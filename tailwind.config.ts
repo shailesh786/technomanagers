@@ -2,7 +2,14 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+    // Legacy Vite paths — kept until Phase 6 removes src/
+    "./pages/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {

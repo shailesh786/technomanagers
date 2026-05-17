@@ -1,28 +1,30 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { QuestionAccessProvider } from "@/contexts/QuestionAccessContext";
-import SignInGateModal from "@/components/questions/SignInGateModal";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import Home from "./pages/Home";
-import { AdminRoute } from "@/components/auth/ProtectedRoute";
+import { Toaster as Sonner } from "@src/components/ui/sonner";
+import { Toaster } from "@src/components/ui/toaster";
+import { TooltipProvider } from "@src/components/ui/tooltip";
+import { AuthProvider } from "@src/contexts/AuthContext";
+import { QuestionAccessProvider } from "@src/contexts/QuestionAccessContext";
+import SignInGateModal from "@src/components/questions/SignInGateModal";
+import Navbar from "@src/components/layout/Navbar";
+import Footer from "@src/components/layout/Footer";
+// NOTE: pages/ was renamed to _vite-pages/ to prevent Next.js from treating
+// this directory as its Pages Router. These imports are legacy Vite-only code.
+import Home from "./_vite-pages/Home";
+import { AdminRoute } from "@src/components/auth/ProtectedRoute";
 
 // Lazy-load non-home routes to reduce initial JS bundle size
-const Questions = lazy(() => import("./pages/Questions"));
-const QuestionDetail = lazy(() => import("./pages/QuestionDetail"));
-const Courses = lazy(() => import("./pages/Courses"));
-const Coaching = lazy(() => import("./pages/Coaching"));
-const Events = lazy(() => import("./pages/Events"));
-const Cohort = lazy(() => import("./pages/Cohort"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Admin = lazy(() => import("./pages/Admin"));
-const Profile = lazy(() => import("./pages/Profile"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Questions = lazy(() => import("./_vite-pages/Questions"));
+const QuestionDetail = lazy(() => import("./_vite-pages/QuestionDetail"));
+const Courses = lazy(() => import("./_vite-pages/Courses"));
+const Coaching = lazy(() => import("./_vite-pages/Coaching"));
+const Events = lazy(() => import("./_vite-pages/Events"));
+const Cohort = lazy(() => import("./_vite-pages/Cohort"));
+const Auth = lazy(() => import("./_vite-pages/Auth"));
+const Admin = lazy(() => import("./_vite-pages/Admin"));
+const Profile = lazy(() => import("./_vite-pages/Profile"));
+const NotFound = lazy(() => import("./_vite-pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
