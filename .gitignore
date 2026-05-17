@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Next.js build output
+.next/
+out/
+
 # Environment / secrets
 .env
 .env.local
