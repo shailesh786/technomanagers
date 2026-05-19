@@ -1,20 +1,33 @@
 /**
  * app/questions/page.tsx — Questions listing (Server Component, Phase 4)
  *
- * Wraps QuestionsClient in <Suspense> — required by Next.js App Router
- * whenever a child client component uses useSearchParams().
+ * QuestionsClient is loaded with ssr:false to avoid hydration mismatches.
+ * The component uses useSearchParams(), Radix UI Popovers (aria-controls via
+ * useId()), and auth state — all of which produce different output between
+ * server and client during the Suspense hydration pass.
  *
- * The four queries that power the default view (questions list + sidebar data)
- * are prefetched server-side and streamed to the client via HydrationBoundary
- * so the page renders with content instead of skeletons on first load.
+ * With ssr:false, the server renders the QuestionsLoading skeleton (matching
+ * the Suspense fallback). React hydrates THAT skeleton without any mismatch.
+ * On the client, QuestionsClient renders immediately from the TanStack Query
+ * cache (populated by HydrationBoundary) — so the user sees no loading flash.
+ *
+ * SEO note: individual /questions/[id] pages are fully SSR'd for crawlers.
+ * The listing page is treated as an app-shell.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import QuestionsClient from '@/components/questions/QuestionsClient';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+// ssr:false — skips server-rendering QuestionsClient, avoiding hydration
+// mismatches from auth state, Radix UI useId(), and useSearchParams().
+const QuestionsClient = dynamic(
+  () => import('@/components/questions/QuestionsClient'),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   title: 'PM Interview Questions | Technomanagers',
