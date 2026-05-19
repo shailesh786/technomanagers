@@ -1,34 +1,16 @@
 /**
- * app/questions/[id]/page.tsx — Question detail  (/questions/:id)
+ * app/questions/[id]/page.tsx — Question detail (Server Component shell)
  *
- * Rendering: SSR (React Server Component)
- *
- * Phase 2: Replace this stub with the migrated <QuestionDetail /> component.
- * The RSC will:
- *  1. Fetch the individual question by ID from Supabase (server-side)
- *  2. Return notFound() if the question doesn't exist or isn't published
- *  3. Pass data as props to interactive client sub-components (comments, likes)
- *
- * SEO: generateMetadata (with per-question og:title/description) in Phase 5.
+ * Passes the `id` param from the URL to QuestionDetailClient so the
+ * client component doesn't need useParams().
  */
 
-import { notFound } from 'next/navigation';
+import QuestionDetailClient from '@/components/questions/QuestionDetailClient';
 
-interface QuestionDetailPageProps {
+interface Props {
   params: { id: string };
 }
 
-export default function QuestionDetailPage({ params }: QuestionDetailPageProps) {
-  if (!params.id) notFound();
-
-  return (
-    <div className="container py-20 text-center">
-      <h1 className="text-4xl font-heading font-bold">
-        🚧 Question Detail — Phase 2 migration pending
-      </h1>
-      <p className="mt-4 text-muted-foreground">
-        Question ID: <code className="font-mono">{params.id}</code>
-      </p>
-    </div>
-  );
+export default function QuestionDetailPage({ params }: Props) {
+  return <QuestionDetailClient id={params.id} />;
 }

@@ -1,23 +1,29 @@
 /**
- * app/layout.tsx — Root Layout
+ * app/layout.tsx — Root Layout (Server Component)
  *
- * Phase 1: Minimal shell — just renders children with the correct HTML structure,
- * global CSS, and font variables.
+ * Wraps every page with:
+ *   QueryProvider → AuthProvider → QuestionAccessProvider → TooltipProvider
+ *   Navbar · <main> · FooterWrapper (hidden on /admin)
+ *   Toaster (shadcn) · Sonner · SignInGateModal
  *
- * Phase 4: This file will be updated to:
- *  - Import and render <Navbar /> and <Footer />
- *  - Wrap children in <AuthProvider>, <QueryClientProvider>, <ThemeProvider>
- *  - Add <Toaster /> and <Sonner /> from shadcn/ui
- *
- * Fonts are loaded via next/font/google (zero layout-shift, self-hosted by
- * Next.js — no external <link> tag needed).
+ * Fonts are loaded via next/font/google — zero layout-shift, self-hosted
+ * by Next.js at build time, no external <link> tag needed.
  */
 
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google';
+import QueryProvider from '@/providers/QueryProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { QuestionAccessProvider } from '@/contexts/QuestionAccessContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import Navbar from '@/components/layout/Navbar';
+import FooterWrapper from '@/components/layout/FooterWrapper';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import SignInGateModal from '@/components/questions/SignInGateModal';
 import '@src/index.css';
 
-// ─── Font definitions ────────────────────────────────────────────────────────
+// ─── Fonts ───────────────────────────────────────────────────────────────────
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -31,7 +37,7 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
-// ─── Default metadata (overridden per-page via generateMetadata) ─────────────
+// ─── Default metadata (each SSR page overrides via generateMetadata) ─────────
 
 export const metadata: Metadata = {
   title: {
@@ -41,7 +47,7 @@ export const metadata: Metadata = {
   description:
     'Master product management with curated interview questions, 1:1 coaching, courses, and a community of PMs from top companies.',
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com'
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com',
   ),
   openGraph: {
     type: 'website',
@@ -52,49 +58,33 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@technomanagers',
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: { index: true, follow: true },
 };
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
-      // Suppress hydration warning caused by next-themes injecting the theme
-      // class before React hydrates.
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${dmSans.variable}`}
     >
-      <body>
-        {/*
-         * Phase 4: Replace this comment block with:
-         *
-         * <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-         *   <QueryProvider>               ← TanStack Query provider
-         *     <AuthProvider>             ← Supabase auth context
-         *       <QuestionAccessProvider>
-         *         <TooltipProvider>
-         *           <Navbar />
-         *           <main className="flex-1">{children}</main>
-         *           <Footer />   ← rendered conditionally (not on /admin)
-         *           <Toaster />
-         *           <Sonner />
-         *           <SignInGateModal />
-         *         </TooltipProvider>
-         *       </QuestionAccessProvider>
-         *     </AuthProvider>
-         *   </QueryProvider>
-         * </ThemeProvider>
-         */}
-        {children}
+      <body className="flex flex-col min-h-screen">
+        <QueryProvider>
+          <AuthProvider>
+            <QuestionAccessProvider>
+              <TooltipProvider>
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <FooterWrapper />
+                <Toaster />
+                <Sonner />
+                <SignInGateModal />
+              </TooltipProvider>
+            </QuestionAccessProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

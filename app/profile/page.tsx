@@ -1,26 +1,18 @@
 /**
- * app/profile/page.tsx — User profile  (/profile)
+ * app/profile/page.tsx — Profile page (Server Component shell)
  *
- * Rendering: CSR (Client Component)
- * 'use client' required because this page reads auth state from context
- * and renders personalised content.
- *
- * Phase 3: Replace this stub with the migrated <Profile /> component.
- * Route protection (redirect to /auth if not signed in) will be handled
- * via middleware.ts in Phase 3.
+ * ProfilePage is a client component because it uses useSearchParams,
+ * useRouter, TanStack Query hooks, and auth context.
+ * Wrapped in Suspense since ProfilePage uses useSearchParams().
  */
 
-'use client';
+import { Suspense } from 'react';
+import ProfilePage from '@/components/profile/ProfilePage';
 
-export default function ProfilePage() {
+export default function Profile() {
   return (
-    <div className="container py-20 text-center">
-      <h1 className="text-4xl font-heading font-bold">
-        🚧 Profile — Phase 3 migration pending
-      </h1>
-      <p className="mt-4 text-muted-foreground">
-        This page will be migrated in Phase 3.
-      </p>
-    </div>
+    <Suspense fallback={<div className="container py-16 text-center text-muted-foreground">Loading...</div>}>
+      <ProfilePage />
+    </Suspense>
   );
 }
