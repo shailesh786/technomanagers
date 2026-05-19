@@ -1,17 +1,33 @@
 /**
- * app/page.tsx — Home page (Server Component)
+ * app/page.tsx — Home page (Server Component, Phase 4)
  *
  * Static sections (hero, stats, company pills, how-it-works, coaching CTA)
  * are rendered server-side — zero JS required for above-the-fold content.
  *
- * FeaturedQuestionsSection is a Client Component that hydrates after load
- * and fetches the top 4 questions via TanStack Query.
+ * FeaturedQuestionsSection is wrapped in HydrationBoundary so the top-4
+ * questions are pre-populated in the TanStack Query cache on the server and
+ * streamed to the client — no loading skeleton on first paint.
  */
 
+import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Users, Star, CheckCircle, TrendingUp, Building2, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FeaturedQuestionsSection from '@/components/home/FeaturedQuestionsSection';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+export const metadata: Metadata = {
+  title: 'Technomanagers — Crack Your PM Interview',
+  description:
+    'Practice with real product management interview questions from top tech companies. Get coached by industry experts.',
+  openGraph: {
+    title: 'Technomanagers — Crack Your PM Interview',
+    description:
+      'Practice with real PM interview questions from Google, Meta, Amazon, and more.',
+    type: 'website',
+  },
+};
 
 const companies = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple', 'DoorDash', 'Uber', 'Adobe', 'PayPal'];
 
@@ -27,7 +43,27 @@ const stats = [
   { icon: Award,      value: '4.9',    label: 'Average Rating' },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Prefetch the "Hot" questions list server-side.
+  // The query key ['questions', { sort: 'Hot' }] matches useQuestions({ sort: 'Hot' })
+  // exactly, so FeaturedQuestionsSection finds the data already in the cache —
+  // no loading skeleton on first render.
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['questions', { sort: 'Hot' }],
+    queryFn: async () => {
+      const supabase = await createSupabaseServerClient();
+      const { data } = await supabase
+        .from('questions')
+        .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
+        .eq('status', 'published')
+        .order('upvotes', { ascending: false })
+        .range(0, 19);
+      return data ?? [];
+    },
+  });
+
   return (
     <div>
       {/* Hero */}
@@ -73,8 +109,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Questions — client component, hydrates after load */}
-      <FeaturedQuestionsSection />
+      {/* Featured Questions — pre-populated from server via HydrationBoundary */}
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <FeaturedQuestionsSection />
+      </HydrationBoundary>
 
       {/* Trending Companies */}
       <section className="bg-muted/50 py-16">
