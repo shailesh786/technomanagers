@@ -45,7 +45,10 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Start true so every consumer sees isLoading=true before the INITIAL_SESSION
+  // event fires — prevents a flash where user=null && isLoading=false causes
+  // protected pages to redirect before auth has had a chance to resolve.
+  const [isLoading, setIsLoading] = useState(true);
 
   const supabase = createSupabaseBrowserClient();
 
@@ -81,11 +84,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Now uses native Supabase OAuth with PKCE flow.
   // The /auth/callback Route Handler (app/auth/callback/route.ts) exchanges
   // the code for a session and sets the cookie.
+  //
+  // We thread the ?next= param through to the callback URL so that if the
+  // middleware redirected the user from e.g. /profile → /auth?next=/profile,
+  // they land back on /profile after signing in rather than the default /.
   const signInWithGoogle = useCallback(async () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const next = searchParams.get('next') || '/questions';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
     if (error) {
