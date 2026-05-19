@@ -21,6 +21,7 @@ import FooterWrapper from '@/components/layout/FooterWrapper';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import SignInGateModal from '@/components/questions/SignInGateModal';
+import { Analytics } from '@vercel/analytics/next';
 import '@src/index.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
@@ -85,6 +86,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </QuestionAccessProvider>
           </AuthProvider>
         </QueryProvider>
+        {/* Vercel Analytics — injected outside providers, no React context needed */}
+        <Analytics />
       </body>
     </html>
   );
