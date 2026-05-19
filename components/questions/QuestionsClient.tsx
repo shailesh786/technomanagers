@@ -150,14 +150,26 @@ export default function QuestionsClient() {
     }
   };
 
-  const categoryCounts: Record<string, number> = {};
-  allQuestions.forEach((q) => {
-    q.category?.forEach((c) => {
-      categoryCounts[c] = (categoryCounts[c] || 0) + 1;
-    });
-  });
+  // Use accumulated allQuestions for pagination; fall back to the raw `questions`
+  // data (available from server-prefetch on both SSR and first client render) so
+  // the initial HTML is identical on server and client — avoids a hydration mismatch
+  // caused by useEffect not running on the server while the query cache is populated.
+  const displayedQuestions = useMemo(() => {
+    if (offset > 0 || allQuestions.length > 0) return allQuestions;
+    return questions ?? [];
+  }, [offset, allQuestions, questions]);
 
-  const showInitialLoading = isLoading && offset === 0;
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    displayedQuestions.forEach((q) => {
+      q.category?.forEach((c) => {
+        counts[c] = (counts[c] || 0) + 1;
+      });
+    });
+    return counts;
+  }, [displayedQuestions]);
+
+  const showInitialLoading = isLoading && displayedQuestions.length === 0;
   const showLoadingMore = isLoading && offset > 0;
 
   const clearAll = useCallback(() => {
@@ -210,7 +222,7 @@ export default function QuestionsClient() {
                 <div className="flex gap-3 pt-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-16" /></div>
               </div>
             ))
-          ) : allQuestions.length === 0 ? (
+          ) : displayedQuestions.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-lg text-muted-foreground">No questions found matching your filters.</p>
               <Button variant="outline" className="mt-4" onClick={clearAll}>
@@ -219,7 +231,7 @@ export default function QuestionsClient() {
             </div>
           ) : (
             <>
-              {allQuestions.map((q) => (
+              {displayedQuestions.map((q) => (
                 <QuestionCard
                   key={q.id}
                   question={q}
