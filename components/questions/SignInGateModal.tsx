@@ -14,6 +14,7 @@
  * - All logic, JSX, and visual design UNCHANGED.
  */
 
+import Image from 'next/image';
 import { Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
@@ -40,9 +41,11 @@ export default function SignInGateModal() {
           onClick={() => signInWithGoogle()}
           className="mx-auto mt-4 flex items-center gap-3 rounded-lg border bg-background px-6 py-2.5 font-medium shadow-sm transition-colors hover:bg-muted"
         >
-          <img
+          <Image
             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
             alt="Google"
+            width={20}
+            height={20}
             className="h-5 w-5"
           />
           Sign in with Google

@@ -16,6 +16,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        // Google icon SVG used on Sign-in buttons (Navbar, SignInGateModal)
+        protocol: 'https',
+        hostname: 'www.gstatic.com',
+      },
     ],
   },
 

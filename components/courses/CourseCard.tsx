@@ -11,6 +11,7 @@
  * - All content, logic, and visual design UNCHANGED.
  */
 
+import Image from 'next/image';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Course } from '@/types';
@@ -28,9 +29,9 @@ export default function CourseCard({ course }: CourseCardProps) {
       className="group block rounded-xl border bg-background overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
     >
       {/* Thumbnail/gradient */}
-      <div className="h-40 bg-gradient-brand flex items-center justify-center overflow-hidden">
+      <div className="relative h-40 bg-gradient-brand flex items-center justify-center overflow-hidden">
         {course.thumbnail_url ? (
-          <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover" />
+          <Image src={course.thumbnail_url} alt={course.title} fill className="object-cover" />
         ) : (
           <BookOpen className="h-12 w-12 text-primary-foreground/80" />
         )}

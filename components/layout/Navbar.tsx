@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { QuestionsDropdown, CoursesDropdown, MobileQuestionsMenu, MobileCoursesMenu } from '@/components/layout/NavDropdown';
+import Image from 'next/image';
 import logo from '@src/assets/logo.webp';
 
 const GOOGLE_ICON = 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg';
@@ -53,7 +54,7 @@ export default function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <img src={logo.src ?? logo} alt="TechnoManagers" width="36" height="36" className="h-9 w-9 object-contain" />
+          <Image src={logo} alt="TechnoManagers" width={36} height={36} className="h-9 w-9 object-contain" />
           <span className="text-lg font-heading font-bold tracking-tight">
             <span className="text-gradient-brand">TECHNO</span>
             <span className="text-foreground">MANAGERS</span>
@@ -163,7 +164,7 @@ export default function Navbar() {
               variant="outline"
               className="gap-2 border-border bg-background hover:bg-muted text-foreground font-medium"
             >
-              <img src={GOOGLE_ICON} alt="Google" width="16" height="16" className="h-4 w-4" />
+              <Image src={GOOGLE_ICON} alt="Google" width={16} height={16} className="h-4 w-4" />
               Sign in
             </Button>
           )}
@@ -227,7 +228,7 @@ export default function Navbar() {
             </Button>
           ) : !isLoading ? (
             <Button className="w-full gap-2" variant="outline" onClick={signInWithGoogle}>
-              <img src={GOOGLE_ICON} alt="Google" width="16" height="16" className="h-4 w-4" />
+              <Image src={GOOGLE_ICON} alt="Google" width={16} height={16} className="h-4 w-4" />
               Sign in
             </Button>
           ) : null}

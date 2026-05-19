@@ -18,7 +18,9 @@ import {
   Zap, Code, Boxes, Bot, ClipboardCheck, MessageSquare, BookOpen, Users,
   Target, Rocket, RefreshCw, TrendingUp, GraduationCap, X,
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+
+const supabase = createSupabaseBrowserClient();
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';

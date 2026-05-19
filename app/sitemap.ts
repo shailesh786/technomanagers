@@ -2,19 +2,17 @@
  * app/sitemap.ts — Dynamic XML sitemap
  *
  * Next.js auto-serves this as /sitemap.xml.
- *
- * Phase 5: Replace stub with dynamic generation — query Supabase for all
- * published question IDs and include them as individual sitemap entries.
- *
- * Current stub includes only the static public routes.
+ * Includes all static public routes + a URL per published question fetched
+ * live from Supabase so new questions are indexed immediately.
  */
 
 import type { MetadataRoute } from 'next';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -54,19 +52,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // TODO Phase 5: Fetch and append individual question URLs
-  // const supabase = await createSupabaseServerClient()
-  // const { data: questions } = await supabase
-  //   .from('questions')
-  //   .select('id, updated_at')
-  //   .eq('status', 'published')
-  // const questionRoutes = (questions ?? []).map((q) => ({
-  //   url: `${BASE_URL}/questions/${q.id}`,
-  //   lastModified: new Date(q.updated_at ?? Date.now()),
-  //   changeFrequency: 'weekly' as const,
-  //   priority: 0.6,
-  // }))
-  // return [...staticRoutes, ...questionRoutes]
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: questions } = await supabase
+      .from('questions')
+      .select('id, updated_at')
+      .eq('status', 'published');
 
-  return staticRoutes;
+    const questionRoutes: MetadataRoute.Sitemap = (questions ?? []).map((q) => ({
+      url: `${BASE_URL}/questions/${q.id}`,
+      lastModified: new Date(q.updated_at ?? Date.now()),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }));
+
+    return [...staticRoutes, ...questionRoutes];
+  } catch {
+    // If Supabase is unavailable during build, return static routes only
+    return staticRoutes;
+  }
 }

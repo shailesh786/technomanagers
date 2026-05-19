@@ -32,7 +32,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
 import { useCommentReplies, useAddComment, useUpdateComment, useDeleteComment } from '@src/hooks/useComments';
 import { useCommentLikeCounts, useUserLikedComments, useToggleCommentLike } from '@src/hooks/useLikes';
-import { supabase } from '@/integrations/supabase/client';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+
+const supabase = createSupabaseBrowserClient();
 import { timeAgo } from '@/lib/timeAgo';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';

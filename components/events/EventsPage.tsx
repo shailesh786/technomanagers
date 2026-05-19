@@ -10,6 +10,7 @@
  * - All logic, JSX, and visual design UNCHANGED.
  */
 
+import Image from 'next/image';
 import { Calendar, ExternalLink, Clock } from 'lucide-react';
 import { useEvents } from '@src/hooks/useEvents';
 import { Button } from '@/components/ui/button';
@@ -74,12 +75,12 @@ export default function EventsPage() {
               className="group border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all flex flex-col"
             >
               {e.thumbnail_url && (
-                <div className="aspect-video w-full overflow-hidden bg-muted">
-                  <img
+                <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                  <Image
                     src={e.thumbnail_url}
                     alt={e.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    loading="lazy"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform"
                   />
                 </div>
               )}
