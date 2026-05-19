@@ -30,8 +30,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
-import { useCommentReplies, useAddComment, useUpdateComment, useDeleteComment } from '@src/hooks/useComments';
-import { useCommentLikeCounts, useUserLikedComments, useToggleCommentLike } from '@src/hooks/useLikes';
+import { useCommentReplies, useAddComment, useUpdateComment, useDeleteComment } from '@/hooks/useComments';
+import { useCommentLikeCounts, useUserLikedComments, useToggleCommentLike } from '@/hooks/useLikes';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const supabase = createSupabaseBrowserClient();

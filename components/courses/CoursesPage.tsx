@@ -12,7 +12,7 @@
  */
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCourses } from '@src/hooks/useCourses';
+import { useCourses } from '@/hooks/useCourses';
 import CourseCard from '@/components/courses/CourseCard';
 import { BookOpen } from 'lucide-react';
 

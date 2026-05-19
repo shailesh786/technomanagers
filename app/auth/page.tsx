@@ -8,15 +8,15 @@
  * - 'use client' added
  * - react-router-dom Navigate → useRouter().replace() via useEffect
  * - useAuth from @/contexts/AuthContext (migrated)
- * - logo imported from @src/assets/logo.webp (stays in src/ until Phase 6)
+ * - logo served from /public/logo.webp via next/image
  * - All UI and logic UNCHANGED.
  */
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import logo from '@src/assets/logo.webp';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -33,8 +33,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-sm mx-auto p-8 rounded-xl border bg-background shadow-lg space-y-6 text-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={typeof logo === 'string' ? logo : (logo as any).src} alt="TechnoManagers" className="h-16 w-16 mx-auto" />
+        <Image src="/logo.webp" alt="TechnoManagers" width={64} height={64} className="h-16 w-16 mx-auto" />
         <div className="space-y-2">
           <h1 className="font-heading font-bold text-xl">Welcome to TechnoManagers</h1>
           <p className="text-sm text-muted-foreground">Sign in to save questions, track progress, and more.</p>

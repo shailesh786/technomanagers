@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
-import { useComments, useCommentCount, useAddComment } from '@src/hooks/useComments';
+import { useComments, useCommentCount, useAddComment } from '@/hooks/useComments';
 import CommentItem from '@/components/questions/CommentItem';
 import { toast } from 'sonner';
 

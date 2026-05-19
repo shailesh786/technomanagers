@@ -16,7 +16,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuestions } from '@src/hooks/useQuestions';
+import { useQuestions } from '@/hooks/useQuestions';
 import QuestionCard from '@/components/questions/QuestionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';

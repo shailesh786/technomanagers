@@ -26,7 +26,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X, Shield, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFlaggedCount } from '@src/hooks/useModeration';
+import { useFlaggedCount } from '@/hooks/useModeration';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { QuestionsDropdown, CoursesDropdown, MobileQuestionsMenu, MobileCoursesMenu } from '@/components/layout/NavDropdown';
 import Image from 'next/image';
-import logo from '@src/assets/logo.webp';
 
 const GOOGLE_ICON = 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg';
 
@@ -54,7 +53,7 @@ export default function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Image src={logo} alt="TechnoManagers" width={36} height={36} className="h-9 w-9 object-contain" />
+          <Image src="/logo.webp" alt="TechnoManagers" width={36} height={36} className="h-9 w-9 object-contain" />
           <span className="text-lg font-heading font-bold tracking-tight">
             <span className="text-gradient-brand">TECHNO</span>
             <span className="text-foreground">MANAGERS</span>

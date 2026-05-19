@@ -12,7 +12,7 @@
 
 import Image from 'next/image';
 import { Calendar, ExternalLink, Clock } from 'lucide-react';
-import { useEvents } from '@src/hooks/useEvents';
+import { useEvents } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';

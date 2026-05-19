@@ -22,7 +22,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import SignInGateModal from '@/components/questions/SignInGateModal';
 import { Analytics } from '@vercel/analytics/next';
-import '@src/index.css';
+import '@/app/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
 

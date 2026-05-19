@@ -21,10 +21,10 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCourses } from '@src/hooks/useCourses';
-import { useRoles } from '@src/hooks/useRoles';
-import { useCategories } from '@src/hooks/useCategories';
-import { usePopularCompanies } from '@src/hooks/useCompanies';
+import { useCourses } from '@/hooks/useCourses';
+import { useRoles } from '@/hooks/useRoles';
+import { useCategories } from '@/hooks/useCategories';
+import { usePopularCompanies } from '@/hooks/useCompanies';
 import type { Course } from '@/types';
 
 function useHoverDropdown(delay = 100) {

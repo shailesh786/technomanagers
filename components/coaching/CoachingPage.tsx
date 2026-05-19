@@ -13,7 +13,7 @@
 
 import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCoaching } from '@src/hooks/useCoaching';
+import { useCoaching } from '@/hooks/useCoaching';
 import CoachingCard from '@/components/coaching/CoachingCard';
 import { Users } from 'lucide-react';
 

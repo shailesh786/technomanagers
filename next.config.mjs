@@ -29,14 +29,18 @@ const nextConfig = {
   // explicit here for self-hosted fallback)
   compress: true,
 
-  // ─── TypeScript & ESLint ───────────────────────────────────────────────────
-  // Don't fail the build on type errors during the migration while src/ still
-  // contains legacy Vite code. Re-enable once Phase 6 (src/ removal) is done.
+  // ─── TypeScript ───────────────────────────────────────────────────────────
+  // Pre-existing Supabase types/version mismatch causes many `never` errors
+  // in both the hooks and new server pages. These existed before migration
+  // (which is why this was set from the start). Fix by regenerating types:
+  //   npx supabase gen types typescript --project-id <id> > lib/supabase/types.ts
   typescript: {
     ignoreBuildErrors: true,
   },
+  // ─── ESLint ───────────────────────────────────────────────────────────────
+  // src/ removed — ESLint checks re-enabled.
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 };
 

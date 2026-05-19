@@ -19,9 +19,9 @@ import { useState } from 'react';
 import { ChevronDown, X, Building2, SlidersHorizontal, Flame, Clock, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useRoles } from '@src/hooks/useRoles';
-import { useCompaniesWithCounts } from '@src/hooks/useCompanies';
-import { useCategories } from '@src/hooks/useCategories';
+import { useRoles } from '@/hooks/useRoles';
+import { useCompaniesWithCounts } from '@/hooks/useCompanies';
+import { useCategories } from '@/hooks/useCategories';
 
 /* ─── Pill button ─── */
 function FilterButton({

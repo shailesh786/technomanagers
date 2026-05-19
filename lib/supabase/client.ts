@@ -15,7 +15,7 @@
  */
 
 import { createBrowserClient } from '@supabase/ssr';
-import type { Database } from '@src/integrations/supabase/types';
+import type { Database } from '@/lib/supabase/types';
 
 // Singleton pattern — reuse the same client instance across re-renders
 let client: ReturnType<typeof createBrowserClient<Database>> | undefined;
