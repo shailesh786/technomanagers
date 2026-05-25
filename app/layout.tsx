@@ -48,7 +48,10 @@ export const metadata: Metadata = {
   description:
     'Master product management with curated interview questions, 1:1 coaching, courses, and a community of PMs from top companies.',
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com',
+    (() => {
+      const u = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
+      return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+    })(),
   ),
   openGraph: {
     type: 'website',
