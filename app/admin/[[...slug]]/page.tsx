@@ -1,28 +1,36 @@
-/**
- * app/admin/[[...slug]]/page.tsx — Admin panel  (/admin/*)
- *
- * Rendering: CSR (Client Component)
- * 'use client' required because the admin panel uses heavy client-side
- * interactions (tables, modals, image uploads).
- *
- * The [[...slug]] catch-all segment handles all /admin/* sub-routes
- * (e.g. /admin/questions, /admin/coaching, /admin/moderation).
- *
- * Phase 3: Replace this stub with the migrated <Admin /> component.
- * Route protection (admin-only guard) will be enforced via middleware.ts.
- */
-
 'use client';
 
-export default function AdminPage() {
-  return (
-    <div className="container py-20 text-center">
-      <h1 className="text-4xl font-heading font-bold">
-        🚧 Admin — Phase 3 migration pending
-      </h1>
-      <p className="mt-4 text-muted-foreground">
-        This page will be migrated in Phase 3.
-      </p>
+import dynamic from 'next/dynamic';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+const AdminPage = dynamic(() => import('@/components/admin/AdminPage'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
     </div>
-  );
+  ),
+});
+
+export default function AdminRoute() {
+  const { user, isAdmin, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && (!user || !isAdmin)) {
+      router.replace('/');
+    }
+  }, [user, isAdmin, isLoading, router]);
+
+  if (isLoading || !user || !isAdmin) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  return <AdminPage />;
 }
