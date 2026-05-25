@@ -22,6 +22,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import SignInGateModal from '@/components/questions/SignInGateModal';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import '@/app/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
@@ -89,8 +90,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </QuestionAccessProvider>
           </AuthProvider>
         </QueryProvider>
-        {/* Vercel Analytics — injected outside providers, no React context needed */}
+        {/* Vercel Analytics + Speed Insights — outside providers, no React context needed */}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
