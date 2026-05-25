@@ -10,8 +10,8 @@
 
 import type { MetadataRoute } from 'next';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
+const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
+const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
 
 export default function robots(): MetadataRoute.Robots {
   return {

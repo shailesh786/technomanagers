@@ -9,8 +9,8 @@
 import type { MetadataRoute } from 'next';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
+const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
+const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
