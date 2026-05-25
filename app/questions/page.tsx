@@ -1,18 +1,14 @@
 /**
- * app/questions/page.tsx — Questions listing (Server Component, Phase 4)
+ * Questions listing page (Server Component)
  *
- * QuestionsClient is loaded with ssr:false to avoid hydration mismatches.
- * The component uses useSearchParams(), Radix UI Popovers (aria-controls via
- * useId()), and auth state — all of which produce different output between
- * server and client during the Suspense hydration pass.
+ * QuestionsClient uses ssr:false to avoid hydration mismatches from
+ * useSearchParams(), Radix UI Popovers (useId()), and auth state — all of
+ * which produce different output on the server vs the first client render.
  *
- * With ssr:false, the server renders the QuestionsLoading skeleton (matching
- * the Suspense fallback). React hydrates THAT skeleton without any mismatch.
- * On the client, QuestionsClient renders immediately from the TanStack Query
- * cache (populated by HydrationBoundary) — so the user sees no loading flash.
+ * The server renders the loading skeleton; the client hydrates it cleanly,
+ * then immediately swaps in QuestionsClient from the HydrationBoundary cache.
  *
- * SEO note: individual /questions/[id] pages are fully SSR'd for crawlers.
- * The listing page is treated as an app-shell.
+ * SEO: individual /questions/[id] pages are fully SSR'd for crawlers.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';

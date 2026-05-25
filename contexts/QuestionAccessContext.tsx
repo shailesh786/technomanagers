@@ -1,15 +1,8 @@
 'use client';
 
 /**
- * contexts/QuestionAccessContext.tsx
- *
- * Migrated from src/contexts/QuestionAccessContext.tsx.
- *
- * Changes from original:
- * 1. Added 'use client' directive (uses useState, useCallback, useMemo)
- * 2. Import paths updated: @/ now resolves to root (contexts/, @/types, etc.)
- *
- * Logic is UNCHANGED — manages the free-view gate for unauthenticated users.
+ * Manages the free-view gate — tracks how many questions an unauthenticated
+ * user has viewed before prompting sign-in.
  */
 
 import {

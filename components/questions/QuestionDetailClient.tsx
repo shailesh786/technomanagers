@@ -1,19 +1,5 @@
 'use client';
 
-/**
- * components/questions/QuestionDetailClient.tsx  —  Client Component ✅
- *
- * Migrated from src/_vite-pages/QuestionDetail.tsx.
- * Changes:
- * - 'use client' added
- * - Receives `id` as a prop instead of useParams()
- * - useNavigate → useRouter from next/navigation
- * - react-router-dom Link → next/link Link  |  to → href
- * - Hook imports: @src/hooks/...
- * - Context imports: @/contexts/... (migrated)
- * - Component imports: @/components/... (migrated)
- * - All business logic and visual design UNCHANGED.
- */
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';

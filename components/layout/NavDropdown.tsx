@@ -1,21 +1,5 @@
 'use client';
 
-/**
- * components/layout/NavDropdown.tsx  —  Client Component ✅
- *
- * Needs 'use client': useState, useEffect, useRef, useCallback (in useHoverDropdown),
- * TanStack Query hooks (useRoles, useCategories, usePopularCompanies, useCourses),
- * onMouseEnter/onMouseLeave/onClick event handlers.
- *
- * Changes from src/components/layout/NavDropdown.tsx:
- * - Added 'use client' directive
- * - `import { Link } from 'react-router-dom'`  →  `import Link from 'next/link'`
- * - `<Link to="...">` props  →  `<Link href="...">`
- * - All hook imports: `@/hooks/...`  →  `@src/hooks/...` (hooks stay in src/ until Phase 6)
- * - `@/lib/utils`  →  `@/lib/utils` (now resolves to root lib/utils.ts ✅)
- * - `@/types`  →  `@/types` (now resolves to root types/index.ts ✅)
- * - All logic, JSX, and visual design UNCHANGED.
- */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';

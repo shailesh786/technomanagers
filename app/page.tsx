@@ -1,12 +1,9 @@
 /**
- * app/page.tsx — Home page (Server Component, Phase 4)
+ * Home page (Server Component)
  *
- * Static sections (hero, stats, company pills, how-it-works, coaching CTA)
- * are rendered server-side — zero JS required for above-the-fold content.
- *
- * FeaturedQuestionsSection is wrapped in HydrationBoundary so the top-4
- * questions are pre-populated in the TanStack Query cache on the server and
- * streamed to the client — no loading skeleton on first paint.
+ * Static sections are server-rendered. FeaturedQuestionsSection is wrapped
+ * in HydrationBoundary so questions are pre-populated in the TanStack Query
+ * cache on the server — no loading skeleton on first paint.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';

@@ -1,17 +1,5 @@
 'use client';
 
-/**
- * components/home/FeaturedQuestionsSection.tsx  —  Client Component ✅
- *
- * Migrated from src/_vite-pages/home/FeaturedQuestionsSection.tsx.
- * Changes:
- * - 'use client' added
- * - react-router-dom Link → next/link Link  |  to → href
- * - Hook imports: @src/hooks/useQuestions
- * - Context import: @/contexts/AuthContext (migrated version)
- * - Component import: @/components/questions/QuestionCard (migrated version)
- * - All logic, JSX, and visual design UNCHANGED.
- */
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';

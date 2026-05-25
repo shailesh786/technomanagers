@@ -1,11 +1,3 @@
-/**
- * app/not-found.tsx — 404 page
- *
- * Rendering: SSR (React Server Component)
- * Replaces: src/pages/NotFound.tsx
- *
- * Phase 4: Replace stub content with the migrated <NotFound /> component.
- */
 
 import Link from 'next/link';
 

@@ -1,16 +1,8 @@
 'use client';
 
 /**
- * components/NavLink.tsx  —  Client Component ✅
- *
- * Needs 'use client': uses usePathname() from next/navigation to detect
- * the active route for applying activeClassName.
- *
- * Changes from src/components/NavLink.tsx:
- * - Removed react-router-dom dependency entirely
- * - Uses next/link <Link> instead of react-router-dom's <NavLink>
- * - Active detection: usePathname() === href  (replaces router's isActive)
- * - Prop rename: `to` → `href` to match next/link API
+ * NavLink — next/link wrapper that applies activeClassName when the
+ * current pathname matches the href.
  */
 
 import Link from 'next/link';

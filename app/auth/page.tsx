@@ -1,16 +1,5 @@
 'use client';
 
-/**
- * app/auth/page.tsx — Sign-in page (Client Component)
- *
- * Migrated from src/_vite-pages/Auth.tsx.
- * Changes:
- * - 'use client' added
- * - react-router-dom Navigate → useRouter().replace() via useEffect
- * - useAuth from @/contexts/AuthContext (migrated)
- * - logo served from /public/logo.webp via next/image
- * - All UI and logic UNCHANGED.
- */
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';

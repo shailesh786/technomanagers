@@ -1,18 +1,5 @@
 'use client';
 
-/**
- * components/questions/QuestionsClient.tsx  —  Client Component ✅
- *
- * Full interactive Questions page. Migrated from src/_vite-pages/Questions.tsx.
- * Changes:
- * - 'use client' added
- * - react-router-dom useSearchParams → next/navigation useSearchParams + useRouter
- * - Filter mutations use router.replace() to update URL
- * - Hook imports: @src/hooks/...
- * - Context import: @/contexts/AuthContext (migrated)
- * - Component imports: @/components/questions/... (migrated)
- * - All business logic, pagination, and visual design UNCHANGED.
- */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';

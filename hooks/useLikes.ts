@@ -3,7 +3,6 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const supabase = createSupabaseBrowserClient();
 
-// Question likes
 export function useQuestionLikeCount(questionId: string) {
   return useQuery({
     queryKey: ['question_like_count', questionId],
@@ -56,7 +55,6 @@ export function useToggleQuestionLike() {
   });
 }
 
-// Comment likes
 export function useCommentLikeCounts(commentIds: string[]) {
   return useQuery({
     queryKey: ['comment_like_counts', commentIds],
@@ -111,7 +109,6 @@ export function useToggleCommentLike() {
   });
 }
 
-// User's liked questions (for profile)
 export function useUserLikedQuestions(userId?: string) {
   return useQuery({
     queryKey: ['user_liked_questions', userId],

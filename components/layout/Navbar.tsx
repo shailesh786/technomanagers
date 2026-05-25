@@ -1,25 +1,5 @@
 'use client';
 
-/**
- * components/layout/Navbar.tsx  —  Client Component ✅
- *
- * Needs 'use client': useState (mobile menu toggle), usePathname (active link),
- * useAuth() + useFlaggedCount() (client-side context/query), onClick handlers.
- *
- * Changes from src/components/layout/Navbar.tsx:
- * - Added 'use client' directive
- * - `import { Link, useLocation, useNavigate } from 'react-router-dom'`
- *   → `import Link from 'next/link'` + `import { usePathname } from 'next/navigation'`
- * - `useLocation()` → `usePathname()` from next/navigation
- * - `location.pathname` → `pathname`
- * - `<Link to="...">` → `<Link href="...">`
- * - Logo: `import logo from '@/assets/logo.webp'` → `@src/assets/logo.webp`
- *   (asset stays in src/ until Phase 6; webpack handles the import fine)
- * - All hook imports: `@/contexts/...` → `@/contexts/...` (now resolves to root ✅)
- * - useFlaggedCount: `@src/hooks/useModeration` (stays in src/ until Phase 6)
- * - All UI component imports: `@/components/ui/...` → same (now resolves to root ✅)
- * - Visual design: UNCHANGED — pixel-perfect.
- */
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

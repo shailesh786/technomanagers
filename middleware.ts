@@ -25,10 +25,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware-client';
 
 export async function middleware(request: NextRequest) {
-  // ── 1. Build a pass-through response so we can attach refreshed cookies ──
   const response = NextResponse.next({ request });
 
-  // ── 2. Validate + refresh the session cookie ──────────────────────────────
   const supabase = createSupabaseMiddlewareClient(request, response);
   const {
     data: { user },
@@ -36,10 +34,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // ── 3. Route guards ───────────────────────────────────────────────────────
-
-  // /profile — requires sign-in
-  // Preserve the intended path so /auth/callback can redirect back after login.
+  // /profile — requires sign-in; preserve intended path for post-login redirect
   if (pathname.startsWith('/profile') && !user) {
     const redirectUrl = new URL('/auth', request.url);
     redirectUrl.searchParams.set('next', pathname);
@@ -51,12 +46,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // /auth — skip if already signed in
+  // /auth — redirect away if already signed in
   if (pathname === '/auth' && user) {
     return NextResponse.redirect(new URL('/questions', request.url));
   }
 
-  // ── 4. All other routes — just return the response with refreshed cookies ─
   return response;
 }
 

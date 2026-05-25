@@ -1,9 +1,6 @@
 /**
- * app/cohort/page.tsx — Cohort programme page (Server Component, Phase 4)
- *
- * CohortPage is entirely static content (hero, curriculum, testimonials)
- * plus a client-side waitlist form that posts directly to Supabase.
- * No server-side data prefetch is needed — metadata is the only addition.
+ * Cohort programme page — static content with a client-side waitlist form.
+ * No server prefetch needed.
  */
 
 import type { Metadata } from 'next';

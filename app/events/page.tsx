@@ -1,8 +1,6 @@
 /**
- * app/events/page.tsx — Events page (Server Component, Phase 4)
- *
- * Prefetches all upcoming/live events server-side.
- * The query key ['events'] matches useEvents() in EventsPage.
+ * Events page — prefetches all upcoming/live events server-side.
+ * Query key ['events'] matches useEvents() in EventsPage.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';

@@ -1,8 +1,6 @@
 /**
- * app/coaching/page.tsx — Coaching page (Server Component, Phase 4)
- *
- * Prefetches the default "All" coaching services tab server-side.
- * The query key ['coaching', 'All'] matches useCoaching('All') in CoachingPage.
+ * Coaching page — prefetches the default "All" tab server-side.
+ * Query key ['coaching', 'All'] matches useCoaching('All') in CoachingPage.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';

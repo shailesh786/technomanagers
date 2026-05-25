@@ -1,19 +1,5 @@
 'use client';
 
-/**
- * components/questions/QuestionFilters.tsx  —  Client Component ✅
- *
- * Needs 'use client': useState for each popover's open state, TanStack Query
- * hooks (useRoles, useCategories, useCompaniesWithCounts), onChange/onClick
- * handlers on checkboxes and input fields.
- *
- * Changes from src/components/questions/QuestionFilters.tsx:
- * - Added 'use client' directive
- * - Hook imports: `@/hooks/...` → `@src/hooks/...` (hooks stay in src/ until Phase 6)
- * - `@/lib/utils` → `@/lib/utils` ✅ (resolves to root lib/utils.ts)
- * - `@/components/ui/popover` → `@/components/ui/popover` ✅
- * - All logic, JSX, and visual design UNCHANGED.
- */
 
 import { useState } from 'react';
 import { ChevronDown, X, Building2, SlidersHorizontal, Flame, Clock, Search } from 'lucide-react';

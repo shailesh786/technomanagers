@@ -1,19 +1,5 @@
 'use client';
 
-/**
- * components/questions/CommentsSection.tsx  —  Client Component ✅
- *
- * Needs 'use client': useState, useRef, TanStack Query (infinite query +
- * mutations), useAuth(), useQuestionAccess(), form event handlers.
- *
- * Changes from src/components/questions/CommentsSection.tsx:
- * - Added 'use client' directive
- * - Hook imports: `@/hooks/...` → `@src/hooks/...`
- * - Context imports: `@/contexts/...` → `@/contexts/...` ✅
- * - UI component imports: `@/components/ui/...` → same ✅
- * - CommentItem import: local sibling (same directory)
- * - All logic, JSX, and visual design UNCHANGED.
- */
 
 import { useState, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';

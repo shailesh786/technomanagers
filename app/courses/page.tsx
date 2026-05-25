@@ -1,8 +1,6 @@
 /**
- * app/courses/page.tsx — Courses page (Server Component, Phase 4)
- *
- * Prefetches all active courses server-side.
- * The query key ['courses'] matches useCourses() in CoursesPage.
+ * Courses page — prefetches all active courses server-side.
+ * Query key ['courses'] matches useCourses() in CoursesPage.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';

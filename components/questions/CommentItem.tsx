@@ -1,23 +1,5 @@
 'use client';
 
-/**
- * components/questions/CommentItem.tsx  —  Client Component ✅
- *
- * Needs 'use client': 9× useState, TanStack Query mutations, useAuth(),
- * useQuestionAccess(), useQueryClient(), direct supabase call for reporting,
- * and multiple onClick/onChange event handlers.
- *
- * Changes from src/components/questions/CommentItem.tsx:
- * - Added 'use client' directive
- * - Hook imports: `@/hooks/...` → `@src/hooks/...`
- * - `import { supabase } from '@/integrations/supabase/client'`
- *   → `import { supabase } from '@/integrations/supabase/client'`
- *   (resolves to the bridge at root/integrations/supabase/client.ts ✅)
- * - Context imports: `@/contexts/...` → `@/contexts/...` ✅
- * - UI component imports: `@/components/ui/...` → `@/components/ui/...` ✅
- * - `@/lib/timeAgo` → `@/lib/timeAgo` ✅
- * - All logic, JSX, and visual design UNCHANGED.
- */
 
 import { useState } from 'react';
 import { Heart, Reply, Trash2, Pencil, MoreHorizontal, Flag } from 'lucide-react';

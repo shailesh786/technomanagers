@@ -1,21 +1,11 @@
 'use client';
 
 /**
- * contexts/AuthContext.tsx
+ * Auth context — wraps Supabase auth state for client components.
  *
- * Migrated from src/contexts/AuthContext.tsx.
- *
- * Changes from original:
- * 1. Added 'use client' directive (required — uses useState, useEffect, hooks)
- * 2. Supabase client: now uses createSupabaseBrowserClient() from @/lib/supabase/client
- *    (cookie-based session, not localStorage — required for SSR compatibility)
- * 3. signInWithGoogle: replaced @lovable.dev/cloud-auth-js (removed in Phase 1)
- *    with native supabase.auth.signInWithOAuth. The redirect goes to /auth/callback
- *    which exchanges the PKCE code for a session (Route Handler already in place).
- *    All other logic (profile fetch, onAuthStateChange, signOut) is UNCHANGED.
- *
- * Phase 3: This context will be wired into app/layout.tsx as part of the
- * providers wrapper.
+ * Uses cookie-based sessions (not localStorage) for SSR compatibility.
+ * signInWithGoogle uses native Supabase OAuth with PKCE; the /auth/callback
+ * Route Handler exchanges the code for a session cookie.
  */
 
 import {
@@ -80,14 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Replaced: lovable.auth.signInWithOAuth (package removed in Phase 1)
-  // Now uses native Supabase OAuth with PKCE flow.
-  // The /auth/callback Route Handler (app/auth/callback/route.ts) exchanges
-  // the code for a session and sets the cookie.
-  //
-  // We thread the ?next= param through to the callback URL so that if the
-  // middleware redirected the user from e.g. /profile → /auth?next=/profile,
-  // they land back on /profile after signing in rather than the default /.
+  // Threads ?next= through to the callback URL so users redirected to /auth
+  // (e.g. from /profile) land back on their intended page after signing in.
   const signInWithGoogle = useCallback(async () => {
     const searchParams = new URLSearchParams(window.location.search);
     const next = searchParams.get('next') || '/questions';
