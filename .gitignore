@@ -23,7 +23,17 @@ dist-ssr
 *.sln
 *.sw?
 
+# Next.js build output
+.next/
+out/
+
 # Environment / secrets
 .env
 .env.local
 .env.*.local
+
+# TypeScript incremental compilation cache
+tsconfig.tsbuildinfo
+
+# Supabase CLI temp files
+supabase/.temp/
