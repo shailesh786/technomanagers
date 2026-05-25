@@ -16,6 +16,7 @@ export function useQuestions(filters?: {
 }) {
   return useQuery({
     queryKey: ['questions', filters],
+    staleTime: 60 * 1000,
     queryFn: async () => {
       let query = supabase
         .from('questions')
@@ -60,10 +61,11 @@ export function useQuestions(filters?: {
 export function useQuestion(id: string) {
   return useQuery({
     queryKey: ['question', id],
+    staleTime: 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('questions')
-        .select('*')
+        .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, sample_answer, created_at, updated_at')
         .eq('id', id)
         .single();
       if (error) throw error;
@@ -77,20 +79,21 @@ export function useUpvoteQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: question } = await supabase
-        .from('questions')
-        .select('upvotes')
-        .eq('id', id)
-        .single();
-      const { error } = await supabase
-        .from('questions')
-        .update({ upvotes: (question?.upvotes || 0) + 1 })
-        .eq('id', id);
+      // Cast needed until supabase gen types is re-run after applying the migration
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).rpc('increment_upvotes', { question_id: id });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['questions'] });
-      queryClient.invalidateQueries({ queryKey: ['question'] });
+    onSuccess: (_, id) => {
+      // Optimistically update the detail cache
+      queryClient.setQueryData<Question>(['question', id], (old) =>
+        old ? { ...old, upvotes: (old.upvotes ?? 0) + 1 } : old,
+      );
+      // Update every cached list that contains this question
+      queryClient.setQueriesData<Question[]>(
+        { queryKey: ['questions'], exact: false },
+        (old) => old?.map((q) => (q.id === id ? { ...q, upvotes: (q.upvotes ?? 0) + 1 } : q)),
+      );
     },
   });
 }

@@ -7,6 +7,7 @@ const supabase = createSupabaseBrowserClient();
 export function useEvents() {
   return useQuery({
     queryKey: ['events'],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')

@@ -31,3 +31,9 @@ out/
 .env
 .env.local
 .env.*.local
+
+# TypeScript incremental compilation cache
+tsconfig.tsbuildinfo
+
+# Supabase CLI temp files
+supabase/.temp/

@@ -26,7 +26,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 // mismatches from auth state, Radix UI useId(), and useSearchParams().
 const QuestionsClient = dynamic(
   () => import('@/components/questions/QuestionsClient'),
-  { ssr: false },
+  { ssr: false, loading: () => <QuestionsLoading /> },
 );
 
 export const metadata: Metadata = {

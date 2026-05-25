@@ -18,29 +18,16 @@ export interface Comment {
 }
 
 const PAGE_SIZE = 10;
-
-async function enrichWithProfiles(comments: any[]) {
-  if (!comments || comments.length === 0) return [];
-  const userIds = [...new Set(comments.map(c => c.user_id))];
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, full_name, avatar_url')
-    .in('id', userIds);
-  const profileMap: Record<string, any> = {};
-  (profiles || []).forEach(p => { profileMap[p.id] = p; });
-  return comments.map(c => ({
-    ...c,
-    profile: profileMap[c.user_id] || { full_name: 'Anonymous', avatar_url: null },
-  }));
-}
+const COMMENT_SELECT = '*, profile:user_id(id, full_name, avatar_url)';
 
 export function useComments(questionId: string, sort: 'newest' | 'top' = 'newest') {
   return useInfiniteQuery({
     queryKey: ['comments', questionId, sort],
+    staleTime: 30 * 1000,
     queryFn: async ({ pageParam = 0 }) => {
       let query = supabase
         .from('question_comments')
-        .select('*')
+        .select(COMMENT_SELECT)
         .eq('question_id', questionId)
         .is('parent_id', null)
         .is('deleted_at', null)
@@ -53,8 +40,7 @@ export function useComments(questionId: string, sort: 'newest' | 'top' = 'newest
         console.error('Failed to fetch comments:', error);
         throw error;
       }
-      const enriched = await enrichWithProfiles(data || []);
-      return { data: enriched, nextOffset: pageParam + PAGE_SIZE };
+      return { data: data || [], nextOffset: pageParam + PAGE_SIZE };
     },
     getNextPageParam: (lastPage) => {
       if (lastPage.data.length < PAGE_SIZE) return undefined;
@@ -68,10 +54,11 @@ export function useComments(questionId: string, sort: 'newest' | 'top' = 'newest
 export function useCommentReplies(parentId: string) {
   return useQuery({
     queryKey: ['comment_replies', parentId],
+    staleTime: 30 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('question_comments')
-        .select('*')
+        .select(COMMENT_SELECT)
         .eq('parent_id', parentId)
         .is('deleted_at', null)
         .order('created_at', { ascending: true });
@@ -79,7 +66,7 @@ export function useCommentReplies(parentId: string) {
         console.error('Failed to fetch replies:', error);
         throw error;
       }
-      return enrichWithProfiles(data || []);
+      return data || [];
     },
     enabled: !!parentId,
   });
@@ -144,7 +131,10 @@ export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('question_comments').delete().eq('id', id);
+      const { error } = await supabase
+        .from('question_comments')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
