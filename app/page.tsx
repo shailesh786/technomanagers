@@ -4,15 +4,23 @@
  * Static sections are server-rendered. FeaturedQuestionsSection is wrapped
  * in HydrationBoundary so questions are pre-populated in the TanStack Query
  * cache on the server — no loading skeleton on first paint.
+ *
+ * ISR: page is statically generated and rebuilt in the background every 5 min.
+ * The Supabase query is additionally cached via unstable_cache so the DB is
+ * not hit on every revalidation — only once per 5-minute window.
  */
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { unstable_cache } from 'next/cache';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Users, Star, CheckCircle, TrendingUp, Building2, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FeaturedQuestionsSection from '@/components/home/FeaturedQuestionsSection';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+// ISR: rebuild page at most once every 5 minutes
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'Technomanagers — Crack Your PM Interview',
@@ -40,25 +48,30 @@ const stats = [
   { icon: Award,      value: '4.9',    label: 'Average Rating' },
 ];
 
+// Cache the DB query independently so a revalidation spike doesn't hammer Supabase.
+// Tagged 'questions' so admin publish actions can call revalidateTag('questions')
+// to flush this immediately without waiting for the 5-minute window.
+const getHotQuestions = unstable_cache(
+  async () => {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from('questions')
+      .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
+      .eq('status', 'published')
+      .order('upvotes', { ascending: false })
+      .range(0, 19);
+    return data ?? [];
+  },
+  ['hot-questions'],
+  { revalidate: 300, tags: ['questions'] },
+);
+
 export default async function HomePage() {
-  // Prefetch the "Hot" questions list server-side.
-  // The query key ['questions', { sort: 'Hot' }] matches useQuestions({ sort: 'Hot' })
-  // exactly, so FeaturedQuestionsSection finds the data already in the cache —
-  // no loading skeleton on first render.
   const queryClient = new QueryClient();
 
   await queryClient.prefetchQuery({
     queryKey: ['questions', { sort: 'Hot' }],
-    queryFn: async () => {
-      const supabase = await createSupabaseServerClient();
-      const { data } = await supabase
-        .from('questions')
-        .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
-        .eq('status', 'published')
-        .order('upvotes', { ascending: false })
-        .range(0, 19);
-      return data ?? [];
-    },
+    queryFn: getHotQuestions,
   });
 
   return (
