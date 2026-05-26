@@ -633,6 +633,9 @@ function QuestionForm({ question, onClose }: { question: Question | null; onClos
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       queryClient.invalidateQueries({ queryKey: ['roles', 'counts'] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      // Bust the ISR cache so the homepage reflects the change immediately
+      // instead of waiting up to 5 minutes for the revalidate window.
+      fetch('/api/revalidate/questions', { method: 'POST' }).catch(() => {});
       toast.success(question ? 'Question updated' : 'Question added');
       onClose();
     },
