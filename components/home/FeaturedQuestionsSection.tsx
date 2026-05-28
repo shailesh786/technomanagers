@@ -1,27 +1,86 @@
 'use client';
 
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuestions } from '@/hooks/useQuestions';
+import { useQuestions, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
+import { useUserLikedQuestionIds, useToggleLike } from '@/hooks/useLikes';
 import QuestionCard from '@/components/questions/QuestionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+const PILLS = [
+  'All',
+  'Product Management',
+  'Program Management',
+  'Management Consulting',
+  'Category Management',
+];
 
 export default function FeaturedQuestionsSection() {
-  const { data: questions, isLoading } = useQuestions({ sort: 'Hot' });
+  const [selectedPill, setSelectedPill] = useState('All');
+
+  const { data: questions, isLoading } = useQuestions({
+    sort: 'Hot',
+    ...(selectedPill !== 'All' ? { category: selectedPill } : {}),
+  });
+
   const { user } = useAuth();
+  const { data: savedIds = [] } = useSavedQuestions(user?.id);
+  const { data: likedIds = new Set<string>() } = useUserLikedQuestionIds(user?.id);
+  const toggleLike = useToggleLike();
+  const save = useSaveQuestion();
+  const unsave = useUnsaveQuestion();
+
   const featuredQuestions = questions?.slice(0, 4) || [];
 
+  const handleUpvote = (id: string) => {
+    if (!user) { toast.info('Sign in to upvote'); return; }
+    toggleLike.mutate({ questionId: id, userId: user.id });
+  };
+
+  const handleToggleSave = (id: string) => {
+    if (!user) { toast.info('Sign in to save questions'); return; }
+    if (savedIds.includes(id)) {
+      unsave.mutate({ userId: user.id, questionId: id });
+    } else {
+      save.mutate({ userId: user.id, questionId: id });
+    }
+  };
+
   return (
-    <section className="container py-16 space-y-8">
+    <section className="container py-16 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-heading font-bold text-2xl">Featured Questions</h2>
         <Link href="/questions" className="text-sm text-secondary hover:underline flex items-center gap-1">
           View all <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
+
+      {/* Category pills */}
+      <div className="flex flex-wrap gap-2">
+        {PILLS.map((pill) => (
+          <button
+            key={pill}
+            type="button"
+            onClick={() => setSelectedPill(pill)}
+            className={cn(
+              'px-4 py-1.5 rounded-full text-sm font-medium transition-colors border',
+              selectedPill === pill
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground',
+            )}
+          >
+            {pill}
+          </button>
+        ))}
+      </div>
+
+      {/* Question grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -36,13 +95,17 @@ export default function FeaturedQuestionsSection() {
             <QuestionCard
               key={q.id}
               question={q}
+              isSaved={savedIds.includes(q.id)}
+              isLiked={likedIds.has(q.id)}
               isAuthenticated={!!user}
-              onUpvote={() => toast.info('Sign in to upvote')}
-              onToggleSave={() => toast.info('Sign in to save questions')}
+              onUpvote={() => handleUpvote(q.id)}
+              onToggleSave={() => handleToggleSave(q.id)}
             />
           ))
         ) : (
-          <p className="text-muted-foreground col-span-2 text-center py-8">Questions coming soon!</p>
+          <p className="text-muted-foreground col-span-2 text-center py-8">
+            {selectedPill === 'All' ? 'Questions coming soon!' : `No ${selectedPill} questions yet.`}
+          </p>
         )}
       </div>
     </section>

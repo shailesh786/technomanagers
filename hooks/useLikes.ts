@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
+import type { Question } from '@/types';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -105,6 +107,83 @@ export function useToggleCommentLike() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['comment_like_counts'] });
       qc.invalidateQueries({ queryKey: ['user_liked_comments'] });
+    },
+  });
+}
+
+/**
+ * Batch-fetch the set of question IDs liked by a user.
+ * Used by card list views (QuestionsClient, FeaturedQuestionsSection) to
+ * show the filled blue state on upvote buttons without a per-card query.
+ */
+export function useUserLikedQuestionIds(userId?: string) {
+  return useQuery({
+    queryKey: ['user_liked_question_ids', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('question_likes')
+        .select('question_id')
+        .eq('user_id', userId!);
+      if (error) throw error;
+      return new Set(data.map((d) => d.question_id as string));
+    },
+    enabled: !!userId,
+  });
+}
+
+/**
+ * Toggle like on a question card.
+ * Calls the toggle_question_like RPC (atomically updates question_likes +
+ * questions.upvotes), with optimistic updates for instant UI feedback.
+ */
+export function useToggleLike() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ questionId }: { questionId: string; userId: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('toggle_question_like', {
+        p_question_id: questionId,
+      });
+      if (error) throw error;
+      return data as { liked: boolean };
+    },
+    onMutate: async ({ questionId, userId }) => {
+      const prevLikedIds =
+        qc.getQueryData<Set<string>>(['user_liked_question_ids', userId]) ?? new Set<string>();
+      const isCurrentlyLiked = prevLikedIds.has(questionId);
+      const delta = isCurrentlyLiked ? -1 : 1;
+
+      // Update liked IDs set
+      const next = new Set(prevLikedIds);
+      isCurrentlyLiked ? next.delete(questionId) : next.add(questionId);
+      qc.setQueryData(['user_liked_question_ids', userId], next);
+
+      // Update upvote counts in every cached question list
+      qc.setQueriesData<Question[]>(
+        { queryKey: ['questions'], exact: false },
+        (old) =>
+          old?.map((q) =>
+            q.id === questionId ? { ...q, upvotes: Math.max(0, (q.upvotes ?? 0) + delta) } : q,
+          ),
+      );
+      // Update the detail cache too
+      qc.setQueryData<Question>(['question', questionId], (old) =>
+        old ? { ...old, upvotes: Math.max(0, (old.upvotes ?? 0) + delta) } : old,
+      );
+
+      return { prevLikedIds };
+    },
+    onError: (_err, { userId }, context) => {
+      if (context?.prevLikedIds) {
+        qc.setQueryData(['user_liked_question_ids', userId], context.prevLikedIds);
+      }
+      qc.invalidateQueries({ queryKey: ['questions'] });
+      toast.error('Failed to update like. Please try again.');
+    },
+    onSuccess: (_data, { questionId }) => {
+      // Sync per-question state used by the detail page
+      qc.invalidateQueries({ queryKey: ['user_liked_question', questionId] });
+      qc.invalidateQueries({ queryKey: ['question_like_count', questionId] });
     },
   });
 }
