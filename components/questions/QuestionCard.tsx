@@ -106,7 +106,7 @@ export default function QuestionCard({
           )}
           aria-label={isLiked ? 'Unlike' : 'Upvote'}
         >
-          <ThumbsUp className={cn('h-4 w-4', isLiked ? 'fill-primary stroke-white' : '')} />
+          <ThumbsUp className={cn('h-4 w-4', isLiked && 'fill-primary stroke-primary')} />
           <span>{question.upvotes || 0}</span>
         </button>
         <button
