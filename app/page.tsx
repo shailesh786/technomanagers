@@ -14,7 +14,7 @@ import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query
 import { unstable_cache } from 'next/cache';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, Users, Star, CheckCircle, TrendingUp, Building2, Award } from 'lucide-react';
+import { ArrowRight, BookOpen, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FeaturedQuestionsSection from '@/components/home/FeaturedQuestionsSection';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -34,18 +34,10 @@ export const metadata: Metadata = {
   },
 };
 
-const companies = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple', 'DoorDash', 'Uber', 'Adobe', 'PayPal'];
-
 const steps = [
   { num: '1', icon: BookOpen,    title: 'Browse Questions',  desc: 'Explore real interview questions from top tech companies.' },
   { num: '2', icon: CheckCircle, title: 'Practice & Prepare', desc: 'Study sample answers and save your favorites for later.' },
   { num: '3', icon: Star,        title: 'Ace Your Interview', desc: 'Walk in confident and land your dream PM role.' },
-];
-
-const stats = [
-  { icon: TrendingUp, value: '1,500+', label: 'Questions' },
-  { icon: Building2,  value: '50+',    label: 'Companies' },
-  { icon: Award,      value: '4.9',    label: 'Average Rating' },
 ];
 
 // Cache the DB query independently so a revalidation spike doesn't hammer Supabase.
@@ -102,45 +94,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-b bg-background">
-        <div className="container py-8 flex flex-wrap justify-center gap-8 md:gap-16">
-          {stats.map((stat) => (
-            <div key={stat.label} className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                <stat.icon className="h-5 w-5 text-secondary" />
-              </div>
-              <div>
-                <div className="font-heading font-extrabold text-2xl md:text-3xl text-foreground">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Featured Questions — pre-populated from server via HydrationBoundary */}
       <HydrationBoundary state={dehydrate(queryClient)}>
         <FeaturedQuestionsSection />
       </HydrationBoundary>
-
-      {/* Trending Companies */}
-      <section className="bg-muted/50 py-16">
-        <div className="container space-y-8 text-center">
-          <h2 className="font-heading font-bold text-2xl">Trending Companies</h2>
-          <div className="flex flex-wrap justify-center gap-3">
-            {companies.map((c) => (
-              <Link
-                key={c}
-                href={`/questions?company=${c}`}
-                className="px-5 py-2 rounded-full border bg-background text-sm font-medium hover:bg-secondary hover:text-secondary-foreground transition-all duration-200"
-              >
-                {c}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* How It Works */}
       <section className="container py-16 space-y-8">

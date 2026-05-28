@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import AdminModeration from '@/components/admin/AdminModeration';
 import { useFlaggedCount } from '@/hooks/useModeration';
 import { useAllRoles, useRoles, useCreateRole, useUpdateRole, useDeleteRole } from '@/hooks/useRoles';
@@ -1508,11 +1509,30 @@ function CoachingForm({ service, onClose }: { service: CoachingService | null; o
 
 /* ===================== USERS ===================== */
 function AdminUsers() {
+  const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+
+  const toggleAdminMutation = useMutation({
+    mutationFn: async ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_admin: isAdmin })
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast.success('Admin status updated');
+    },
+    onError: () => {
+      toast.error('Failed to update admin status');
+    },
+  });
 
   // Debounce search
   useEffect(() => {
@@ -1674,7 +1694,16 @@ function AdminUsers() {
                   </td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">{u.email}</td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">{u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</td>
-                  <td className="p-3">{u.is_admin ? <Badge className="bg-accent text-white text-xs">Admin</Badge> : <span className="text-muted-foreground">—</span>}</td>
+                  <td className="p-3">
+                    <Switch
+                      checked={u.is_admin ?? false}
+                      disabled={u.id === currentUser?.id || toggleAdminMutation.isPending}
+                      onCheckedChange={(checked) =>
+                        toggleAdminMutation.mutate({ userId: u.id, isAdmin: checked })
+                      }
+                      aria-label={`Toggle admin for ${u.full_name || u.email}`}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

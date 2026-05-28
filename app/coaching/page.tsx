@@ -8,6 +8,9 @@ import type { Metadata } from 'next';
 import CoachingPage from '@/components/coaching/CoachingPage';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+// ISR: rebuild at most once every 5 minutes — avoids a fresh Supabase hit on every visit
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: '1:1 Coaching | Technomanagers',
   description:

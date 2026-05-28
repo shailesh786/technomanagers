@@ -72,10 +72,8 @@ export default function QuestionsClient() {
 
   const { user } = useAuth();
 
-  const filterCategory = categories.length === 1 ? categories[0] : 'All';
-
   const { data: questions, isLoading } = useQuestions({
-    category: filterCategory,
+    categories,
     companies,
     difficulties,
     role: role || undefined,

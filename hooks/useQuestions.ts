@@ -1,11 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 import type { Question } from '@/types';
 
 const supabase = createSupabaseBrowserClient();
 
 export function useQuestions(filters?: {
+  /** Single category for homepage pill filter */
   category?: string;
+  /** Multi-category for questions page filter */
+  categories?: string[];
   companies?: string[];
   difficulties?: string[];
   role?: string;
@@ -23,14 +27,19 @@ export function useQuestions(filters?: {
         .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
         .eq('status', 'published');
 
+      // Homepage single-pill filter
       if (filters?.category && filters.category !== 'All') {
         query = query.contains('category', [filters.category]);
+      }
+      // Questions-page multi-category filter (OR logic)
+      if (filters?.categories && filters.categories.length > 0) {
+        query = query.or(filters.categories.map(c => `category.cs.{${c}}`).join(','));
       }
       if (filters?.companies && filters.companies.length > 0) {
         query = query.or(filters.companies.map(c => `company.cs.{${c}}`).join(','));
       }
       if (filters?.role) {
-        query = query.contains('tags', [filters.role]);
+        query = query.eq('role', filters.role);
       }
       if (filters?.difficulties && filters.difficulties.length > 0) {
         query = query.in('difficulty', filters.difficulties);
@@ -94,6 +103,9 @@ export function useUpvoteQuestion() {
         { queryKey: ['questions'], exact: false },
         (old) => old?.map((q) => (q.id === id ? { ...q, upvotes: (q.upvotes ?? 0) + 1 } : q)),
       );
+    },
+    onError: () => {
+      toast.error('Failed to upvote. Please try again.');
     },
   });
 }
