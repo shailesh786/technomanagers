@@ -5,7 +5,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuestions, useUpvoteQuestion, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
+import { useQuestions, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
+import { useUserLikedQuestionIds, useToggleLike } from '@/hooks/useLikes';
 import QuestionCard from '@/components/questions/QuestionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -29,7 +30,8 @@ export default function FeaturedQuestionsSection() {
 
   const { user } = useAuth();
   const { data: savedIds = [] } = useSavedQuestions(user?.id);
-  const upvote = useUpvoteQuestion();
+  const { data: likedIds = new Set<string>() } = useUserLikedQuestionIds(user?.id);
+  const toggleLike = useToggleLike();
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
 
@@ -37,7 +39,7 @@ export default function FeaturedQuestionsSection() {
 
   const handleUpvote = (id: string) => {
     if (!user) { toast.info('Sign in to upvote'); return; }
-    upvote.mutate(id);
+    toggleLike.mutate({ questionId: id, userId: user.id });
   };
 
   const handleToggleSave = (id: string) => {
@@ -94,6 +96,7 @@ export default function FeaturedQuestionsSection() {
               key={q.id}
               question={q}
               isSaved={savedIds.includes(q.id)}
+              isLiked={likedIds.has(q.id)}
               isAuthenticated={!!user}
               onUpvote={() => handleUpvote(q.id)}
               onToggleSave={() => handleToggleSave(q.id)}

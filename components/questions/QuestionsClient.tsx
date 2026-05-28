@@ -7,7 +7,8 @@ import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuestions, useUpvoteQuestion, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
+import { useQuestions, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
+import { useUserLikedQuestionIds, useToggleLike } from '@/hooks/useLikes';
 import { useRoles, useRoleQuestionCounts } from '@/hooks/useRoles';
 import { usePopularCompanies } from '@/hooks/useCompanies';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,10 +84,11 @@ export default function QuestionsClient() {
     offset,
   });
   const { data: savedIds = [] } = useSavedQuestions(user?.id);
+  const { data: likedIds = new Set<string>() } = useUserLikedQuestionIds(user?.id);
   const { data: rolesList = [] } = useRoles();
   const { data: roleCounts = {} } = useRoleQuestionCounts();
   const { data: trendingCompanies = [] } = usePopularCompanies(6);
-  const upvote = useUpvoteQuestion();
+  const toggleLike = useToggleLike();
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
 
@@ -123,7 +125,7 @@ export default function QuestionsClient() {
 
   const handleUpvote = (id: string) => {
     if (!user) { toast.info('Sign in to upvote'); return; }
-    upvote.mutate(id);
+    toggleLike.mutate({ questionId: id, userId: user.id });
   };
 
   const handleToggleSave = (id: string) => {
@@ -221,6 +223,7 @@ export default function QuestionsClient() {
                   key={q.id}
                   question={q}
                   isSaved={savedIds.includes(q.id)}
+                  isLiked={likedIds.has(q.id)}
                   isAuthenticated={!!user}
                   onUpvote={() => handleUpvote(q.id)}
                   onToggleSave={() => handleToggleSave(q.id)}

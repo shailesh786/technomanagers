@@ -22,11 +22,13 @@ import { useRouter } from 'next/navigation';
 import { ThumbsUp, Bookmark, BookmarkCheck, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
+import { cn } from '@/lib/utils';
 import type { Question } from '@/types';
 
 interface QuestionCardProps {
   question: Question;
   isSaved?: boolean;
+  isLiked?: boolean;
   onUpvote: () => void;
   onToggleSave: () => void;
   isAuthenticated: boolean;
@@ -41,6 +43,7 @@ const difficultyColors: Record<string, string> = {
 export default function QuestionCard({
   question,
   isSaved,
+  isLiked,
   onUpvote,
   onToggleSave,
   isAuthenticated,
@@ -95,9 +98,15 @@ export default function QuestionCard({
       <div className={`flex items-center gap-4 mt-4 pt-3 border-t ${showLock ? 'relative' : ''}`}>
         <button
           onClick={onUpvote}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-secondary transition-colors"
+          className={cn(
+            'flex items-center gap-1.5 text-sm transition-colors',
+            isLiked
+              ? 'text-primary hover:text-primary/80'
+              : 'text-muted-foreground hover:text-secondary',
+          )}
+          aria-label={isLiked ? 'Unlike' : 'Upvote'}
         >
-          <ThumbsUp className="h-4 w-4" />
+          <ThumbsUp className={cn('h-4 w-4', isLiked && 'fill-primary')} />
           <span>{question.upvotes || 0}</span>
         </button>
         <button
