@@ -48,17 +48,18 @@ export function useAllRoles() {
 export function useRoleQuestionCounts() {
   return useQuery({
     queryKey: ['roles', 'counts'],
+    staleTime: 5 * 60 * 1000, // treat server-hydrated data as fresh for 5 min
     queryFn: async () => {
+      // Use `role` column (not `tags`) — matches the role filter in QuestionsClient
       const { data, error } = await supabase
         .from('questions')
-        .select('tags')
-        .eq('status', 'published');
+        .select('role')
+        .eq('status', 'published')
+        .not('role', 'is', null);
       if (error) throw error;
       const counts: Record<string, number> = {};
-      (data || []).forEach((q: { tags: string[] | null }) => {
-        (q.tags || []).forEach((t) => {
-          counts[t] = (counts[t] || 0) + 1;
-        });
+      (data || []).forEach((q: { role: string | null }) => {
+        if (q.role) counts[q.role] = (counts[q.role] || 0) + 1;
       });
       return counts;
     },
