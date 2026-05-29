@@ -64,6 +64,13 @@ export const metadata: Metadata = {
     site: '@technomanagers',
   },
   robots: { index: true, follow: true },
+  // Favicon: uses logo.webp until proper favicon.ico / 192px PNG files are added.
+  // To replace: put a square logo.png (512×512) in /public/ and update the paths below.
+  icons: {
+    icon: '/logo.webp',
+    shortcut: '/logo.webp',
+    apple: '/logo.webp',
+  },
 };
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
