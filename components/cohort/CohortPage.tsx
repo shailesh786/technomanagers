@@ -1,554 +1,894 @@
 'use client';
 
 /**
- * components/cohort/CohortPage.tsx  —  Client Component ✅
+ * components/cohort/CohortPage.tsx — Client Component ✅
  *
- * Migrated from src/_vite-pages/Cohort.tsx.
- * Changes:
- * - 'use client' added (useState×6, useEffect×3, useRef×2, scroll events,
- *   supabase waitlist insert, useAuth)
- * - supabase import: @/integrations/supabase/client (bridge at root)
- * - Context import: @/contexts/AuthContext (migrated)
- * - All logic, JSX, animations, and visual design UNCHANGED.
+ * Next.js conversion of the AI Product Builder Cohort page:
+ * - 'use client' added (useState in WeekCard + FAQItem)
+ * - import Image from 'next/image' replaces all <img> tags
+ * - Hero <img> → <Image fill> inside a relative wrapper
+ * - Review <img> → <Image width/height> with style={{ width:'100%', height:'auto' }}
+ * - CSSProperties imported from 'react' (replaces React.CSSProperties)
+ * - Export renamed: Cohort → CohortPage
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
+import type { CSSProperties } from 'react';
+import Image from 'next/image';
 import {
-  Calendar, Video, Award, Play, ArrowRight, Check, Sparkles, Brain, Database,
-  Zap, Code, Boxes, Bot, ClipboardCheck, MessageSquare, BookOpen, Users,
-  Target, Rocket, RefreshCw, TrendingUp, GraduationCap, X,
+  ArrowRight, Check, X, Calendar, Clock, Video, Monitor, Mic, Trophy,
+  Briefcase, TrendingUp, Code2, GraduationCap, Route, Puzzle, ChevronDown,
+  MessageCircle, Users, BookOpen, Award,
 } from 'lucide-react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-const supabase = createSupabaseBrowserClient();
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+const APPLY_URL = 'https://share-na2.hsforms.com/1vL9J0C6rR9yhuOz54UhLog41clik';
+const WA_URL = 'https://api.whatsapp.com/send/?phone=918017145177&text=Hi+Anand%2C+I%27m+interested+in+the+AI+Product+Builder+Cohort&type=phone_number&app_absent=0';
 
-const CURRICULUM = [
-  {
-    weeks: 'Week 1–2',
-    title: 'AI Fundamentals',
-    modules: [
-      { n: 1, icon: Brain, title: 'AI & Machine Learning', desc: 'Core concepts, supervised vs unsupervised learning, neural networks fundamentals.' },
-      { n: 2, icon: Sparkles, title: 'Algorithms & Case Studies', desc: 'Real-world AI product algorithms, recommendation systems, search ranking.' },
-    ],
-  },
-  {
-    weeks: 'Week 3–4',
-    title: 'AI Systems & Infrastructure',
-    modules: [
-      { n: 3, icon: Database, title: 'ML Systems & Data Pipelines', desc: 'Production ML systems, data collection, feature engineering, model training pipelines.' },
-      { n: 4, icon: Zap, title: 'Generative AI & LLMs', desc: 'Transformer architecture, GPT/Claude/Gemini, fine-tuning vs prompting, when to use GenAI.' },
-    ],
-  },
-  {
-    weeks: 'Week 5',
-    title: 'Prompting & Pricing',
-    modules: [
-      { n: 5, icon: MessageSquare, title: 'Advanced Prompting', desc: 'Prompt engineering, chain-of-thought, few-shot learning, building reliable AI features.' },
-      { n: 6, icon: TrendingUp, title: 'AI Pricing Strategy', desc: 'Pricing models for AI products (usage, seat, outcome-based), unit economics of AI.' },
-    ],
-  },
-  {
-    weeks: 'Week 6',
-    title: 'Building with AI',
-    modules: [
-      { n: 7, icon: Code, title: 'Advanced Vibe Coding', desc: 'Build AI-powered prototypes rapidly, no-code/low-code AI tools, ship MVPs fast.' },
-      { n: 8, icon: Boxes, title: 'RAG Implementation', desc: 'Retrieval-Augmented Generation from scratch, vector databases, knowledge-based AI products.' },
-    ],
-  },
-  {
-    weeks: 'Week 7',
-    title: 'Scaling & Automation',
-    modules: [
-      { n: 9, icon: Bot, title: 'AI Agents & Automation', desc: 'Autonomous agents, tool use, multi-agent systems, workflow automation with AI.' },
-      { n: 10, icon: ClipboardCheck, title: 'Evals in Detail (Advanced)', desc: 'Evaluate AI product quality, build eval frameworks, measure hallucination & accuracy.' },
-    ],
-  },
-  {
-    weeks: 'Week 8',
-    title: 'Career & Interview Prep',
-    modules: [
-      { n: 11, icon: Target, title: 'AI PM Interview Questions', desc: 'Top questions from Google, Meta, Amazon, Anthropic for AI PM roles, with frameworks.' },
-      { n: 12, icon: BookOpen, title: '25 AI & Strategy Cases Ebook', desc: 'Comprehensive case studies covering real AI product decisions at top companies.' },
-    ],
-  },
-];
+const C = {
+  navy: '#0a1628',
+  navy2: '#0d2847',
+  cyan: '#00b4d8',
+  cyan2: '#0ea5e9',
+  light: '#f8fafc',
+  text: '#0f172a',
+  body: '#475569',
+  muted: '#94a3b8',
+  border: '#e2e8f0',
+  wa: '#25d366',
+  cyanLight: '#e0f7fa',
+  cyanDark: '#006978',
+};
 
-const FEATURES = [
-  { icon: Video, title: 'Live Weekly Sessions', desc: '2-hour live sessions every week with industry PMs. Ask questions, get real-time feedback, learn collaboratively.' },
-  { icon: Play, title: 'Session Recordings', desc: "Can't attend live? All sessions are recorded and available within 24 hours. Learn at your own pace." },
-  { icon: Code, title: 'Hands-on Projects', desc: 'Build real AI products during the cohort. Work on actual product problems from top companies.' },
-  { icon: Target, title: 'Mock Interviews', desc: 'Practice AI PM interviews with peers and get expert feedback. Walk into your next interview with confidence.' },
-  { icon: Award, title: 'Certificate of Competency', desc: 'Earn a Certificate of Competency in AI Product Management upon completion.' },
-  { icon: Users, title: 'PM Community Access', desc: 'Join a private community of 600+ ambitious PMs. Network, share resources, grow together.' },
-];
+// Use the project's global fonts (font-heading / font-body from tailwind.config.ts).
+// These empty style objects keep all existing `...heading` / `...body` spreads working
+// without overriding the inherited font-family.
+const heading: CSSProperties = {};
+const body: CSSProperties = {};
 
-const AUDIENCE = [
-  { icon: Rocket, title: 'Aspiring AI PMs', desc: "You're a PM who wants to transition into AI product roles." },
-  { icon: RefreshCw, title: 'Career Switchers', desc: "You're in tech (eng, design, data) and want to move into AI PM." },
-  { icon: TrendingUp, title: 'Current PMs Upskilling', desc: "You're already a PM but want to add AI expertise to your skillset." },
-  { icon: GraduationCap, title: 'Students & Fresh Grads', desc: "You're studying tech/business and want to start your career in AI PM." },
-];
+const PAGE_WRAP = 'max-w-[1200px] mx-auto px-5 sm:px-8 md:px-10 lg:px-12';
 
-const FAQS = [
-  { q: 'What is the time commitment?', a: 'Expect 4-6 hours per week — 2 hours for the live session and 2-4 hours for assignments and self-study.' },
-  { q: 'Do I need a technical background?', a: 'No. The curriculum starts from AI fundamentals and builds up. PMs from non-technical backgrounds have successfully completed the cohort.' },
-  { q: 'What if I miss a live session?', a: "All sessions are recorded and shared within 24 hours. You'll also have access to the community to ask questions async." },
-  { q: 'Will I get a certificate?', a: "Yes. You'll receive a Certificate of Competency in AI Product Management upon completing all modules and assignments." },
-  { q: 'Is there a refund policy?', a: "Yes. If you're not satisfied after the first 2 weeks, you can request a full refund." },
-  { q: 'When does the next cohort start?', a: 'The next cohort launches Summer 2026. Join the waitlist to get notified and receive early bird pricing.' },
-];
+function CTAPrimary({ children, href, light = false }: { children: React.ReactNode; href: string; light?: boolean }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold transition hover:scale-[1.02] hover:shadow-lg"
+      style={{
+        ...heading,
+        background: light ? '#fff' : C.cyan,
+        color: light ? C.cyan : '#fff',
+        borderRadius: 100,
+      }}
+    >
+      <ArrowRight className="w-4 h-4" /> {children}
+    </a>
+  );
+}
 
-function Reveal({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => entry.isIntersecting && (setVisible(true), obs.disconnect()),
-      { threshold: 0.1 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+function CTASecondary({ children, href }: { children: React.ReactNode; href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold transition hover:bg-white/10"
+      style={{ ...heading, border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 100 }}
+    >
+      <MessageCircle className="w-4 h-4" /> {children}
+    </a>
+  );
+}
+
+function CTAWhatsApp({ children = 'Ask on WhatsApp' }: { children?: React.ReactNode }) {
+  return (
+    <a
+      href={WA_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full font-semibold transition hover:opacity-90"
+      style={{ ...heading, background: C.wa, color: '#fff', borderRadius: 100 }}
+    >
+      <MessageCircle className="w-4 h-4" /> {children}
+    </a>
+  );
+}
+
+function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
   return (
     <div
-      ref={ref}
-      className={`${className} transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      className="text-xs tracking-[0.2em] font-semibold mb-4"
+      style={{ ...heading, color: dark ? 'rgba(255,255,255,0.5)' : C.cyan }}
     >
       {children}
     </div>
   );
 }
 
-export default function CohortPage() {
-  const { user, profile } = useAuth();
-  const [email, setEmail] = useState(profile?.email || '');
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showStickyCta, setShowStickyCta] = useState(false);
-  const [stickyDismissed, setStickyDismissed] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
+const PHASES = [
+  {
+    label: 'PHASE 1 · WEEKS 1–3',
+    name: 'AI Foundations',
+    weeks: [
+      {
+        n: 'WEEK 1', title: 'AI Fundamentals & Algorithms', sub: 'Lock your capstone problem statement',
+        goal: "Build AI literacy from first principles. Understand what makes a product 'AI-powered' and lock in your capstone problem statement.",
+        sessions: [
+          ['Sat AM — AI Fundamentals', 'Supervised vs Unsupervised Learning, AI Flywheel, AI product taxonomy'],
+          ['Sat PM — Algorithms & Use Cases', 'Logistic Regression, Clustering, Decision Trees, SVM, Random Forest, XGBoost'],
+          ['Sun AM — Interview Prep 1', 'CIRCLES and STAR frameworks, clarifying questions'],
+          ['Sun PM — Office Hours', 'Q&A + AI Opportunity Canvas review'],
+        ],
+        outcome: 'AI Opportunity Canvas + clarifying question bank (10 Qs) delivered.',
+      },
+      {
+        n: 'WEEK 2', title: 'Generative AI & ML Systems', sub: 'LLMs, transformers, production pipelines',
+        goal: 'Build a real mental model of how LLMs and ML production systems actually work.',
+        sessions: [
+          ['Sat AM — Generative AI Deep Dive', 'Deep Learning, transformers, LLMs, Advanced Prompting'],
+          ['Sat PM — ML Systems & Pipelines', 'Training vs inference, feature stores, monitoring'],
+          ['Sun AM — Interview Prep 2', 'AI Product Sense questions'],
+          ['Sun PM — Office Hours', 'GenAI Q&A + pipeline review'],
+        ],
+        outcome: 'GenAI feature defined. ML pipeline map + 2 product sense answers.',
+      },
+      {
+        n: 'WEEK 3', title: 'GenAI Tools, AI PM Role & RAG', sub: 'Ship your first working RAG prototype',
+        goal: 'Understand the modern AI stack and ship your first working RAG prototype.',
+        sessions: [
+          ['Sat AM — GenAI Tools & AI PM Role', 'Tool landscape, AI product stack, What AI PMs do in 2026'],
+          ['Sat PM — RAG Deep Dive', 'RAG architecture, Vector DBs, embeddings, chunking, RAG vs fine-tuning'],
+          ['Sun AM — Interview Prep 3', 'Metrics RCA & Guesstimate'],
+          ['Sun PM — Demo Hours', 'Build RAG Prototype'],
+        ],
+        outcome: 'AI stack diagram + RAG prototype + 3 RCA / guesstimate answers.',
+      },
+    ],
+  },
+  {
+    label: 'PHASE 2 · WEEKS 4–7',
+    name: 'Building AI Products',
+    weeks: [
+      {
+        n: 'WEEK 4', title: 'AI Agents: Concept + Hands-on Build', sub: 'Design and prototype your AI agent same day',
+        goal: 'Design and prototype an AI agent — autonomy levels, tool use, memory, HITL.',
+        sessions: [
+          ['Sat AM — AI Agents Deep Dive', 'Autonomy L1–L4, ReAct, multi-agent systems, MCP, A2A'],
+          ['Sat PM — Demo: Agent Hands-on Build', 'Using Claude, LangChain, or no-code tools'],
+          ['Sun AM — Interview Prep 4', 'Metrics NSM & Execution'],
+          ['Sun PM — Demo Hours', 'Agent Prototyping Continued'],
+        ],
+        outcome: 'Agent architecture + prototype + NSM + execution answers.',
+      },
+      {
+        n: 'WEEK 5', title: 'Advanced Evals: Spec → Test → Launch Threshold', sub: "Write production evals, define 'good enough to ship'",
+        goal: "Write production evals, build a golden test set, decide 'good enough to ship.'",
+        sessions: [
+          ['Sat AM — Advanced Evals', 'BLEU, ROUGE, RAGAS, LLM-as-judge, eval pipeline tools'],
+          ['Sat PM — Demo: Evals Implementation', '10 golden test cases, launch threshold'],
+          ['Sun AM — Interview Prep 5', 'AI Strategy, Growth & Pricing'],
+          ['Sun PM — Office Hours', 'Eval Spec Review'],
+        ],
+        outcome: 'Eval framework + golden test set (10 cases) + launch threshold + growth/pricing answers.',
+      },
+      {
+        n: 'WEEK 6', title: 'Spec-Driven Dev & Live Build', sub: 'Spec → prototype → test → ship in one weekend',
+        goal: 'Use Claude/AI tools to go from spec to working prototype in one weekend.',
+        sessions: [
+          ['Sat AM — Spec-Driven Dev & Claude Skills', 'Spec anatomy, vibe coding, PRD-to-shipped'],
+          ['Sat PM — Demo: Spec → Prototype Live Build', ''],
+          ['Sun AM — Interview Prep 6', 'GTM & Market Entry'],
+          ['Sun PM — Demo Hours', 'Lovable Prototyping'],
+        ],
+        outcome: 'Full spec + working prototype + tested against evals + GTM answers.',
+      },
+      {
+        n: 'WEEK 7', title: 'AI Product Design & UX Polish', sub: 'Trust signals, HITL, AI-native UX patterns',
+        goal: 'Design for non-determinism. Polish prototype with trust signals, HITL, AI-native UX.',
+        sessions: [
+          ['Sat AM — AI Product Design & UX', 'Non-determinism, HITL patterns, explainability UX'],
+          ['Sat PM — Demo: UX Audit & Prototype Polish', ''],
+          ['Sun AM — Interview Prep 8', 'Behavioural Interview'],
+          ['Sun PM — Demo Hours', 'N8N Agent Building'],
+        ],
+        outcome: 'UX audit complete + prototype polished + mini case study finalised.',
+      },
+    ],
+  },
+  {
+    label: 'PHASE 3 · WEEKS 8–10',
+    name: 'Strategy & Depth',
+    weeks: [
+      {
+        n: 'WEEK 8', title: 'AI Risks, Biases & Product Metrics', sub: 'Responsible AI + the full metrics stack',
+        goal: 'Add the responsible-AI and analytics layer your capstone needs.',
+        sessions: [
+          ['Sat AM — AI Risks & Biases', 'Bias types, hallucinations, EU AI Act, India DPDP Act'],
+          ['Sat PM — Product Metrics & AI Analytics', 'AI operational metrics, A/B testing AI, SQL + LLM'],
+          ['Sun AM — Interview Prep 8', 'AI General Questions'],
+          ['Sun PM — Office Hours', 'Risk + Metrics Q&A'],
+        ],
+        outcome: 'Risk audit + responsible AI section + full metrics stack + STAR bank (5 stories).',
+      },
+      {
+        n: 'WEEK 9', title: 'GTM, Model Selection & Mock Interview Round 1', sub: 'Moats, model decisions, go-to-market + first full mock loop',
+        goal: 'Lock GTM strategy, model selection, complete first 3-round mock interview loop.',
+        sessions: [
+          ['Sat AM — GTM & Market Entry', 'PLG vs sales-led, competitive moats, launch playbook'],
+          ['Sat PM — Model Selection, Latency & Tradeoffs', 'Model comparison, cost-quality, build vs buy'],
+          ['Sun AM — Interview Prep 7', 'Evals, Model Selection & Tradeoffs'],
+          ['Sun PM — Mock Interview Round 1', 'Full 3-round loop (45–60 min), mentor scoring'],
+        ],
+        outcome: 'GTM one-pager + model selection matrix + Mock Round 1 scores.',
+      },
+      {
+        n: 'WEEK 10', title: 'Enterprise Case Studies & Mock Interview Round 2', sub: 'Pattern recognition + final interview mastery',
+        goal: 'Analyse enterprise AI launches, complete both mock rounds, lock 15-answer story bank.',
+        sessions: [
+          ['Sat AM — Enterprise AI Case Studies (B2C)', ''],
+          ['Sat PM — Enterprise AI Case Studies (B2B)', ''],
+          ['Sun AM — Mock Interview Round 2', 'Full 3-round loop, stricter scoring'],
+          ['Sun PM — Office Hours', 'Interview Debrief + Story Bank'],
+        ],
+        outcome: 'Case study teardown + 15-answer story bank. Both mock rounds complete.',
+      },
+    ],
+  },
+  {
+    label: 'PHASE 4 · WEEKS 11–12',
+    name: 'Demo Prep & Demo Day',
+    weeks: [
+      {
+        n: 'WEEK 11', title: 'Capstone Refinement & Mock Demo', sub: 'Turn your capstone into a tight 8-minute story',
+        goal: 'Turn capstone into tight 8-minute story. Rehearse until Demo-Day ready.',
+        sessions: [
+          ['Sat AM — Capstone Refinement', 'Structure, peer review with scoring rubric'],
+          ['Sat PM — Mock Demo Presentations', '5 min each + feedback'],
+          ['Sun AM — Final Polish + Rehearsal', ''],
+        ],
+        outcome: 'Full deck (10–12 slides) + demo video + mock demo delivered.',
+      },
+      {
+        n: 'WEEK 12', title: '🎤 Demo Day', sub: 'Live presentation · Portfolio published · Certificate awarded',
+        goal: '',
+        highlight: true,
+        sessions: [
+          ['Demo Day Session 1', '8-min capstone + 5-min Q&A + scoring'],
+          ['Demo Day Session 2', 'Remaining presentations + Best Project awards + speed interviews'],
+          ['Wrap-up', 'Portfolio published, LinkedIn post, certificate, alumni community, accountability partner'],
+        ],
+        outcome: '✅ COURSE COMPLETE. Portfolio-ready capstone delivered. Interview answers polished. AI PM job-ready.',
+      },
+    ],
+  },
+];
 
-  useEffect(() => {
-    if (profile?.email) setEmail(profile.email);
-  }, [profile]);
+const MILESTONES = [
+  ['01', 'Problem Definition', 'AI Opportunity Canvas — problem, user segment, solution gaps, AI angle', 'Notion doc / 1-pager'],
+  ['02', 'Technical Foundation', 'ML Pipeline Map — algorithm selected, data pipeline, model card', 'Diagram + rationale'],
+  ['03', 'RAG Prototype', 'RAG design + working prototype: architecture, knowledge base, retrieval strategy', 'Architecture doc + prototype'],
+  ['04', 'Agent Prototype', 'Agent design + working prototype: autonomy level, tools, memory, HITL, tested on 3 scenarios', 'Architecture doc + prototype'],
+  ['05', 'Eval Framework', 'Eval spec + 10-case golden set + launch threshold + evals run on prototype', 'Eval spec + test results'],
+  ['06', 'Full Spec + Prototype', 'Complete spec + polished prototype, mini case study started', 'Spec doc + prototype link'],
+  ['07', 'UX Audit + Polish', '8-principle UX audit, HITL pattern, AI UX copy, prototype finalised, case study complete', 'UX audit + prototype'],
+  ['08', 'Quality & Metrics', 'Risk audit + responsible AI section + NSM/supporting/guardrail metrics + A/B test plan', 'Risk doc + metrics'],
+  ['09', 'Strategy + Model Decision', 'GTM one-pager + model comparison matrix + cost + latency strategy', 'Strategy doc + model doc'],
+  ['10', 'Interview Ready', '15-answer story bank, 2 mock rounds scored, enterprise case study teardown', 'Interview doc + case analysis'],
+  ['11', 'Presentation Ready', 'Full capstone deck (10–12 slides) + demo video + mock demo + 2 interview answers', 'Deck + demo video'],
+  ['12', '🎤 Demo Day', 'Live 8-min presentation + portfolio published + LinkedIn post + certificate awarded', 'Live demo + portfolio'],
+];
 
-  useEffect(() => {
-    const onScroll = () => {
-      const heroH = heroRef.current?.offsetHeight ?? 600;
-      setShowStickyCta(window.scrollY > heroH * 0.8);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+const INCLUDED = [
+  '45 live sessions across 12 weeks',
+  '10 hands-on Demo / Demo Hours sessions',
+  '8 structured Interview Prep modules',
+  '2 full Mock Interview rounds (mentor scored)',
+  'Office Hours throughout for Q&A + STAR practice',
+  'Portfolio-ready AI product capstone (all 12 weeks)',
+  'Working RAG prototype + AI Agent prototype',
+  'Eval framework with golden test set + launch threshold',
+  'Spec-driven dev workflow using Claude / AI tools',
+  '8-principle UX audit + AI UX copy',
+  'Bias audit + Responsible AI section + 3 launch guardrails',
+  'Full metrics stack: NSM + supporting + guardrails + A/B',
+  'GTM one-pager + model selection matrix + cost strategy',
+  '15-answer STAR story bank across 2 mock rounds',
+  'Final capstone deck (10–12 slides) + recorded demo video',
+  '🎤 Live Demo Day + Best Project awards + speed interviews',
+  'Certificate of completion',
+  'Async course access + alumni community + job board',
+  'All session recordings + bonus content vault',
+  'Accountability partner for post-cohort job search',
+];
 
-  useEffect(() => {
-    if (!showVideoModal) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowVideoModal(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showVideoModal]);
+const OUTCOMES = [
+  'A portfolio-ready AI capstone: problem → spec → prototype → evals → GTM → Demo Day',
+  'AI fundamentals mastered — supervised/unsupervised learning, deep learning, LLMs, CoT + ToT prompting',
+  'Working RAG system and AI agent prototype with documented architecture and HITL checkpoints',
+  'Production-grade evals — golden test sets, RAGAS, LLM-as-judge, launch threshold defined',
+  'AI PM strategy depth — model selection, latency, cost-quality tradeoffs, GTM, competitive moats',
+  '8 structured Interview Prep modules + 2 full mock rounds with mentor scoring and written feedback',
+  '15-answer STAR story bank, polished interview prep doc, capstone framed as interview answers',
+  'Live Demo Day — panel Q&A, certificate awarded, portfolio published, LinkedIn launch post',
+];
 
-  const scrollToWaitlist = () => {
-    document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
+const FAQS: [string, string][] = [
+  ['Do I need to be a developer or engineer to join?',
+    'No. The cohort is designed for PMs, engineers, designers, and data scientists alike. All prototyping is done using no-code and AI tools (Claude, LangChain, no-code RAG builders). You need to be able to think through product decisions and use AI tools to build — not write production code.'],
+  ['How much time per week do I need to commit?',
+    '8 hours per week for Weeks 1–10 (4 live sessions of 2 hrs each on Saturday + Sunday). 6 hours per week for Weeks 11–12 (Demo Prep and Demo Day). All sessions run on Saturday and Sunday mornings and afternoons IST — designed not to conflict with weekday work.'],
+  ['What if I miss a session?',
+    'All sessions are recorded and shared. Office Hours run throughout the cohort so you can catch up. We strongly recommend attending live — the real value is in Q&A, peer reviews of your capstone work, and real-time mentor feedback on your specific prototype.'],
+  ['What does the capstone look like at the end?',
+    'A complete portfolio-ready AI product: a written spec, working prototype (RAG or agent), eval framework with a golden test set and launch threshold, GTM one-pager, risk + metrics doc, a polished 10–12 slide deck, and a 3-min recorded demo video. You present it live on Demo Day in front of a panel.'],
+  ['Is this heavy on theory or hands-on building?',
+    'Heavily hands-on. Every concept week is paired with a Demo/Demo Hours session where you build something the same week. By the end you will have built a working RAG prototype, a working AI agent, run your own evals, and shipped a full spec-driven prototype — all before Demo Day.'],
+  ['How does the application process work?',
+    "Fill in the application form. The cohort is capped — applications are reviewed on a rolling basis. If you're a fit, you'll receive the payment link. Seats are allocated in order of approved application + payment."],
+];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.from('waitlist').insert({
-        email: email.trim(),
-        user_id: user?.id || null,
-      });
-      if (error) {
-        if (error.code === '23505') {
-          toast.info("You're already on the waitlist!");
-          setSubmitted(true);
-        } else throw error;
-      } else {
-        setSubmitted(true);
-        toast.success("You're on the list!");
-      }
-    } catch {
-      toast.error('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+const WHO = [
+  [Briefcase, 'PMs transitioning into AI PM roles — building hands-on credibility with working prototypes, not just theory'],
+  [TrendingUp, 'Mid-to-senior PMs (3–10 years) who want to lead AI initiatives or move to AI-first companies'],
+  [Code2, 'Engineers, data scientists, and designers pivoting into AI Product Management roles'],
+  [GraduationCap, 'PMs preparing for AI PM interviews — product sense, metrics, strategy, behavioural, and technical AI questions'],
+  [Route, 'Builders who want a structured path through AI fundamentals, RAG, AI agents, evals, and GTM — with a capstone'],
+  [Puzzle, 'Anyone who has watched scattered AI tutorials and wants a single, sequenced, mentor-led program'],
+] as const;
 
+const VIDEOS: [string, string, string][] = [
+  ['https://res.cloudinary.com/topmate/video/upload/v1778235779/Harshit_Testimonial_x1dosu.mp4', "Harshit's Story", 'PM at Indeed'],
+  ['https://res.cloudinary.com/topmate/video/upload/v1778235794/WhatsApp_Video_2026-05-05_at_7.08.45_AM_iblof5.mp4', "Aishwarya's Story", 'PM at Microsoft'],
+  ['https://res.cloudinary.com/topmate/video/upload/v1778235800/WIN_20260427_21_20_21_Pro_dz8vjv.mp4', "Shikhar's Story", 'PM at Shipturtle'],
+];
+
+const REVIEW_COLS: string[][] = [
+  [
+    'https://res.cloudinary.com/topmate/image/upload/v1778235775/Screenshot_2026-04-30_at_11.49.13_PM_tzle9y.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.53.25_PM_xc7eih.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.19.17_PM_fgxsai.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235779/IMG_6584_gtjk82.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235780/Screenshot_2026-04-30_at_11.11.36_PM_jsjh5p.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.23.35_PM_djrk8n.png',
+  ],
+  [
+    'https://res.cloudinary.com/topmate/image/upload/v1778235775/Screenshot_2026-04-26_at_8.16.09_AM_flbn1y.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235775/IMG_6583_j62jhv.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.51.19_PM_vkc6ce.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235777/IMG_6560_mqbkn2.jpg',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235780/Screenshot_2026-04-30_at_11.13.30_PM_dfcc0t.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.18.27_PM_fwpnvh.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.25.03_PM_in8ujr.png',
+  ],
+  [
+    'https://res.cloudinary.com/topmate/image/upload/v1778235775/Screenshot_2026-04-30_at_11.36.18_PM_zq2fqx.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.17.00_PM_yvcsdz.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235778/IMG_6582_miriui.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.22.22_PM_ctgpzf.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235780/Screenshot_2026-04-30_at_11.14.46_PM_ktbilv.png',
+    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.21.24_PM_ntw6m9.png',
+  ],
+];
+
+const COMPARISON: Array<[string, string, string]> = [
+  ['Format', '45 recorded videos, ~7 hrs total', '45 live sessions, ~90 hrs total'],
+  ['Pace', 'Self-paced, lifetime access', 'Structured 12-week schedule'],
+  ['Projects you build', '1 prototype demo', '10+ projects across 12 weeks'],
+  ['Capstone product', '✕', 'Full AI product: spec → prototype → evals + Demo Day'],
+  ['Hands-on Build Hours', '✕', '10 dedicated sessions — RAG, Agents, Evals, UX Audit, Prototyping'],
+  ['Mentor feedback', '✕', 'Weekly office hours + scored reviews'],
+  ['Interview prep', '20 questions + answers (recorded)', '10 dedicated sessions (20 hrs) + frameworks to tackle every AI PM question type'],
+  ['Mock interviews', '✕', '2 full 3-round loops, mentor scored + written feedback'],
+  ['Demo Day', '✕', 'Live 8-min presentation + panel Q&A + Best Project awards'],
+  ['Strategy & depth classes', '✕', 'GTM, AI Pricing, Model Selection, Latency, AI Safety, AI Analytics, AI ROI'],
+  ['SDD + AI Agents + UX', '✕', 'Spec-Driven Development, Agents deep dive (MCP, A2A), UI/UX for AI'],
+  ['AI Case Studies (B2C + B2B)', 'PDF book only', '4 hrs of live case study discussion with frameworks'],
+  ['Tools: N8N, Claude Skills, Lovable', 'Lovable demo only', 'Hands-on with all three + deployment'],
+  ['Peer community', '✕', 'Alumni network + job board + accountability partner'],
+  ['Best for', 'Learning AI PM concepts at your own speed', 'Getting job-ready with proof of work + portfolio'],
+];
+
+function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boolean } }) {
+  const [open, setOpen] = useState(false);
+  const highlight = (w as any).highlight;
   return (
-    <div className="bg-white scroll-smooth">
-      {/* ======================== HERO ======================== */}
-      <section
-        ref={heroRef}
-        className="relative overflow-hidden bg-[#0A2E6B] min-h-screen flex items-center justify-center px-4 py-20"
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#1A7AE8]/30 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#00C2FF]/20 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <span className="h-px w-10 bg-[#00C2FF]/60" />
-            <span className="text-[#00C2FF] text-xs font-bold uppercase tracking-[0.25em]">
-              Live Cohort · Starts Summer 2026
-            </span>
-            <span className="h-px w-10 bg-[#00C2FF]/60" />
-          </div>
-
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-extrabold text-white mb-6 leading-[1.1]">
-            <span className="bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] bg-clip-text text-transparent">
-              AI Product Management
-            </span>
-            <br />Builder Cohort
-          </h1>
-
-          <p className="text-gray-300 text-lg md:text-xl max-w-[650px] mx-auto mb-10 leading-relaxed">
-            An 8-week intensive program to master AI Product Management — from fundamentals to advanced implementation. Learn to build, ship, and scale AI-powered products.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-            {[
-              { icon: Calendar, label: '8 Weeks' },
-              { icon: Video, label: 'Live Sessions + Recordings' },
-              { icon: Award, label: 'Certificate of Competency' },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md px-4 py-2 text-white text-sm">
-                <s.icon className="h-4 w-4 text-[#00C2FF]" />
-                {s.label}
+    <div
+      className="rounded-2xl overflow-hidden transition"
+      style={{ background: highlight ? C.cyanLight : '#fff', border: `1px solid ${highlight ? C.cyan : C.border}` }}
+    >
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-4 p-5 text-left">
+        <span
+          className="px-3 py-1 rounded-full text-xs font-bold shrink-0"
+          style={{ ...heading, background: highlight ? C.cyan : C.cyanLight, color: highlight ? '#fff' : C.cyanDark, letterSpacing: '0.08em' }}
+        >
+          {w.n}
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-base md:text-lg" style={{ ...heading, color: C.text }}>{w.title}</div>
+          <div className="text-sm italic" style={{ ...body, color: C.body }}>{w.sub}</div>
+        </div>
+        <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: C.body }} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5 space-y-4">
+          {w.goal && (
+            <div className="p-4 rounded-xl text-sm" style={{ background: C.cyanLight, color: C.cyanDark, ...body }}>
+              <span className="font-bold" style={heading}>Goal · </span>{w.goal}
+            </div>
+          )}
+          <div className="grid md:grid-cols-2 gap-3">
+            {w.sessions.map(([t, d]: [string, string], i: number) => (
+              <div key={i} className="p-4 rounded-xl" style={{ border: `1px solid ${C.border}` }}>
+                <div className="font-semibold text-sm mb-1" style={{ ...heading, color: C.text }}>{t}</div>
+                {d && <div className="text-sm" style={{ ...body, color: C.body }}>{d}</div>}
               </div>
             ))}
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <button
-              onClick={scrollToWaitlist}
-              className="group rounded-full bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] text-white font-semibold px-8 py-4 text-base hover:opacity-90 transition-all hover:scale-105 shadow-[0_10px_40px_-10px_rgba(0,194,255,0.5)] flex items-center gap-2"
-            >
-              Join the Waitlist
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => setShowVideoModal(true)}
-              className="rounded-full border border-white/30 text-white font-semibold px-8 py-4 text-base hover:bg-white/10 transition-all flex items-center gap-2"
-            >
-              <Play className="h-4 w-4" />
-              Watch Demo
-            </button>
-            <a
-              href="https://api.whatsapp.com/send/?phone=917014958894&text=Hi+Shailesh%2C+I%27m+interested+in+the+AI+Product+Builder+Cohort&type=phone_number&app_absent=0"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border border-[#25D366]/60 bg-[#25D366]/10 text-white font-semibold px-8 py-4 text-base hover:bg-[#25D366]/20 transition-all flex items-center gap-2"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-[#25D366]" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              Chat on WhatsApp
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ======================== CURRICULUM ======================== */}
-      <section className="py-20 md:py-28 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-[#0A2E6B] mb-4">
-              8 Weeks. 12 Modules. <span className="bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] bg-clip-text text-transparent">One Transformation.</span>
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              A structured curriculum designed by Senior PMs from top tech companies.
-            </p>
-          </Reveal>
-
-          <Reveal>
-            <Accordion type="multiple" defaultValue={['week-0']} className="space-y-4">
-              {CURRICULUM.map((wk, i) => (
-                <AccordionItem
-                  key={wk.weeks}
-                  value={`week-${i}`}
-                  className="relative border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow data-[state=open]:shadow-lg"
-                >
-                  {i < CURRICULUM.length - 1 && (
-                    <div className="absolute left-[39px] top-full h-4 w-px bg-gradient-to-b from-[#1A7AE8]/40 to-transparent" />
-                  )}
-                  <AccordionTrigger className="px-5 py-5 hover:no-underline">
-                    <div className="flex items-center gap-4 text-left flex-1">
-                      <div className="shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-[#1A7AE8] to-[#00C2FF] flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                        {i + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-[#1A7AE8] mb-1">{wk.weeks}</div>
-                        <div className="text-lg font-heading font-bold text-[#0A2E6B]">{wk.title}</div>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-5 pb-5">
-                    <div className="ml-16 space-y-4 pt-2">
-                      {wk.modules.map((m) => (
-                        <div key={m.n} className="flex gap-4 p-4 rounded-xl bg-gradient-to-br from-gray-50 to-blue-50/30 border border-gray-100">
-                          <div className="shrink-0 h-10 w-10 rounded-lg bg-white border border-[#1A7AE8]/20 flex items-center justify-center">
-                            <m.icon className="h-5 w-5 text-[#1A7AE8]" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold text-gray-500 mb-1">Module {m.n}</div>
-                            <div className="font-bold text-[#0A2E6B] mb-1">{m.title}</div>
-                            <div className="text-sm text-gray-600 leading-relaxed">{m.desc}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ======================== WHAT'S INCLUDED ======================== */}
-      <section className="py-20 md:py-28 px-4 bg-[#F7F9FC]">
-        <div className="max-w-6xl mx-auto">
-          <Reveal className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-[#0A2E6B] mb-4">
-              Everything You Need to Become an AI PM
-            </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((f) => (
-              <Reveal key={f.title}>
-                <div className="bg-white rounded-2xl p-7 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 border border-gray-100 h-full">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[#1A7AE8]/10 to-[#00C2FF]/10 flex items-center justify-center mb-5">
-                    <f.icon className="h-6 w-6 text-[#1A7AE8]" />
-                  </div>
-                  <h3 className="font-heading font-bold text-lg text-[#0A2E6B] mb-2">{f.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ======================== BONUS BOOKS ======================== */}
-      <section className="py-20 md:py-28 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <Reveal className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#1A7AE8]/10 to-[#00C2FF]/10 border border-[#00C2FF]/30 px-4 py-1.5 mb-4">
-              <Sparkles className="h-4 w-4 text-[#1A7AE8]" />
-              <span className="text-[#1A7AE8] text-xs font-bold uppercase tracking-wider">Extra Bonus</span>
+          {w.outcome && (
+            <div className="p-4 rounded-xl text-sm" style={{ background: '#fef3c7', color: '#78350f', ...body }}>
+              <span className="font-bold" style={heading}>Milestone · </span>{w.outcome}
             </div>
-            <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-[#0A2E6B] mb-3">Included Free</h2>
-            <p className="text-gray-600 text-lg">Two premium books to deepen your PM expertise</p>
-          </Reveal>
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              { title: 'Strategy for Product Managers', desc: 'A comprehensive guide to product strategy frameworks used at top tech companies.', from: 'from-[#1A7AE8]', to: 'to-[#0A2E6B]' },
-              { title: 'Tech for Product Managers', desc: 'Understand the technical foundations every PM needs — from APIs to system design.', from: 'from-[#00C2FF]', to: 'to-[#1A7AE8]' },
-            ].map((book) => (
-              <Reveal key={book.title}>
-                <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-br from-[#1A7AE8] to-[#00C2FF]">
-                  <div className="rounded-2xl bg-white p-6 flex gap-5 items-center h-full">
-                    <div className={`shrink-0 w-24 h-32 md:w-28 md:h-36 rounded-md bg-gradient-to-br ${book.from} ${book.to} shadow-xl flex items-center justify-center text-white p-3 text-center transform -rotate-3 hover:rotate-0 transition-transform`}>
-                      <div>
-                        <BookOpen className="h-6 w-6 mx-auto mb-2 opacity-80" />
-                        <div className="text-[10px] font-bold leading-tight">{book.title}</div>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-[#1A7AE8] uppercase tracking-wider mb-1">Free Bonus Book</div>
-                      <h3 className="font-heading font-bold text-lg text-[#0A2E6B] mb-2">{book.title}</h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">{book.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          )}
         </div>
-      </section>
+      )}
+    </div>
+  );
+}
 
-      {/* ======================== AUDIENCE ======================== */}
-      <section className="py-20 md:py-28 px-4 bg-[#F7F9FC]">
-        <div className="max-w-6xl mx-auto">
-          <Reveal className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-[#0A2E6B] mb-3">
-              Is This Cohort Right for You?
-            </h2>
-          </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {AUDIENCE.map((a) => (
-              <Reveal key={a.title}>
-                <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all border border-gray-100 h-full">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-[#1A7AE8]/10 to-[#00C2FF]/10 flex items-center justify-center">
-                      <a.icon className="h-5 w-5 text-[#1A7AE8]" />
-                    </div>
-                    <Check className="h-5 w-5 text-green-500 ml-auto" />
-                  </div>
-                  <h3 className="font-heading font-bold text-[#0A2E6B] mb-2">{a.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{a.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+function FAQItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.border}`, background: '#fff' }}>
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-4 p-5 text-left">
+        <span className="flex-1 font-semibold text-base md:text-lg" style={{ ...heading, color: C.text }}>{q}</span>
+        <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: C.body }} />
+      </button>
+      {open && <div className="px-5 pb-5 text-base leading-relaxed" style={{ ...body, color: C.body }}>{a}</div>}
+    </div>
+  );
+}
 
-      {/* ======================== PRICING + WAITLIST ======================== */}
-      <section id="waitlist" className="relative py-20 md:py-28 px-4 bg-[#0A2E6B] overflow-hidden">
+export default function CohortPage() {
+  const stats = [
+    ['12', 'Weeks Live'], ['45', 'Live Sessions'], ['8h', 'Per Week'],
+    ['10+', 'Projects Built'], ['2x', 'Mock Interviews'],
+  ];
+
+  return (
+    <div style={{ ...body, color: C.text }} className="pb-24 md:pb-0">
+      {/* HERO */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navy2} 100%)`,
+          color: '#fff',
+        }}
+      >
         <div
-          className="absolute inset-0 pointer-events-none"
+          aria-hidden
+          className="absolute inset-0 opacity-[0.07]"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
             backgroundSize: '60px 60px',
           }}
         />
-        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[#1A7AE8]/30 blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#00C2FF]/20 blur-[100px]" />
-
-        <div className="relative max-w-2xl mx-auto">
-          <Reveal className="text-center mb-10">
-            <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-white mb-3">
-              Join the <span className="bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] bg-clip-text text-transparent">Waitlist</span>
-            </h2>
-            <p className="text-gray-300 text-lg">Be the first to know when registration opens.</p>
-          </Reveal>
-
-          <Reveal>
-            <div className="rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10 mb-10">
-              {submitted ? (
-                <div className="flex flex-col items-center gap-3 py-4 animate-in fade-in-0 duration-500">
-                  <div className="h-14 w-14 rounded-full bg-[#00C2FF]/20 flex items-center justify-center">
-                    <Check className="h-7 w-7 text-[#00C2FF]" />
-                  </div>
-                  <p className="text-gray-200 text-center">
-                    🎉 You're on the list! We'll notify you when registration opens.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="flex-1 rounded-full bg-white/10 border border-white/20 px-5 py-3.5 text-white placeholder:text-gray-400 text-sm outline-none focus:border-[#00C2FF]/60 focus:ring-1 focus:ring-[#00C2FF]/30 transition-all"
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="rounded-full bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] text-white font-semibold px-7 py-3.5 text-sm whitespace-nowrap hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5"
-                  >
-                    {loading ? 'Joining...' : <><span>Join Waitlist</span> <ArrowRight className="h-4 w-4" /></>}
-                  </button>
-                </form>
-              )}
-              <p className="mt-5 text-[#00C2FF] text-sm font-medium text-center">
-                Limited to 50 seats per cohort
-              </p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ======================== FAQ ======================== */}
-      <section className="py-20 md:py-28 px-4 bg-white">
-        <div className="max-w-3xl mx-auto">
-          <Reveal className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-heading font-extrabold text-[#0A2E6B] mb-3">
-              Frequently Asked Questions
-            </h2>
-          </Reveal>
-          <Reveal>
-            <Accordion type="single" collapsible className="space-y-3">
-              {FAQS.map((f, i) => (
-                <AccordionItem
-                  key={i}
-                  value={`faq-${i}`}
-                  className="border border-gray-200 rounded-xl bg-white px-5 hover:border-[#1A7AE8]/30 transition-colors"
-                >
-                  <AccordionTrigger className="font-heading font-semibold text-[#0A2E6B] text-left hover:no-underline py-5">
-                    {f.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-gray-600 leading-relaxed pb-5">
-                    {f.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ======================== STICKY CTA ======================== */}
-      {showStickyCta && !stickyDismissed && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-5 duration-300 px-4 w-full max-w-md">
-          <div className="rounded-full bg-[#0A2E6B] border border-white/20 shadow-2xl backdrop-blur-md flex items-center gap-2 pl-5 pr-2 py-2">
-            <span className="text-white text-sm font-medium hidden sm:inline">Ready to upskill?</span>
-            <button
-              onClick={scrollToWaitlist}
-              className="flex-1 sm:flex-none rounded-full bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] text-white font-semibold px-5 py-2.5 text-sm whitespace-nowrap hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
-            >
-              Join Waitlist <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => setStickyDismissed(true)}
-              className="h-8 w-8 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
-              aria-label="Dismiss"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ======================== VIDEO MODAL ======================== */}
-      {showVideoModal && (
         <div
-          onClick={() => setShowVideoModal(false)}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-[80vw] max-w-[900px] aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
-          >
-            <button
-              onClick={() => setShowVideoModal(false)}
-              aria-label="Close video"
-              className="absolute -top-3 -right-3 sm:top-3 sm:right-3 h-9 w-9 rounded-full bg-white text-black hover:bg-gray-200 flex items-center justify-center transition-colors z-10 shadow-lg"
+          aria-hidden
+          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-30"
+          style={{ background: C.cyan }}
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full blur-3xl opacity-20"
+          style={{ background: C.cyan2 }}
+        />
+        <div className={`${PAGE_WRAP} py-20 md:py-28 relative grid lg:grid-cols-5 gap-12 items-center`}>
+          <div className="lg:col-span-3 space-y-6">
+            <span
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', ...heading }}
             >
-              <X className="h-5 w-5" />
-            </button>
-            <iframe
-              width="100%"
-              height="100%"
-              src="https://www.youtube.com/embed/Bt4ABQbUsZA?autoplay=1"
-              title="AI PM Cohort Demo"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.cyan }} />
+              Applications Open · 12-Week Live Bootcamp
+            </span>
+            <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.05]" style={heading}>
+              Become a Job Ready
+              <br />
+              <span className="italic font-normal" style={{ ...body, color: C.cyan }}>AI First Product Manager</span>
+              <br />
+              <span className="text-2xl md:text-4xl font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>in 12 Weeks</span>
+            </h1>
+            <p className="text-lg max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
+              A 12-week, mentor-led live cohort for PMs, engineers &amp; builders who want to ship a portfolio-ready AI product — RAG, agents, evals, GTM, with dedicated interview prep baked in and a live Demo Day.
+            </p>
+            <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Not a recorded course. You build 10+ projects, get mentor feedback every week, and present on Demo Day.
+            </p>
+            <div className="flex flex-wrap items-stretch gap-x-6 gap-y-4 py-2">
+              {stats.map(([n, l], i) => (
+                <div key={i} className="flex items-center gap-6">
+                  <div>
+                    <div className="text-2xl md:text-3xl font-extrabold" style={{ ...heading, color: C.cyan }}>{n}</div>
+                    <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</div>
+                  </div>
+                  {i < stats.length - 1 && <div className="h-10 w-px" style={{ background: 'rgba(255,255,255,0.15)' }} />}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <CTAPrimary href={APPLY_URL} light>Apply Now</CTAPrimary>
+              <CTASecondary href={WA_URL}>Ask on WhatsApp</CTASecondary>
+            </div>
+          </div>
+          <div className="lg:col-span-2 hidden lg:block">
+            <div
+              className="rounded-3xl overflow-hidden backdrop-blur shadow-2xl"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                boxShadow: '0 0 0 1px rgba(0,180,216,0.08), 0 20px 60px -20px rgba(0,180,216,0.25)',
+              }}
+            >
+              {/* Hero image — Next.js Image with fill */}
+              <div className="relative h-[420px] w-full">
+                <Image
+                  src="https://res.cloudinary.com/topmate/image/upload/v1778317151/WhatsApp_Image_2026-05-09_at_2.06.10_PM_ae5sht.jpg"
+                  alt="Shailesh Sharma"
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: 'top center' }}
+                  priority
+                />
+              </div>
+              <div
+                className="p-5 space-y-1"
+                style={{ background: 'rgba(10,22,40,0.92)', borderTop: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <div className="font-bold text-xl text-white" style={heading}>Shailesh Sharma</div>
+                <div className="font-semibold" style={{ color: C.cyan }}>AI Product Builder Cohort</div>
+                <div className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>IIT Kanpur &amp; IIM Bangalore Alumni</div>
+                <div className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>YouTube · 15K Followers</div>
+              </div>
+            </div>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* TRUST BAR */}
+      <section style={{ background: C.light, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+        <div className={`${PAGE_WRAP} py-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm`} style={{ color: C.body }}>
+          {[
+            [Calendar, <>Sat + Sun · 10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST</>],
+            [Video, <><b>45 live sessions</b></>],
+            [Mic, <>Live <b>Demo Day</b> + certificate</>],
+            [BookOpen, <><b>10 Interview Prep</b> + 10 Demo Sessions</>],
+            [Trophy, <>Portfolio-ready <b>AI product</b> capstone</>],
+            [Users, <>Alumni community + job board</>],
+          ].map(([Icon, label]: any, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Icon className="w-4 h-4" style={{ color: C.cyan }} />
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* MAIN + SIDEBAR */}
+      <div className={`${PAGE_WRAP} py-16 grid lg:grid-cols-[1fr_340px] gap-10`}>
+        <main className="space-y-24 min-w-0">
+          {/* WHO */}
+          <section id="who">
+            <Eyebrow>— WHO THIS IS FOR</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Built for builders who want to ship real AI</h2>
+            <p className="text-lg mb-10" style={{ color: C.body }}>
+              Not for passive learners. This is a <em>doing</em> cohort — you ship something real by Week 12.
+            </p>
+            <div className="grid md:grid-cols-2 gap-5">
+              {WHO.map(([Icon, text], i) => (
+                <div key={i} className="p-6 rounded-2xl flex gap-4" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: C.cyanLight }}>
+                    <Icon className="w-5 h-5" style={{ color: C.cyan }} />
+                  </div>
+                  <p className="text-base leading-relaxed" style={{ color: C.body }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* REVIEWS */}
+          <section id="reviews">
+            <Eyebrow>— REVIEWS &amp; TESTIMONIALS</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>
+              What our <span className="italic font-normal" style={{ ...body, color: C.cyan }}>students</span> are saying
+            </h2>
+            <p className="text-lg mb-8" style={{ color: C.body }}>
+              Real feedback from students who&apos;ve learned with Shailesh across courses, YouTube, mentorship, and 1:1 coaching.
+            </p>
+            <div className="rounded-3xl p-6 md:p-12 lg:p-14 space-y-10" style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, color: '#fff' }}>
+              <div>
+                <div className="text-xs tracking-[0.2em] font-semibold mb-4" style={{ ...heading, color: C.cyan }}>🎬 VIDEO TESTIMONIALS</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                  {VIDEOS.map(([src, name, role], i) => (
+                    <div key={i} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <video src={src} controls preload="metadata" className="w-full h-[320px] object-cover bg-black" />
+                      <div className="p-3">
+                        <div className="font-semibold text-sm" style={heading}>{name}</div>
+                        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{role}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs tracking-[0.2em] font-semibold mb-4" style={{ ...heading, color: C.cyan }}>📸 FEEDBACK &amp; REVIEWS</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {REVIEW_COLS.map((col, i) => (
+                    <div key={i} className="space-y-4">
+                      {col.map((url, j) => (
+                        <div key={j} className="relative w-full rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                          <Image
+                            src={url}
+                            alt=""
+                            width={800}
+                            height={600}
+                            style={{ width: '100%', height: 'auto' }}
+                            className="rounded-xl"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-around items-center gap-4 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                {[['⭐ 5/5', 'AVG RATING'], ['12 wks', 'IDEA TO PORTFOLIO'], ['100%', 'SHIPPED A CAPSTONE']].map(([n, l], i, arr) => (
+                  <div key={i} className="flex items-center gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-extrabold" style={{ ...heading, color: C.cyan }}>{n}</div>
+                      <div className="text-xs tracking-wider mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</div>
+                    </div>
+                    {i < arr.length - 1 && <div className="hidden md:block h-10 w-px" style={{ background: 'rgba(255,255,255,0.15)' }} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* COMPARISON */}
+          <section>
+            <Eyebrow>— ALREADY SEEN THE COURSE?</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>
+              The course teaches you AI PM.<br />
+              The cohort <span className="italic font-normal" style={{ ...body, color: C.cyan }}>makes</span> you one.
+            </h2>
+            <p className="text-lg mb-8" style={{ color: C.body }}>
+              The self-paced course gives you knowledge. The cohort gives you more knowledge, proof of work, interview readiness, and mentor access — the things that actually get you hired.
+            </p>
+            <div className="rounded-2xl overflow-hidden overflow-x-auto" style={{ border: `1px solid ${C.border}` }}>
+              <table className="w-full text-sm min-w-[700px]">
+                <thead>
+                  <tr>
+                    <th className="text-left p-4 bg-white" />
+                    <th className="text-left p-4 font-bold" style={{ ...heading, background: C.light, color: C.body }}>Self-Paced Course</th>
+                    <th className="text-left p-4 font-bold" style={{ ...heading, background: C.cyan, color: '#fff' }}>
+                      12-Week Live Cohort<br /><span className="text-xs font-normal opacity-90">Starts Soon</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARISON.map(([label, a, b], i) => (
+                    <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
+                      <td className="p-4 font-semibold" style={{ ...heading, color: C.text }}>{label}</td>
+                      <td className="p-4" style={{ color: C.body }}>{a === '✕' ? <X className="w-4 h-4 inline" style={{ color: '#cbd5e1' }} /> : a}</td>
+                      <td className="p-4" style={{ background: 'rgba(0,180,216,0.06)', color: C.text }}>
+                        <span className="inline-flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: C.cyan }} />{b}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-8 p-6 md:p-8 rounded-2xl" style={{ background: 'linear-gradient(135deg, #e0f7fa, #e0f2fe)', border: `1px solid ${C.cyan}40` }}>
+              <p className="text-base md:text-lg mb-6" style={{ color: C.text }}>
+                The course gives you <b>knowledge.</b> The cohort gives you knowledge + <b>proof of work</b> + <b>interview readiness</b> + <b>mentor access.</b>
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                {[['90+', 'Hours Live'], ['10+', 'Projects Built'], ['20 Hrs', 'Interview Prep'], ['2', 'Mock Interview Rounds'], ['1', 'Portfolio-Ready Capstone']].map(([n, l], i) => (
+                  <div key={i}>
+                    <div className="text-2xl md:text-3xl font-extrabold" style={{ ...heading, color: C.cyanDark }}>{n}</div>
+                    <div className="text-xs md:text-sm mt-1" style={{ color: C.body }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* CURRICULUM */}
+          <section id="curriculum">
+            <Eyebrow>— 12-WEEK CURRICULUM</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Week-by-week breakdown</h2>
+            <p className="text-lg mb-10" style={{ color: C.body }}>
+              Saturdays + Sundays · 4 sessions/week (10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST) · 8 hrs/week · Weeks 1–10
+            </p>
+            <div className="space-y-10">
+              {PHASES.map((p, i) => (
+                <div key={i} className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap" style={{ ...heading, background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}>{p.label}</span>
+                    <div className="h-px flex-1" style={{ background: C.border }} />
+                    <span className="italic text-sm md:text-base" style={{ ...body, color: C.body }}>{p.name}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {p.weeks.map((w, j) => <WeekCard key={j} w={w as any} />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* CAPSTONE MILESTONES */}
+          <section id="capstone">
+            <Eyebrow>— CAPSTONE MILESTONES</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Week-by-week deliverable map</h2>
+            <p className="text-lg mb-8" style={{ color: C.body }}>
+              Every learner builds toward the same outcome — a portfolio-ready AI product with full spec, prototype, evals, GTM, and live demo.
+            </p>
+            <div className="rounded-2xl overflow-hidden overflow-x-auto" style={{ border: `1px solid ${C.border}` }}>
+              <table className="w-full text-sm min-w-[700px]">
+                <thead>
+                  <tr style={{ background: C.navy, color: '#fff' }}>
+                    {['WK', 'MILESTONE', 'WHAT YOU DELIVER', 'FORMAT'].map(h => (
+                      <th key={h} className="text-left p-4 font-bold text-xs tracking-wider" style={heading}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody style={{ background: '#fff' }}>
+                  {MILESTONES.map((row, i) => (
+                    <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
+                      <td className="p-4 font-bold" style={{ ...heading, color: C.cyan }}>{row[0]}</td>
+                      <td className="p-4 font-semibold" style={{ ...heading, color: C.text }}>{row[1]}</td>
+                      <td className="p-4" style={{ color: C.body }}>{row[2]}</td>
+                      <td className="p-4 text-xs" style={{ color: C.muted }}>{row[3]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* INCLUDED */}
+          <section id="includes">
+            <Eyebrow>— EVERYTHING INCLUDED</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Every single thing you get</h2>
+            <p className="text-lg mb-10" style={{ color: C.body }}>Not a recorded course. Every item below is live, hands-on, and mentor-guided.</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              {INCLUDED.map((item, i) => (
+                <div key={i} className="flex items-start gap-3 p-4 rounded-xl" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
+                  <Check className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+                  <span style={{ color: C.body }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* OUTCOMES */}
+          <section id="outcomes">
+            <Eyebrow>— CORE OUTCOMES</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>What you walk away with</h2>
+            <p className="text-lg mb-10" style={{ color: C.body }}>Every output below is built, not watched. You&apos;ll have a portfolio to show on Demo Day.</p>
+            <div className="grid md:grid-cols-2 gap-5">
+              {OUTCOMES.map((text, i) => (
+                <div key={i} className="p-6 rounded-2xl flex gap-5" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
+                  <div className="text-5xl md:text-6xl font-extrabold leading-none shrink-0" style={{ ...heading, color: C.cyan, opacity: 0.25 }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <p className="text-base leading-relaxed" style={{ color: C.body }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* FAQ */}
+          <section id="faqs">
+            <Eyebrow>— FREQUENTLY ASKED</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-8" style={heading}>Your questions, answered</h2>
+            <div className="space-y-3">
+              {FAQS.map(([q, a], i) => <FAQItem key={i} q={q} a={a} />)}
+            </div>
+          </section>
+        </main>
+
+        {/* SIDEBAR */}
+        <aside className="hidden lg:block">
+          <div
+            className="sticky top-[84px] space-y-4 overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden"
+            style={{ maxHeight: 'calc(100vh - 100px)', scrollbarWidth: 'none', msOverflowStyle: 'none' } as CSSProperties}
+          >
+            <div className="rounded-2xl p-6 text-white" style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})` }}>
+              <div className="font-extrabold text-xl leading-tight mb-2" style={heading}>
+                Become a Job Ready AI First Product Manager in 12 Weeks
+              </div>
+              <div className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                12-Week Live Bootcamp · Including Interview Prep · with Shailesh Sharma
+              </div>
+              <div className="mt-5 space-y-3">
+                <a href={APPLY_URL} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
+                  style={{ ...heading, background: `linear-gradient(135deg, ${C.cyan}, ${C.cyan2})`, color: '#fff' }}>
+                  <ArrowRight className="w-4 h-4" /> Apply Now
+                </a>
+                <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
+                  style={{ ...heading, background: C.wa, color: '#fff' }}>
+                  <MessageCircle className="w-4 h-4" /> Ask on WhatsApp
+                </a>
+              </div>
+            </div>
+            <div className="rounded-2xl p-5 space-y-3 text-sm" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
+              {[
+                [Calendar, '12 weeks · Live cohort'],
+                [Clock, 'Sat + Sun · 10:30–12:30 & 2:30–4:30 PM IST'],
+                [Video, '45 live sessions + recordings'],
+                [Monitor, '10 hands-on Demo sessions'],
+                [Mic, '2 mock interview rounds'],
+                [Trophy, 'Live Demo Day + certificate'],
+              ].map(([Icon, t]: any, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.cyan }} />
+                  <span style={{ color: C.body }}>{t}</span>
+                </div>
+              ))}
+              <div className="h-px" style={{ background: C.border }} />
+              <div className="font-bold text-xs tracking-wider" style={{ ...heading, color: C.text }}>WHAT&apos;S INCLUDED</div>
+              {[
+                'Portfolio-ready AI product capstone',
+                'Working RAG + AI Agent prototype',
+                'Eval framework + golden test set',
+                'AI PM interview preparation',
+                'Alumni community + job board',
+              ].map((t, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+                  <span style={{ color: C.body }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {/* FINAL CTA */}
+      <section className={`${PAGE_WRAP} pb-20`}>
+        <div
+          className="rounded-3xl p-10 md:p-14 lg:p-16 text-center text-white relative overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})` }}
+        >
+          <div aria-hidden className="absolute -top-32 -right-32 w-[400px] h-[400px] rounded-full blur-3xl opacity-20" style={{ background: C.cyan }} />
+          <h2 className="text-3xl md:text-5xl font-extrabold mb-4 relative" style={heading}>Ready to Build Your AI Product?</h2>
+          <p className="text-lg mb-8 max-w-2xl mx-auto relative" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            12 weeks. 45 live sessions. Working prototypes. Mock interviews. Live Demo Day. Rolling applications.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 relative">
+            <CTAPrimary href={APPLY_URL} light>Apply Now</CTAPrimary>
+            <CTAWhatsApp />
+          </div>
+        </div>
+      </section>
+
+      {/* MOBILE FIXED BOTTOM CTA */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-3 flex gap-2"
+        style={{ background: '#fff', borderTop: `1px solid ${C.border}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
+        <a href={APPLY_URL} target="_blank" rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-bold text-sm"
+          style={{ ...heading, background: C.cyan, color: '#fff' }}>
+          <ArrowRight className="w-4 h-4" /> Apply Now
+        </a>
+        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-bold text-sm"
+          style={{ ...heading, background: C.wa, color: '#fff' }}>
+          <MessageCircle className="w-4 h-4" /> WhatsApp
+        </a>
+      </div>
     </div>
   );
 }
