@@ -44,16 +44,26 @@ export default function QuestionsClient() {
   const sort = searchParams.get('sort') || 'Hot';
   const search = searchParams.get('q') || '';
 
-  // Helper to update a single filter param and replace the URL
+  // Local state for search input — avoids a URL round-trip on every keystroke
+  const [searchInput, setSearchInput] = useState(search);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout>>();
+
+  // Sync local input when the URL param changes externally (e.g. "Clear Filters")
+  useEffect(() => { setSearchInput(search); }, [search]);
+
+  // Helper to update a single filter param and replace the URL.
+  // Reads from window.location.search (always current) instead of the React
+  // searchParams state, which can be stale when multiple filters change in
+  // rapid succession — that was the root cause of filters clearing each other.
   const updateParam = useCallback(
     (key: string, value: string | string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(window.location.search);
       const v = Array.isArray(value) ? value.join(',') : value;
       if (v) params.set(key, v);
       else params.delete(key);
       router.replace(`/questions?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams],
+    [router],
   );
 
   const setRole = useCallback((v: string) => updateParam('role', v), [updateParam]);
@@ -62,14 +72,13 @@ export default function QuestionsClient() {
   const setDifficulties = useCallback((v: string[]) => updateParam('difficulty', v), [updateParam]);
   const setSort = useCallback(
     (v: string) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(window.location.search);
       if (v && v !== 'Hot') params.set('sort', v);
       else params.delete('sort');
       router.replace(`/questions?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams],
+    [router],
   );
-  const setSearch = useCallback((v: string) => updateParam('q', v), [updateParam]);
 
   const { user } = useAuth();
 
@@ -177,8 +186,12 @@ export default function QuestionsClient() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search questions..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              clearTimeout(searchDebounce.current);
+              searchDebounce.current = setTimeout(() => updateParam('q', e.target.value), 300);
+            }}
             className="pl-9"
           />
         </div>
@@ -248,8 +261,12 @@ export default function QuestionsClient() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search questions..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                clearTimeout(searchDebounce.current);
+                searchDebounce.current = setTimeout(() => updateParam('q', e.target.value), 300);
+              }}
               className="pl-9"
             />
           </div>

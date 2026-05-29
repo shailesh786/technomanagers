@@ -7,6 +7,7 @@ const supabase = createSupabaseBrowserClient();
 export function useCoaching(filter?: string) {
   return useQuery({
     queryKey: ['coaching', filter],
+    staleTime: 5 * 60 * 1000, // treat server-hydrated data as fresh for 5 min
     queryFn: async () => {
       let query = supabase
         .from('coaching_services')
