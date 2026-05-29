@@ -114,19 +114,31 @@ export default function QuestionsClient() {
     }
   }, [filterKey]);
 
-  // Accumulate results — only apply data matching current filterKey
+  // Accumulate results across pagination pages.
+  //
+  // Guard logic:
+  //   offset === 0 → ALWAYS sync allQuestions with the latest cache data.
+  //     This handles filter resets, optimistic like/unlike updates, and
+  //     background refetches. Without this, the guard would block upvote
+  //     counter changes because the key (filterKey|offset) doesn't change
+  //     when only the upvote count changes.
+  //   offset >  0 → only APPEND once per page (guard prevents duplicates).
   const lastAppliedKey = useRef('');
   useEffect(() => {
     if (!questions) return;
     const currentKey = `${filterKey}|${offset}`;
-    if (lastAppliedKey.current === currentKey) return;
-    lastAppliedKey.current = currentKey;
 
     if (offset === 0) {
       setAllQuestions(questions);
-    } else {
-      setAllQuestions((prev) => [...prev, ...questions]);
+      setHasMore(questions.length === PAGE_SIZE);
+      lastAppliedKey.current = currentKey;
+      return;
     }
+
+    // Paginated pages: only append once per page to prevent duplicate rows
+    if (lastAppliedKey.current === currentKey) return;
+    lastAppliedKey.current = currentKey;
+    setAllQuestions((prev) => [...prev, ...questions]);
     setHasMore(questions.length === PAGE_SIZE);
   }, [questions, offset, filterKey]);
 
