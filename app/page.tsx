@@ -12,6 +12,7 @@
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { unstable_cache } from 'next/cache';
+import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Users, Star, CheckCircle } from 'lucide-react';
@@ -64,13 +65,18 @@ const getHotQuestions = unstable_cache(
 // admin can flush it via revalidateTag('hero'). Error-resilient: if the table
 // doesn't exist yet (migration not applied) it returns [], so the homepage
 // renders the hardcoded fallback hero instead of crashing.
+//
+// IMPORTANT: this uses a plain, cookieless anon client — NOT createSupabaseServerClient,
+// which reads cookies(). Next 14 throws when cookies() is accessed inside
+// unstable_cache, so a cookie-based client here would silently always return [].
+// Active slides are public to the anon role via RLS, so no session is needed.
 const getHeroSlides = unstable_cache(
   async (): Promise<HeroSlide[]> => {
     try {
-      // Cast until supabase types are regenerated post-migration (table not yet
-      // in the generated Database type). See hooks/useHeroSlides.ts for context.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = (await createSupabaseServerClient()) as any;
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
       const { data, error } = await supabase
         .from('hero_slides')
         .select(
@@ -135,7 +141,7 @@ export default async function HomePage() {
           <p className="text-primary-foreground/80">
             1:1 mock interviews, resume reviews, and mentorship sessions.
           </p>
-          <Link href="/coaching">
+          <Link href="/coaching" className="inline-block pt-1">
             <Button size="lg" variant="secondary" className="gap-2 text-base px-8">
               View Coaching <ArrowRight className="h-4 w-4" />
             </Button>

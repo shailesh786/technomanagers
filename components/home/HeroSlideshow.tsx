@@ -27,7 +27,7 @@ const FALLBACK_SLIDE: HeroSlide = {
   updated_at: null,
 };
 
-const AUTO_ADVANCE_MS = 6000;
+const AUTO_ADVANCE_MS = 5000;
 
 /** A CTA link: internal hrefs use next/link, external (http) use a plain anchor. */
 function CtaButton({

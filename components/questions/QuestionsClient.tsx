@@ -11,6 +11,7 @@ import { useQuestions, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } f
 import { useUserLikedQuestionIds, useToggleLike } from '@/hooks/useLikes';
 import { useRoles, useRoleQuestionCounts } from '@/hooks/useRoles';
 import { usePopularCompanies } from '@/hooks/useCompanies';
+import { useQuestionFacets, type FacetRow } from '@/hooks/useQuestionFacets';
 import { useAuth } from '@/contexts/AuthContext';
 import QuestionCard from '@/components/questions/QuestionCard';
 import { RoleFilter, CompanyFilter, CategoryFilter, GeneralFilter, SortFilter } from '@/components/questions/QuestionFilters';
@@ -97,6 +98,7 @@ export default function QuestionsClient() {
   const { data: rolesList = [] } = useRoles();
   const { data: roleCounts = {} } = useRoleQuestionCounts();
   const { data: trendingCompanies = [] } = usePopularCompanies(6);
+  const { data: facetRows = [] } = useQuestionFacets();
   const toggleLike = useToggleLike();
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
@@ -167,6 +169,55 @@ export default function QuestionsClient() {
     return questions ?? [];
   }, [offset, allQuestions, questions]);
 
+  // ── Faceted filter options ────────────────────────────────────────────────
+  // Each filter's available options reflect the questions that match the OTHER
+  // currently-applied filters (a filter never constrains its own options, so you
+  // can still add/remove values within it). Options with a count of 0 are hidden
+  // by the filter components, so e.g. selecting role "Product Management" removes
+  // companies that have no PM questions from the Company dropdown.
+  const facets = useMemo(() => {
+    // Until the facet corpus has loaded, return null so the filters fall back to
+    // showing all options (rather than hiding everything against empty counts).
+    if (facetRows.length === 0) return null;
+
+    const matchRole = (q: FacetRow) => !role || q.role === role;
+    const matchCompanies = (q: FacetRow) =>
+      companies.length === 0 || companies.some((c) => q.company?.includes(c));
+    const matchCategories = (q: FacetRow) =>
+      categories.length === 0 || categories.some((c) => q.category?.includes(c));
+    const matchDifficulties = (q: FacetRow) =>
+      difficulties.length === 0 || (!!q.difficulty && difficulties.includes(q.difficulty));
+    const lowerSearch = search.trim().toLowerCase();
+    const matchSearch = (q: FacetRow) =>
+      !lowerSearch || q.question_text.toLowerCase().includes(lowerSearch);
+
+    const role_: Record<string, number> = {};
+    const company: Record<string, number> = {};
+    const category: Record<string, number> = {};
+    const difficulty: Record<string, number> = {};
+
+    facetRows.forEach((q) => {
+      // Role options: apply every filter except role itself.
+      if (matchCompanies(q) && matchCategories(q) && matchDifficulties(q) && matchSearch(q) && q.role) {
+        role_[q.role] = (role_[q.role] || 0) + 1;
+      }
+      // Company options: apply every filter except company itself.
+      if (matchRole(q) && matchCategories(q) && matchDifficulties(q) && matchSearch(q)) {
+        q.company?.forEach((c) => { company[c] = (company[c] || 0) + 1; });
+      }
+      // Category options: apply every filter except category itself.
+      if (matchRole(q) && matchCompanies(q) && matchDifficulties(q) && matchSearch(q)) {
+        q.category?.forEach((c) => { category[c] = (category[c] || 0) + 1; });
+      }
+      // Difficulty options: apply every filter except difficulty itself.
+      if (matchRole(q) && matchCompanies(q) && matchCategories(q) && matchSearch(q) && q.difficulty) {
+        difficulty[q.difficulty] = (difficulty[q.difficulty] || 0) + 1;
+      }
+    });
+
+    return { role: role_, company, category, difficulty };
+  }, [facetRows, role, companies, categories, difficulties, search]);
+
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     displayedQuestions.forEach((q) => {
@@ -212,10 +263,10 @@ export default function QuestionsClient() {
       {/* Filter bar */}
       <div className="sticky top-16 z-40 bg-background/95 backdrop-blur pb-4 -mx-2 px-2">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <RoleFilter value={role} onChange={setRole} />
-          <CompanyFilter value={companies} onChange={setCompanies} />
-          <CategoryFilter value={categories} onChange={setCategories} />
-          <GeneralFilter difficulties={difficulties} onDifficultiesChange={setDifficulties} />
+          <RoleFilter value={role} onChange={setRole} counts={facets?.role} />
+          <CompanyFilter value={companies} onChange={setCompanies} counts={facets?.company} />
+          <CategoryFilter value={categories} onChange={setCategories} counts={facets?.category} />
+          <GeneralFilter difficulties={difficulties} onDifficultiesChange={setDifficulties} counts={facets?.difficulty} />
           <div className="ml-auto shrink-0">
             <SortFilter value={sort} onChange={setSort} />
           </div>

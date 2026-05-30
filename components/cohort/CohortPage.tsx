@@ -15,6 +15,7 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
+import { useCohortSettings } from '@/hooks/useCohortSettings';
 import {
   ArrowRight, Check, X, Calendar, Clock, Video, Monitor, Mic, Trophy,
   Briefcase, TrendingUp, Code2, GraduationCap, Route, Puzzle, ChevronDown,
@@ -80,10 +81,10 @@ function CTASecondary({ children, href }: { children: React.ReactNode; href: str
   );
 }
 
-function CTAWhatsApp({ children = 'Ask on WhatsApp' }: { children?: React.ReactNode }) {
+function CTAWhatsApp({ children = 'Ask on WhatsApp', href = WA_URL }: { children?: React.ReactNode; href?: string }) {
   return (
     <a
-      href={WA_URL}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full font-semibold transition hover:opacity-90"
@@ -449,6 +450,12 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function CohortPage() {
+  // CTA links are admin-configurable; fall back to the hardcoded constants
+  // when no config row exists (or the table hasn't been migrated yet).
+  const { data: cohortSettings } = useCohortSettings();
+  const applyUrl = cohortSettings?.apply_url || APPLY_URL;
+  const waUrl = cohortSettings?.whatsapp_url || WA_URL;
+
   const stats = [
     ['12', 'Weeks Live'], ['45', 'Live Sessions'], ['8h', 'Per Week'],
     ['10+', 'Projects Built'], ['2x', 'Mock Interviews'],
@@ -516,8 +523,8 @@ export default function CohortPage() {
               ))}
             </div>
             <div className="flex flex-wrap gap-3 pt-2">
-              <CTAPrimary href={APPLY_URL} light>Apply Now</CTAPrimary>
-              <CTASecondary href={WA_URL}>Ask on WhatsApp</CTASecondary>
+              <CTAPrimary href={applyUrl} light>Apply Now</CTAPrimary>
+              <CTASecondary href={waUrl}>Ask on WhatsApp</CTASecondary>
             </div>
           </div>
           <div className="lg:col-span-2 hidden lg:block">
@@ -812,12 +819,12 @@ export default function CohortPage() {
                 12-Week Live Bootcamp · Including Interview Prep · with Shailesh Sharma
               </div>
               <div className="mt-5 space-y-3">
-                <a href={APPLY_URL} target="_blank" rel="noopener noreferrer"
+                <a href={applyUrl} target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
                   style={{ ...heading, background: `linear-gradient(135deg, ${C.cyan}, ${C.cyan2})`, color: '#fff' }}>
                   <ArrowRight className="w-4 h-4" /> Apply Now
                 </a>
-                <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+                <a href={waUrl} target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
                   style={{ ...heading, background: C.wa, color: '#fff' }}>
                   <MessageCircle className="w-4 h-4" /> Ask on WhatsApp
@@ -869,8 +876,8 @@ export default function CohortPage() {
             12 weeks. 45 live sessions. Working prototypes. Mock interviews. Live Demo Day. Rolling applications.
           </p>
           <div className="flex flex-wrap justify-center gap-3 relative">
-            <CTAPrimary href={APPLY_URL} light>Apply Now</CTAPrimary>
-            <CTAWhatsApp />
+            <CTAPrimary href={applyUrl} light>Apply Now</CTAPrimary>
+            <CTAWhatsApp href={waUrl} />
           </div>
         </div>
       </section>
@@ -878,12 +885,12 @@ export default function CohortPage() {
       {/* MOBILE FIXED BOTTOM CTA */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-3 flex gap-2"
         style={{ background: '#fff', borderTop: `1px solid ${C.border}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
-        <a href={APPLY_URL} target="_blank" rel="noopener noreferrer"
+        <a href={applyUrl} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-bold text-sm"
           style={{ ...heading, background: C.cyan, color: '#fff' }}>
           <ArrowRight className="w-4 h-4" /> Apply Now
         </a>
-        <a href={WA_URL} target="_blank" rel="noopener noreferrer"
+        <a href={waUrl} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-bold text-sm"
           style={{ ...heading, background: C.wa, color: '#fff' }}>
           <MessageCircle className="w-4 h-4" /> WhatsApp

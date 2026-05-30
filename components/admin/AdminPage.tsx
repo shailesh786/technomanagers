@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd } from 'lucide-react';
+import { Plus, Pencil, Trash2, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminModeration from '@/components/admin/AdminModeration';
 import { useFlaggedCount } from '@/hooks/useModeration';
@@ -21,6 +21,7 @@ import { useAllRoles, useRoles, useCreateRole, useUpdateRole, useDeleteRole } fr
 import { useAllCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
 import { useCompaniesWithCounts, useAllCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany } from '@/hooks/useCompanies';
 import { useAllHeroSlides, useCreateHeroSlide, useUpdateHeroSlide, useDeleteHeroSlide, type HeroSlideInput } from '@/hooks/useHeroSlides';
+import { useCohortSettings, useUpdateCohortSettings } from '@/hooks/useCohortSettings';
 import CompanyMultiSelect from '@/components/admin/CompanyMultiSelect';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import * as XLSX from 'xlsx';
@@ -29,7 +30,7 @@ import type { Question, Course, CoachingService, Profile, Event } from '@/types'
 
 const supabase = createSupabaseBrowserClient();
 
-type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage';
+type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage' | 'cohort';
 
 export default function Admin() {
   const [tab, setTab] = useState<AdminTab>('questions');
@@ -37,6 +38,7 @@ export default function Admin() {
 
   const tabs = [
     { id: 'homepage' as const, label: 'Homepage Hero', icon: GalleryHorizontalEnd },
+    { id: 'cohort' as const, label: 'Cohort', icon: Rocket },
     { id: 'questions' as const, label: 'Questions', icon: HelpCircle },
     { id: 'roles' as const, label: 'Roles', icon: Tags },
     { id: 'categories' as const, label: 'Categories', icon: Tags },
@@ -98,6 +100,7 @@ export default function Admin() {
       {/* Content */}
       <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto">
         {tab === 'homepage' && <AdminHeroSlides />}
+        {tab === 'cohort' && <AdminCohortSettings />}
         {tab === 'questions' && <AdminQuestions />}
         {tab === 'roles' && <AdminRoles />}
         {tab === 'categories' && <AdminCategories />}
@@ -1134,6 +1137,80 @@ function AdminHeroSlides() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== COHORT SETTINGS ===================== */
+function AdminCohortSettings() {
+  const { data: settings, isLoading } = useCohortSettings();
+  const updateMut = useUpdateCohortSettings();
+  const [applyUrl, setApplyUrl] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
+  const [initialized, setInitialized] = useState(false);
+
+  // Seed the form once the settings row loads.
+  useEffect(() => {
+    if (!initialized && settings) {
+      setApplyUrl(settings.apply_url ?? '');
+      setWhatsappUrl(settings.whatsapp_url ?? '');
+      setInitialized(true);
+    }
+  }, [settings, initialized]);
+
+  const save = async () => {
+    if (!applyUrl.trim() || !whatsappUrl.trim()) return;
+    try {
+      await updateMut.mutateAsync({ apply_url: applyUrl.trim(), whatsapp_url: whatsappUrl.trim() });
+      toast.success('Cohort links updated');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <div>
+        <h2 className="font-heading font-extrabold text-2xl">Cohort Page</h2>
+        <p className="text-sm text-muted-foreground">
+          Configure the &ldquo;Apply Now&rdquo; and &ldquo;Ask on WhatsApp&rdquo; button links on the cohort page.
+          If left unset, the page falls back to the built-in defaults.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : (
+        <div className="rounded-xl border p-5 space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-1">Apply Now link</label>
+            <Input
+              value={applyUrl}
+              onChange={(e) => setApplyUrl(e.target.value)}
+              placeholder="https://share-na2.hsforms.com/..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">The application form / signup URL.</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Ask on WhatsApp link</label>
+            <Input
+              value={whatsappUrl}
+              onChange={(e) => setWhatsappUrl(e.target.value)}
+              placeholder="https://api.whatsapp.com/send/?phone=..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">The WhatsApp chat link (wa.me or api.whatsapp.com).</p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={save}
+              disabled={!applyUrl.trim() || !whatsappUrl.trim() || updateMut.isPending}
+            >
+              {updateMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Save
+            </Button>
+          </div>
         </div>
       )}
     </div>

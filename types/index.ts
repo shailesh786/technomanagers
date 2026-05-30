@@ -86,6 +86,14 @@ export interface HeroSlide {
   updated_at: string | null;
 }
 
+export interface CohortSettings {
+  id: string;
+  apply_url: string;
+  whatsapp_url: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export interface SavedQuestion {
   id: string;
   user_id: string;
