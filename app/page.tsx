@@ -17,7 +17,9 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FeaturedQuestionsSection from '@/components/home/FeaturedQuestionsSection';
+import HeroSlideshow from '@/components/home/HeroSlideshow';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import type { HeroSlide } from '@/types';
 
 // ISR: rebuild page at most once every 5 minutes
 export const revalidate = 300;
@@ -58,6 +60,34 @@ const getHotQuestions = unstable_cache(
   { revalidate: 300, tags: ['questions'] },
 );
 
+// Active hero slides for the homepage slideshow. Cached & tagged 'hero' so the
+// admin can flush it via revalidateTag('hero'). Error-resilient: if the table
+// doesn't exist yet (migration not applied) it returns [], so the homepage
+// renders the hardcoded fallback hero instead of crashing.
+const getHeroSlides = unstable_cache(
+  async (): Promise<HeroSlide[]> => {
+    try {
+      // Cast until supabase types are regenerated post-migration (table not yet
+      // in the generated Database type). See hooks/useHeroSlides.ts for context.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = (await createSupabaseServerClient()) as any;
+      const { data, error } = await supabase
+        .from('hero_slides')
+        .select(
+          'id, title, highlight, description, primary_cta_label, primary_cta_href, secondary_cta_label, secondary_cta_href, display_order, is_active, created_at, updated_at',
+        )
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      if (error) return [];
+      return (data ?? []) as HeroSlide[];
+    } catch {
+      return [];
+    }
+  },
+  ['hero-slides'],
+  { revalidate: 300, tags: ['hero'] },
+);
+
 export default async function HomePage() {
   const queryClient = new QueryClient();
 
@@ -66,33 +96,13 @@ export default async function HomePage() {
     queryFn: getHotQuestions,
   });
 
+  const heroSlides = await getHeroSlides();
+
   return (
     <div>
-      {/* Hero */}
-      <section className="bg-gradient-hero py-20 md:py-28">
-        <div className="container text-center max-w-3xl mx-auto space-y-6">
-          <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl leading-tight tracking-tight">
-            Crack Your Next{' '}
-            <span className="text-gradient-brand">Product Management</span>{' '}
-            Interview
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Practice with real interview questions from top tech companies. Get coached by industry experts.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-            <Link href="/questions">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 text-base px-8">
-                Explore Questions <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/courses">
-              <Button size="lg" variant="outline" className="gap-2 text-base px-8">
-                View Courses
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Hero slideshow — configurable via admin panel, falls back to a
+          hardcoded default slide when no active slides are configured. */}
+      <HeroSlideshow slides={heroSlides} />
 
       {/* Featured Questions — pre-populated from server via HydrationBoundary */}
       <HydrationBoundary state={dehydrate(queryClient)}>
