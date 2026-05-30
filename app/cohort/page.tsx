@@ -7,13 +7,13 @@ import type { Metadata } from 'next';
 import CohortPage from '@/components/cohort/CohortPage';
 
 export const metadata: Metadata = {
-  title: 'PM Cohort Programme | Technomanagers',
+  title: 'AI Product Builder Cohort | Technomanagers',
   description:
-    'Join our structured cohort programme to go from aspiring PM to offer in hand — live sessions, peer groups, and expert mentorship.',
+    'A 12-week mentor-led live cohort to become a job-ready AI Product Manager. Build RAG systems, AI agents, run evals, prep for interviews, and present on Demo Day.',
   openGraph: {
-    title: 'PM Cohort Programme | Technomanagers',
+    title: 'AI Product Builder Cohort | Technomanagers',
     description:
-      'Structured cohort programme with live sessions, peer groups, and expert PM mentorship.',
+      '12-week live cohort: RAG prototypes, AI agents, evals, interview prep, and a live Demo Day. Become a job-ready AI PM.',
     type: 'website',
   },
 };

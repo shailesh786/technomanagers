@@ -64,35 +64,36 @@ export default function QuestionCard({
 
   return (
     <div className="group relative rounded-xl border bg-background p-5 shadow-sm hover:shadow-md transition-all duration-200">
-      {/* Company badges */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {question.company?.map((c) => (
-          <Badge key={c} variant="secondary" className="text-xs font-medium">
-            Asked at {c}
-          </Badge>
-        ))}
-        {question.difficulty && (
-          <Badge variant="outline" className={`text-xs ${difficultyColors[question.difficulty] || ''}`}>
-            {question.difficulty}
-          </Badge>
-        )}
-      </div>
+      {/* Clickable body — everything above the footer navigates to the question */}
+      <a href={`/questions/${question.id}`} onClick={handleClick} className="block cursor-pointer">
+        {/* Company badges */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {question.company?.map((c) => (
+            <Badge key={c} variant="secondary" className="text-xs font-medium">
+              Asked at {c}
+            </Badge>
+          ))}
+          {question.difficulty && (
+            <Badge variant="outline" className={`text-xs ${difficultyColors[question.difficulty] || ''}`}>
+              {question.difficulty}
+            </Badge>
+          )}
+        </div>
 
-      {/* Question text */}
-      <a href={`/questions/${question.id}`} onClick={handleClick} className="block">
+        {/* Question text */}
         <h3 className="font-heading font-semibold text-base leading-relaxed group-hover:text-secondary transition-colors">
           {question.question_text}
         </h3>
-      </a>
 
-      {/* Category tags */}
-      <div className="flex flex-wrap gap-1.5 mt-3">
-        {question.category?.map((cat) => (
-          <span key={cat} className="text-xs font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-            {cat}
-          </span>
-        ))}
-      </div>
+        {/* Category tags */}
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {question.category?.map((cat) => (
+            <span key={cat} className="text-xs font-mono px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+              {cat}
+            </span>
+          ))}
+        </div>
+      </a>
 
       {/* Stats row */}
       <div className={`flex items-center gap-4 mt-4 pt-3 border-t ${showLock ? 'relative' : ''}`}>

@@ -13,13 +13,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminModeration from '@/components/admin/AdminModeration';
 import { useFlaggedCount } from '@/hooks/useModeration';
 import { useAllRoles, useRoles, useCreateRole, useUpdateRole, useDeleteRole } from '@/hooks/useRoles';
 import { useAllCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
 import { useCompaniesWithCounts, useAllCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany } from '@/hooks/useCompanies';
+import { useAllHeroSlides, useCreateHeroSlide, useUpdateHeroSlide, useDeleteHeroSlide, type HeroSlideInput } from '@/hooks/useHeroSlides';
+import { useCohortSettings, useUpdateCohortSettings } from '@/hooks/useCohortSettings';
 import CompanyMultiSelect from '@/components/admin/CompanyMultiSelect';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import * as XLSX from 'xlsx';
@@ -28,13 +30,15 @@ import type { Question, Course, CoachingService, Profile, Event } from '@/types'
 
 const supabase = createSupabaseBrowserClient();
 
-type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies';
+type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage' | 'cohort';
 
 export default function Admin() {
   const [tab, setTab] = useState<AdminTab>('questions');
   const { data: flaggedCount = 0 } = useFlaggedCount();
 
   const tabs = [
+    { id: 'homepage' as const, label: 'Homepage Hero', icon: GalleryHorizontalEnd },
+    { id: 'cohort' as const, label: 'Cohort', icon: Rocket },
     { id: 'questions' as const, label: 'Questions', icon: HelpCircle },
     { id: 'roles' as const, label: 'Roles', icon: Tags },
     { id: 'categories' as const, label: 'Categories', icon: Tags },
@@ -95,6 +99,8 @@ export default function Admin() {
 
       {/* Content */}
       <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto">
+        {tab === 'homepage' && <AdminHeroSlides />}
+        {tab === 'cohort' && <AdminCohortSettings />}
         {tab === 'questions' && <AdminQuestions />}
         {tab === 'roles' && <AdminRoles />}
         {tab === 'categories' && <AdminCategories />}
@@ -892,6 +898,319 @@ function AdminRoles() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== HOMEPAGE HERO SLIDES ===================== */
+type HeroSlideForm = {
+  id?: string;
+  title: string;
+  highlight: string;
+  description: string;
+  primary_cta_label: string;
+  primary_cta_href: string;
+  secondary_cta_label: string;
+  secondary_cta_href: string;
+  display_order: number;
+};
+
+const EMPTY_HERO_FORM = (order: number): HeroSlideForm => ({
+  title: '',
+  highlight: '',
+  description: '',
+  primary_cta_label: '',
+  primary_cta_href: '',
+  secondary_cta_label: '',
+  secondary_cta_href: '',
+  display_order: order,
+});
+
+function AdminHeroSlides() {
+  const { data: slides = [], isLoading } = useAllHeroSlides();
+  const createMut = useCreateHeroSlide();
+  const updateMut = useUpdateHeroSlide();
+  const deleteMut = useDeleteHeroSlide();
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<HeroSlideForm | null>(null);
+
+  // Flush the homepage's cached hero slideshow so changes appear immediately.
+  const revalidateHero = async () => {
+    try {
+      await fetch('/api/revalidate/hero', { method: 'POST' });
+    } catch {
+      /* non-fatal: the 5-minute ISR window will pick it up anyway */
+    }
+  };
+
+  const openNew = () => { setEditing(EMPTY_HERO_FORM(slides.length + 1)); setShowForm(true); };
+  const openEdit = (s: typeof slides[number]) => {
+    setEditing({
+      id: s.id,
+      title: s.title,
+      highlight: s.highlight ?? '',
+      description: s.description,
+      primary_cta_label: s.primary_cta_label ?? '',
+      primary_cta_href: s.primary_cta_href ?? '',
+      secondary_cta_label: s.secondary_cta_label ?? '',
+      secondary_cta_href: s.secondary_cta_href ?? '',
+      display_order: s.display_order ?? 0,
+    });
+    setShowForm(true);
+  };
+
+  const submit = async () => {
+    if (!editing || !editing.title.trim() || !editing.description.trim()) return;
+    const payload: HeroSlideInput = {
+      title: editing.title.trim(),
+      highlight: editing.highlight.trim() || null,
+      description: editing.description.trim(),
+      primary_cta_label: editing.primary_cta_label.trim() || null,
+      primary_cta_href: editing.primary_cta_href.trim() || null,
+      secondary_cta_label: editing.secondary_cta_label.trim() || null,
+      secondary_cta_href: editing.secondary_cta_href.trim() || null,
+      display_order: editing.display_order,
+    };
+    try {
+      if (editing.id) {
+        await updateMut.mutateAsync({ id: editing.id, ...payload });
+        toast.success('Slide updated');
+      } else {
+        await createMut.mutateAsync(payload);
+        toast.success('Slide added');
+      }
+      await revalidateHero();
+      setShowForm(false);
+      setEditing(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const toggleActive = (s: typeof slides[number]) => {
+    updateMut.mutate(
+      { id: s.id, is_active: !s.is_active },
+      {
+        onSuccess: async () => {
+          await revalidateHero();
+          toast.success(s.is_active ? 'Slide hidden' : 'Slide shown');
+        },
+      },
+    );
+  };
+
+  const handleDelete = (id: string) => {
+    deleteMut.mutate(id, {
+      onSuccess: async () => { await revalidateHero(); toast.success('Slide deleted'); },
+      onError: (e: any) => toast.error(e.message),
+    });
+  };
+
+  return (
+    <div className="space-y-4 max-w-3xl">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="font-heading font-extrabold text-2xl">Homepage Hero</h2>
+          <p className="text-sm text-muted-foreground">
+            Configure the homepage hero slideshow. With no active slides, the homepage shows the default banner.
+            The optional &ldquo;highlight&rdquo; phrase is shown in the brand gradient within the title.
+          </p>
+        </div>
+        <Dialog open={showForm} onOpenChange={(o) => { setShowForm(o); if (!o) setEditing(null); }}>
+          <DialogTrigger asChild>
+            <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Add Slide</Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editing?.id ? 'Edit Slide' : 'Add Slide'}</DialogTitle>
+              <DialogDescription>
+                Title and description are required. Each CTA button shows only if both its label and link are set.
+                Links can be internal (e.g. <code>/questions</code>) or external (e.g. <code>https://...</code>).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium block mb-1">Title *</label>
+                <Input value={editing?.title || ''} onChange={(e) => setEditing((p) => p && { ...p, title: e.target.value })} placeholder="Crack Your Next Product Management Interview" />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Highlight phrase (optional)</label>
+                <Input value={editing?.highlight || ''} onChange={(e) => setEditing((p) => p && { ...p, highlight: e.target.value })} placeholder="Product Management" />
+                <p className="text-xs text-muted-foreground mt-1">Must appear within the title to be highlighted.</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Description *</label>
+                <Textarea value={editing?.description || ''} onChange={(e) => setEditing((p) => p && { ...p, description: e.target.value })} rows={2} placeholder="Practice with real interview questions..." />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium block mb-1">Primary button label</label>
+                  <Input value={editing?.primary_cta_label || ''} onChange={(e) => setEditing((p) => p && { ...p, primary_cta_label: e.target.value })} placeholder="Explore Questions" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1">Primary button link</label>
+                  <Input value={editing?.primary_cta_href || ''} onChange={(e) => setEditing((p) => p && { ...p, primary_cta_href: e.target.value })} placeholder="/questions" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1">Secondary button label</label>
+                  <Input value={editing?.secondary_cta_label || ''} onChange={(e) => setEditing((p) => p && { ...p, secondary_cta_label: e.target.value })} placeholder="View Courses" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1">Secondary button link</label>
+                  <Input value={editing?.secondary_cta_href || ''} onChange={(e) => setEditing((p) => p && { ...p, secondary_cta_href: e.target.value })} placeholder="/courses" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Display Order</label>
+                <Input
+                  type="number"
+                  value={editing?.display_order ?? 0}
+                  onChange={(e) => setEditing((p) => p && { ...p, display_order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button onClick={submit} disabled={!editing?.title.trim() || !editing?.description.trim()}>{editing?.id ? 'Update' : 'Create'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : (
+        <div className="rounded-xl border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr className="text-left">
+                <th className="px-4 py-2 font-medium">Title</th>
+                <th className="px-4 py-2 font-medium w-20">Order</th>
+                <th className="px-4 py-2 font-medium w-28">Status</th>
+                <th className="px-4 py-2 font-medium w-28 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slides.map((s) => (
+                <tr key={s.id} className="border-t">
+                  <td className="px-4 py-2">
+                    <div className="font-medium">{s.title}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">{s.description}</div>
+                  </td>
+                  <td className="px-4 py-2">{s.display_order ?? 0}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      onClick={() => toggleActive(s)}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        s.is_active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {s.is_active ? 'Active' : 'Inactive'}
+                    </button>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete slide?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This permanently removes the slide from the homepage hero. Are you sure?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(s.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </td>
+                </tr>
+              ))}
+              {slides.length === 0 && (
+                <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">No slides configured — the homepage shows the default banner.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ===================== COHORT SETTINGS ===================== */
+function AdminCohortSettings() {
+  const { data: settings, isLoading } = useCohortSettings();
+  const updateMut = useUpdateCohortSettings();
+  const [applyUrl, setApplyUrl] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
+  const [initialized, setInitialized] = useState(false);
+
+  // Seed the form once the settings row loads.
+  useEffect(() => {
+    if (!initialized && settings) {
+      setApplyUrl(settings.apply_url ?? '');
+      setWhatsappUrl(settings.whatsapp_url ?? '');
+      setInitialized(true);
+    }
+  }, [settings, initialized]);
+
+  const save = async () => {
+    if (!applyUrl.trim() || !whatsappUrl.trim()) return;
+    try {
+      await updateMut.mutateAsync({ apply_url: applyUrl.trim(), whatsapp_url: whatsappUrl.trim() });
+      toast.success('Cohort links updated');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <div>
+        <h2 className="font-heading font-extrabold text-2xl">Cohort Page</h2>
+        <p className="text-sm text-muted-foreground">
+          Configure the &ldquo;Apply Now&rdquo; and &ldquo;Ask on WhatsApp&rdquo; button links on the cohort page.
+          If left unset, the page falls back to the built-in defaults.
+        </p>
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : (
+        <div className="rounded-xl border p-5 space-y-4">
+          <div>
+            <label className="text-sm font-medium block mb-1">Apply Now link</label>
+            <Input
+              value={applyUrl}
+              onChange={(e) => setApplyUrl(e.target.value)}
+              placeholder="https://share-na2.hsforms.com/..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">The application form / signup URL.</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Ask on WhatsApp link</label>
+            <Input
+              value={whatsappUrl}
+              onChange={(e) => setWhatsappUrl(e.target.value)}
+              placeholder="https://api.whatsapp.com/send/?phone=..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">The WhatsApp chat link (wa.me or api.whatsapp.com).</p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={save}
+              disabled={!applyUrl.trim() || !whatsappUrl.trim() || updateMut.isPending}
+            >
+              {updateMut.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Save
+            </Button>
+          </div>
         </div>
       )}
     </div>

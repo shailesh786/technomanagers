@@ -6,7 +6,10 @@
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import EventsPage from '@/components/events/EventsPage';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabasePublicClient } from '@/lib/supabase/public';
+
+// ISR: rebuild at most once every 5 minutes — avoids a fresh Supabase hit on every visit
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'Upcoming Events | Technomanagers',
@@ -27,7 +30,7 @@ export default async function Events() {
   await queryClient.prefetchQuery({
     queryKey: ['events'],
     queryFn: async () => {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createSupabasePublicClient();
       const { data } = await supabase
         .from('events')
         .select('*')

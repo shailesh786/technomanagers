@@ -23,9 +23,12 @@ const PILLS = [
 export default function FeaturedQuestionsSection() {
   const [selectedPill, setSelectedPill] = useState('All');
 
+  // Pills are ROLE names (Product Management, Program Management, …). Most
+  // questions carry the matching `role`, but a few only carry the equivalent
+  // `category` tag — so we match on either to surface everything relevant.
   const { data: questions, isLoading } = useQuestions({
     sort: 'Hot',
-    ...(selectedPill !== 'All' ? { category: selectedPill } : {}),
+    ...(selectedPill !== 'All' ? { roleOrCategory: selectedPill } : {}),
   });
 
   const { user } = useAuth();

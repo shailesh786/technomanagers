@@ -21,13 +21,30 @@
 
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { unstable_cache } from 'next/cache';
+import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const revalidate = 60; // ISR: regenerate at most every 60 seconds
+
+// Cookieless anon client for the cached prefetch fetchers below.
+//
+// IMPORTANT: do NOT use createSupabaseServerClient() here — it reads cookies(),
+// and Next 14 THROWS when cookies() is accessed inside unstable_cache(). That
+// throw was silently swallowed, so every prefetch returned nothing, the
+// HydrationBoundary cache shipped empty, and the client (ssr:false) had to
+// refetch all data before the question cards (the LCP element) could paint —
+// the root cause of the slow FCP/LCP on this route. All four queries below read
+// only public, published rows that the anon role can access via RLS, so no
+// session cookie is needed.
+function getAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
 
 // ── ssr:false: skips server-rendering QuestionsClient ──────────────────────
 const QuestionsClient = dynamic(
@@ -52,7 +69,7 @@ export const metadata: Metadata = {
 
 const getDefaultQuestions = unstable_cache(
   async () => {
-    const supabase = await createSupabaseServerClient();
+    const supabase = getAnonClient();
     const { data } = await supabase
       .from('questions')
       .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
@@ -67,7 +84,7 @@ const getDefaultQuestions = unstable_cache(
 
 const getActiveRoles = unstable_cache(
   async () => {
-    const supabase = await createSupabaseServerClient();
+    const supabase = getAnonClient();
     const { data } = await supabase
       .from('roles')
       .select('*')
@@ -81,7 +98,7 @@ const getActiveRoles = unstable_cache(
 
 const getRoleCounts = unstable_cache(
   async () => {
-    const supabase = await createSupabaseServerClient();
+    const supabase = getAnonClient();
     // Use `role` column (not `tags`) to match the client-side filter logic
     const { data } = await supabase
       .from('questions')
@@ -100,7 +117,7 @@ const getRoleCounts = unstable_cache(
 
 const getPopularCompanies = unstable_cache(
   async () => {
-    const supabase = await createSupabaseServerClient();
+    const supabase = getAnonClient();
     const { data } = await supabase.rpc('get_companies_with_counts', { include_inactive: false });
     return ((data ?? []) as Array<{ company_name: string; question_count: number }>).slice(0, 6);
   },

@@ -1,4 +1,4 @@
-# Technomanagers — Next.js Migration Guide
+# Technomanagers — Claude Code Guide
 
 This file is the source of truth for Claude Code in this repository.
 Read it fully before making any changes.
@@ -9,21 +9,21 @@ Read it fully before making any changes.
 
 **Technomanagers** is a community platform for product managers — featuring interview question prep, coaching services, courses, events, and a cohort programme.
 
-We are migrating from a **Lovable (Vite + React Router)** project to **Next.js 14 App Router** for maximum performance and SEO.
+The app is fully migrated from a legacy **Lovable (Vite + React Router)** project to **Next.js 14 App Router**. The `src/` directory and all Vite artefacts have been removed.
 
 ---
 
-## Current Migration Status
+## Migration Status
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Scaffold: Next.js skeleton, Supabase SSR utils, config | ✅ Complete |
-| 2 | Migrate SSR pages: `/`, `/questions`, `/questions/[id]`, `/coaching`, `/courses`, `/cohort`, `/events` | ⏳ Pending |
-| 3 | Migrate CSR pages: `/auth`, `/profile`, `/admin` + replace Lovable auth with native Supabase OAuth | ⏳ Pending |
-| 4 | Migrate shared components: Navbar, Footer, layout wrappers, providers | ⏳ Pending |
-| 5 | SEO: `generateMetadata` on all SSR pages, `app/sitemap.ts`, `robots.ts` | ⏳ Pending |
-| 6 | Remove Vite artefacts (`index.html`, `vite.config.ts`, `src/main.tsx`) | ⏳ Pending |
-| 7 | Vercel deployment config, env vars, final QA | ⏳ Pending |
+| 2 | SSR pages: `/`, `/questions`, `/questions/[id]`, `/coaching`, `/courses`, `/cohort`, `/events` | ✅ Complete |
+| 3 | CSR pages: `/auth`, `/profile`, `/admin` + native Supabase OAuth (`/auth/callback`) | ✅ Complete |
+| 4 | Shared components: Navbar, Footer, layout wrappers, providers, hooks, contexts, types | ✅ Complete |
+| 5 | SEO: `generateMetadata` on all SSR pages, `app/sitemap.ts`, `app/robots.ts` | ✅ Complete |
+| 6 | Remove Vite artefacts (`src/`, `index.html`, `vite.config.ts`) | ✅ Complete |
+| 7 | Vercel deployment, ISR performance tuning, Speed Insights | ✅ Complete |
 
 ---
 
@@ -33,100 +33,189 @@ We are migrating from a **Lovable (Vite + React Router)** project to **Next.js 1
 
 ```
 technomanagers/
-├── app/                     ← Next.js App Router (new)
-│   ├── layout.tsx           ← Root layout: Navbar, Footer, all Providers
-│   ├── page.tsx             ← / (SSR)
-│   ├── not-found.tsx        ← 404
-│   ├── sitemap.ts           ← Dynamic XML sitemap
+├── app/                          ← Next.js App Router pages & API routes
+│   ├── layout.tsx                ← Root layout (Providers, Navbar, Footer)
+│   ├── page.tsx                  ← / homepage          (ISR, 300 s)
+│   ├── not-found.tsx             ← 404 page
+│   ├── robots.ts                 ← /robots.txt
+│   ├── sitemap.ts                ← /sitemap.xml
 │   ├── questions/
-│   │   ├── page.tsx         ← /questions (SSR)
-│   │   └── [id]/page.tsx    ← /questions/[id] (SSR)
-│   ├── coaching/page.tsx    ← /coaching (SSR)
-│   ├── courses/page.tsx     ← /courses (SSR)
-│   ├── cohort/page.tsx      ← /cohort (SSR)
-│   ├── events/page.tsx      ← /events (SSR)
-│   ├── auth/page.tsx        ← /auth (CSR — 'use client')
-│   ├── profile/page.tsx     ← /profile (CSR — 'use client')
-│   └── admin/[[...slug]]/   ← /admin/* (CSR — protected)
-│       └── page.tsx
+│   │   ├── page.tsx              ← /questions list     (ISR, 60 s)
+│   │   └── [id]/page.tsx         ← /questions/:id      (dynamic SSR)
+│   ├── coaching/page.tsx         ← /coaching           (ISR, 300 s)
+│   ├── courses/page.tsx          ← /courses            (ISR, 300 s)
+│   ├── cohort/page.tsx           ← /cohort             (static)
+│   ├── events/page.tsx           ← /events             (ISR, 300 s)
+│   ├── auth/
+│   │   ├── page.tsx              ← /auth sign-in       (CSR)
+│   │   └── callback/route.ts     ← OAuth PKCE callback
+│   ├── profile/page.tsx          ← /profile            (CSR, auth-gated)
+│   ├── admin/[[...slug]]/
+│   │   └── page.tsx              ← /admin/*            (CSR, admin-only)
+│   └── api/revalidate/
+│       ├── hero/route.ts         ← POST → revalidateTag('hero')
+│       └── questions/route.ts    ← POST → revalidateTag('questions')
+│
+├── components/                   ← React components
+│   ├── admin/                    ← Admin panel (questions, users, hero, cohort, etc.)
+│   ├── coaching/ courses/ events/ cohort/ home/ layout/ profile/ questions/
+│   └── ui/                       ← shadcn/ui primitives — do not edit manually
+│
+├── contexts/
+│   ├── AuthContext.tsx            ← User session state (Supabase Auth)
+│   └── QuestionAccessContext.tsx
+│
+├── hooks/                        ← TanStack Query data hooks (client-side only)
+│   ├── useQuestions.ts            ← Questions list, upvote, save
+│   ├── useQuestionFacets.ts       ← Faceted filter option counts
+│   ├── useRoles.ts / useCompanies.ts / useCoaching.ts / useCourses.ts / useEvents.ts
+│   ├── useHeroSlides.ts           ← Hero slideshow (admin CRUD + public read)
+│   └── useCohortSettings.ts       ← Cohort CTA config (admin editable, single row)
 │
 ├── lib/
 │   └── supabase/
-│       ├── server.ts        ← Server-side client (@supabase/ssr, for RSC + Route Handlers)
-│       ├── client.ts        ← Browser singleton (replaces src/integrations/supabase/client.ts)
-│       └── middleware-client.ts  ← Session-refresh client (used only in middleware.ts)
+│       ├── server.ts              ← Server client (RSC + route handlers — reads cookies)
+│       ├── client.ts              ← Browser singleton ('use client' components)
+│       ├── public.ts              ← Cookieless anon client (ISR-safe public reads) ← NEW
+│       └── middleware-client.ts   ← Session-refresh client (middleware.ts only)
 │
-├── middleware.ts            ← Edge middleware: refreshes Supabase auth cookie on every request
-├── next.config.ts           ← Next.js config
+├── providers/
+│   └── QueryProvider.tsx          ← TanStack Query client + HydrationBoundary wrapper
 │
-├── src/                     ← LEGACY Vite app — DO NOT DELETE until Phase 6
-│   ├── components/          ← Will be moved to /components in Phase 4
-│   ├── contexts/            ← Will be moved to /contexts in Phase 4
-│   ├── hooks/               ← Will be moved to /hooks in Phase 4
-│   ├── integrations/        ← lovable/ will be deleted; supabase/ superseded by lib/supabase/
-│   ├── pages/               ← Will be migrated into app/ pages in Phases 2–3
-│   └── types/               ← Will be moved to /types in Phase 4
+├── types/
+│   └── index.ts                   ← Shared TypeScript interfaces
 │
-└── supabase/                ← Supabase config & migrations — NEVER modify
+├── supabase/
+│   └── migrations/                ← SQL migrations — NEVER modify existing files
+│
+├── middleware.ts                  ← Edge: refreshes Supabase auth cookie
+├── next.config.ts
+├── tailwind.config.ts
+└── vitest.config.ts
 ```
 
 ### SSR vs CSR Split
 
 | Route | Rendering | Reason |
 |-------|-----------|--------|
-| `/` | SSR (RSC) | Public landing — needs og:image, meta, fast FCP |
-| `/questions` | SSR (RSC) | Indexed by search engines; initial data from server |
-| `/questions/[id]` | SSR (RSC) | Individual question pages need per-page meta/OG |
-| `/coaching` | SSR (RSC) | Public marketing page |
-| `/courses` | SSR (RSC) | Public marketing page |
-| `/cohort` | SSR (RSC) | Public marketing page |
-| `/events` | SSR (RSC) | Public marketing page |
-| `/auth` | CSR | No crawlable content; browser-only OAuth flow |
+| `/` | Static + ISR 300 s | Public landing — SEO, fast FCP |
+| `/questions` | Static + ISR 60 s | Crawlable; data from server prefetch |
+| `/questions/[id]` | Dynamic SSR | Admin draft preview requires cookie session |
+| `/coaching` | Static + ISR 300 s | Public marketing page |
+| `/courses` | Static + ISR 300 s | Public marketing page |
+| `/cohort` | Static | Marketing page, content rarely changes |
+| `/events` | Static + ISR 300 s | Public marketing page |
+| `/auth` | CSR | Browser-only OAuth flow |
 | `/profile` | CSR | Authenticated-only, personalised content |
 | `/admin` | CSR | Protected; no SEO value |
 
 ### Auth Architecture
 
-**Old (removed):** `@lovable.dev/cloud-auth-js` — Lovable platform wrapper that proxied OAuth through their servers and called `supabase.auth.setSession(tokens)`.
-
-**New:** Native Supabase Auth via `@supabase/ssr`.
-
-Key differences:
-- OAuth is initiated directly via `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: '/auth/callback' } })`
-- A new **`/auth/callback` Route Handler** (`app/auth/callback/route.ts`) will exchange the PKCE code for a session and set the cookie — this is created in Phase 3
-- Session is stored in **cookies** (not `localStorage`) so the server can read it in RSC
+- Native Supabase Auth via `@supabase/ssr`
+- OAuth initiated via `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: '/auth/callback' } })`
+- `/auth/callback` Route Handler exchanges the PKCE code for a session and sets the cookie
+- Session stored in **cookies** (not `localStorage`) so RSC can read it
 - `middleware.ts` calls `supabase.auth.getSession()` on every request to keep the cookie fresh
 
-**Required Supabase Dashboard change (before Phase 3):**
-Add `https://yourdomain.com/auth/callback` to:
-→ Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
+**Supabase Dashboard → Authentication → URL Configuration → Redirect URLs** must include your production callback URL.
 
-### `@/` Path Alias — Dual-Alias Strategy
+### `@/` Path Alias
 
-During migration both Vite (`src/`) and Next.js (root) code coexist.
+All code uses the root-level alias:
 
 ```json
-// tsconfig.json paths
-"@/*": ["./*"],       ← Next.js code uses this (app/, lib/, components/, etc.)
-"@src/*": ["./src/*"] ← Legacy Vite src/ code keeps using @src/ during transition
+"@/*": ["./*"]   // app/, lib/, components/, hooks/, types/, etc.
 ```
-
-When a `src/` file is **migrated** into the Next.js structure, update its imports from `@src/` → `@/`.
-
-### Supabase Client Rules
-
-| Context | Import from | Client type |
-|---------|-------------|-------------|
-| React Server Component / Route Handler | `@/lib/supabase/server` | `createServerClient` |
-| Client Component (`'use client'`) | `@/lib/supabase/client` | `createBrowserClient` (singleton) |
-| `middleware.ts` only | `@/lib/supabase/middleware-client` | `createServerClient` with cookie adapter |
-| Legacy `src/` code (pre-migration) | `@src/integrations/supabase/client` | Old browser client — **do not use in new files** |
-
-**Never** import `@/lib/supabase/server` inside a Client Component — it will throw at runtime.
 
 ---
 
-## Tech Stack (Post-Migration)
+## Supabase Client Rules — CRITICAL
+
+There are four Supabase clients. Using the wrong one causes hard-to-debug bugs.
+
+| Context | Import | Client type |
+|---------|--------|-------------|
+| React Server Component / Route Handler that needs the **user's session** | `@/lib/supabase/server` | `createServerClient` (reads cookies) |
+| **ISR-cached pages / `unstable_cache` fetchers** reading **public data** | `@/lib/supabase/public` | `createSupabasePublicClient()` — cookieless |
+| Client Component (`'use client'`) | `@/lib/supabase/client` | `createBrowserClient` (singleton) |
+| `middleware.ts` only | `@/lib/supabase/middleware-client` | `createServerClient` with cookie adapter |
+
+### The cookies()-in-ISR trap
+
+**Never** use `createSupabaseServerClient()` (from `@/lib/supabase/server`) inside:
+
+1. `unstable_cache(() => { ... })` — Next 14 **throws** when `cookies()` is accessed inside a cached function. The throw is swallowed by `prefetchQuery`, so the cache ships empty and the client refetches everything.
+2. A page component that uses `export const revalidate = N` for ISR — any `cookies()` call in the render opts the whole route into **dynamic rendering**, silently defeating the ISR.
+
+Use `createSupabasePublicClient()` (from `@/lib/supabase/public`) for any data that is publicly readable via RLS. All published questions, active courses, coaching services, events, hero slides, and cohort settings are public to the anon role.
+
+```ts
+// ✅ CORRECT — inside unstable_cache or an ISR page
+import { createSupabasePublicClient } from '@/lib/supabase/public';
+const supabase = createSupabasePublicClient();
+
+// ❌ WRONG — throws inside unstable_cache; opts ISR page into dynamic rendering
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+const supabase = await createSupabaseServerClient(); // reads cookies()
+```
+
+**Never** import `@/lib/supabase/server` inside a `'use client'` component — it will throw at runtime.
+
+---
+
+## Performance Patterns
+
+### TanStack Query + HydrationBoundary
+
+Server Components prefetch data into a `QueryClient`, dehydrate it into HTML, and pass it to a `HydrationBoundary`. Client components read the dehydrated cache on first render — no loading skeleton, no refetch waterfall.
+
+```tsx
+// app/courses/page.tsx (Server Component)
+const queryClient = new QueryClient();
+await queryClient.prefetchQuery({
+  queryKey: ['courses'],
+  queryFn: async () => {
+    const supabase = createSupabasePublicClient(); // ← cookieless
+    const { data } = await supabase.from('courses').select(...).eq('status', 'active');
+    return data ?? [];
+  },
+});
+return (
+  <HydrationBoundary state={dehydrate(queryClient)}>
+    <CoursesPage /> {/* 'use client'; reads ['courses'] from cache immediately */}
+  </HydrationBoundary>
+);
+```
+
+**Query key alignment is critical.** The key used in `prefetchQuery` must exactly match the key in the client hook (`useQuery`). A mismatch silently ignores the prefetch and forces a client refetch.
+
+### `unstable_cache` for per-query caching
+
+Use `unstable_cache` to cache the Supabase query result independently of the page ISR TTL. This prevents DB hammering during revalidation spikes.
+
+```ts
+const getDefaultQuestions = unstable_cache(
+  async () => {
+    const supabase = createSupabasePublicClient(); // cookieless — mandatory
+    const { data } = await supabase.from('questions')...
+    return data ?? [];
+  },
+  ['questions-default-hot'],          // unique cache key
+  { revalidate: 60, tags: ['questions'] },
+);
+```
+
+### `ssr: false` on QuestionsClient
+
+`QuestionsClient` uses `useSearchParams()`, which returns empty params during ISR static generation. Server-rendering it would produce a mismatch on filtered URLs (e.g. `/questions?role=PM`). The skeleton is SSR'd; the cards hydrate instantly from the HydrationBoundary cache.
+
+### Cache invalidation
+
+Admin mutations call `/api/revalidate/hero` or `/api/revalidate/questions` after writes. These route handlers call `revalidateTag(...)` to flush the ISR and `unstable_cache` caches immediately.
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -138,67 +227,39 @@ When a `src/` file is **migrated** into the Next.js structure, update its import
 | Auth SSR | @supabase/ssr |
 | Data fetching (client) | TanStack Query v5 |
 | Forms | react-hook-form + zod |
-| Fonts | Plus Jakarta Sans (headings), DM Sans (body) — loaded via `next/font/google` |
-| Images | `next/image` — replaces all `<img>` tags |
+| Fonts | Plus Jakarta Sans + DM Sans via `next/font/google` |
+| Images | `next/image` |
+| Analytics | @vercel/analytics + @vercel/speed-insights |
+| Testing | Vitest + Testing Library |
 | Deployment | Vercel |
-
----
-
-## Performance & SEO Constraints
-
-1. **No `'use client'` in page-level components for SSR routes** — RSC must do the initial data fetch
-2. **All `<img>` tags → `<Image>` from `next/image`** with explicit `width`, `height` or `fill`
-3. **`generateMetadata`** must be exported from every SSR page — see Phase 5
-4. **Dynamic imports** (`next/dynamic`) replace React `lazy()` for CSR pages
-5. **TanStack Query** is used only in Client Components for interactive re-fetching after hydration; initial data is passed as props from the RSC parent
-6. **Font loading** — use `next/font/google` in `app/layout.tsx`; never link Google Fonts via `<link>` in HTML
-7. **`robots.txt`** — replace the static `public/robots.txt` with `app/robots.ts` in Phase 5
 
 ---
 
 ## Env Vars
 
-The following env vars must exist. Rename from `VITE_` to `NEXT_PUBLIC_` for client-side exposure:
-
-| Old (Vite) | New (Next.js) | Used in |
-|------------|---------------|---------|
-| `VITE_SUPABASE_URL` | `NEXT_PUBLIC_SUPABASE_URL` | All Supabase clients |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All Supabase clients |
-
 Create `.env.local` at the project root (never commit it):
-```
+
+```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server and Client Components.
 
 ---
 
 ## What NOT to Do
 
-- ❌ Do not change any Supabase queries or data models in `src/`
-- ❌ Do not modify any file inside `supabase/migrations/`
-- ❌ Do not refactor or clean up business logic — only migrate it
-- ❌ Do not change UI/visual design — pixel-perfect match is required
-- ❌ Do not delete `src/` until Phase 6 is explicitly started
-- ❌ Do not import `@/lib/supabase/server` in any `'use client'` file
-- ❌ Do not use `localStorage` for auth tokens — cookies only in Next.js
-- ❌ Do not add `export const dynamic = 'force-dynamic'` unless a page genuinely cannot be statically generated
-- ❌ Do not use `react-router-dom` — it is removed
-
----
-
-## Component Migration Checklist (Phase 4)
-
-When moving a component from `src/components/` to `components/`:
-
-1. Update the import path from `@src/` → `@/`
-2. Add `'use client'` at the top if the component uses: `useState`, `useEffect`, `useRef`, event handlers, browser APIs, or any hook
-3. Replace `<img>` → `<Image from 'next/image'>`
-4. Replace `<a href>` → `<Link from 'next/link'>`
-5. Replace `useNavigate` → `useRouter` from `next/navigation`
-6. Replace `useParams` → `useParams` from `next/navigation` (same name, different import)
-7. Replace `<Link to="...">` from react-router-dom → `<Link href="...">` from `next/link`
-8. Remove any `import.meta.env.VITE_*` → `process.env.NEXT_PUBLIC_*`
+- ❌ Do not modify any file inside `supabase/migrations/` — create new files for schema changes
+- ❌ Do not use `createSupabaseServerClient()` inside `unstable_cache()` or in ISR page renders — use `createSupabasePublicClient()` for public data
+- ❌ Do not import `@/lib/supabase/server` inside any `'use client'` file — it throws at runtime
+- ❌ Do not use `localStorage` for auth tokens — cookies only
+- ❌ Do not add `export const dynamic = 'force-dynamic'` unless the page genuinely requires a fresh session on every request
+- ❌ Do not use `react-router-dom` — it is removed; use `next/link` and `next/navigation`
+- ❌ Do not edit files in `components/ui/` manually — they are shadcn/ui generated components; use the CLI to add new ones
+- ❌ Do not change UI/visual design without explicit instruction — pixel-perfect match is required
+- ❌ Do not run `git add -A` or `git add .` — always add specific files to avoid committing `.env.local` or build artifacts
+- ❌ Do not commit unless explicitly asked
 
 ---
 
@@ -207,11 +268,54 @@ When moving a component from `src/components/` to `components/`:
 | File | Purpose |
 |------|---------|
 | `app/layout.tsx` | Root layout — Providers, Navbar, Footer |
-| `lib/supabase/server.ts` | Server Supabase client factory |
+| `app/page.tsx` | Homepage — hero slideshow + featured questions (ISR, 300 s) |
+| `app/questions/page.tsx` | Questions listing — server prefetch + HydrationBoundary (ISR, 60 s) |
+| `app/questions/[id]/page.tsx` | Question detail — dynamic SSR, `generateMetadata`, React.cache dedup |
+| `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |
+| `app/api/revalidate/hero/route.ts` | Admin-gated POST → `revalidateTag('hero')` |
+| `app/api/revalidate/questions/route.ts` | Admin-gated POST → `revalidateTag('questions')` |
+| `lib/supabase/server.ts` | Server Supabase client (cookies, for auth-gated RSC) |
 | `lib/supabase/client.ts` | Browser Supabase singleton |
-| `middleware.ts` | Session cookie refresh on every request |
-| `src/contexts/AuthContext.tsx` | Legacy auth context — will be rewritten in Phase 3 |
-| `src/integrations/lovable/index.ts` | **To be deleted in Phase 3** |
-| `src/integrations/supabase/client.ts` | Legacy browser client — superseded by `lib/supabase/client.ts` |
-| `src/types/index.ts` | Shared TypeScript types — copy to `types/index.ts` in Phase 4 |
-| `supabase/migrations/` | DB schema — never touch |
+| `lib/supabase/public.ts` | Cookieless anon client — use for all ISR/cached public reads |
+| `lib/supabase/middleware-client.ts` | Session-refresh client (middleware.ts only) |
+| `middleware.ts` | Edge: refreshes auth cookie on every request |
+| `components/home/HeroSlideshow.tsx` | Auto-scrolling hero slideshow (5 s interval); falls back to hardcoded slide |
+| `components/cohort/CohortPage.tsx` | Cohort page; reads CTA links from `cohort_settings` table via `useCohortSettings` |
+| `components/admin/AdminPage.tsx` | Full admin panel — tabs for all content types + homepage + cohort config |
+| `components/questions/QuestionsClient.tsx` | Client-side question list — filters, search, pagination, facets |
+| `components/questions/QuestionFilters.tsx` | Faceted filter dropdowns (role, company, category, difficulty) |
+| `hooks/useQuestions.ts` | Questions data hook — supports single/multi category, role, company, difficulty, sort |
+| `hooks/useQuestionFacets.ts` | Fetches all questions client-side to compute per-filter option counts |
+| `hooks/useHeroSlides.ts` | Hero slide CRUD hooks + public read hook |
+| `hooks/useCohortSettings.ts` | Cohort CTA config read + upsert hooks |
+| `types/index.ts` | Shared TypeScript interfaces (Profile, Question, Course, HeroSlide, CohortSettings, etc.) |
+| `supabase/migrations/` | All SQL migrations — never touch existing files |
+
+---
+
+## Database Tables (current schema)
+
+| Table | Purpose |
+|-------|---------|
+| `profiles` | User profiles — extends `auth.users`; `is_admin` flag |
+| `questions` | Interview questions — company[], category[], role, difficulty, upvotes |
+| `saved_questions` | User ↔ question save relationship |
+| `question_likes` | User ↔ question like relationship (toggles `upvotes` counter via RPC) |
+| `comments` | Question comments with moderation |
+| `roles` | Role taxonomy for filtering (Product Management, etc.) |
+| `companies` | Company taxonomy for tagging questions |
+| `coaching_services` | Coaching service listings |
+| `courses` | Course listings |
+| `events` | Event listings |
+| `hero_slides` | Homepage hero slideshow slides (title, description, CTAs, display_order, is_active) |
+| `cohort_settings` | Single-row config for cohort page CTA links (apply_url, whatsapp_url) |
+
+### Key RPCs
+
+| Function | Purpose |
+|----------|---------|
+| `increment_upvotes(question_id)` | Legacy upvote increment (security definer) |
+| `toggle_question_like(p_question_id, p_user_id)` | Idempotent like toggle; updates `upvotes` counter |
+| `get_companies_with_counts(include_inactive)` | Returns company name + published question count |
+| `is_admin(user_id)` | RLS helper — returns true if user has `is_admin = true` in profiles |
+

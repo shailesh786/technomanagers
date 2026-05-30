@@ -20,6 +20,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'www.gstatic.com',
       },
+      {
+        // Cloudinary CDN — cohort page hero, review screenshots, video thumbnails
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
 

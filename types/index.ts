@@ -71,6 +71,29 @@ export interface Event {
   updated_at: string | null;
 }
 
+export interface HeroSlide {
+  id: string;
+  title: string;
+  highlight: string | null;
+  description: string;
+  primary_cta_label: string | null;
+  primary_cta_href: string | null;
+  secondary_cta_label: string | null;
+  secondary_cta_href: string | null;
+  display_order: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface CohortSettings {
+  id: string;
+  apply_url: string;
+  whatsapp_url: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export interface SavedQuestion {
   id: string;
   user_id: string;

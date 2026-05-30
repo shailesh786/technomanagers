@@ -55,10 +55,25 @@ function FilterButton({
 }
 
 /* ─── ROLE FILTER ─── */
-export function RoleFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function RoleFilter({
+  value,
+  onChange,
+  counts,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  /** Faceted counts per role given the other active filters. When provided,
+   *  roles with a count of 0 are hidden (unless currently selected). */
+  counts?: Record<string, number>;
+}) {
   const [open, setOpen] = useState(false);
   const { data: roles = [] } = useRoles();
   const active = value !== '';
+
+  // Hide roles that have no questions under the other active filters.
+  const visibleRoles = counts
+    ? roles.filter((r) => (counts[r.name] ?? 0) > 0 || value === r.name)
+    : roles;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -72,7 +87,7 @@ export function RoleFilter({ value, onChange }: { value: string; onChange: (v: s
         </div>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-60 p-1.5" sideOffset={6}>
-        {roles.map((r) => (
+        {visibleRoles.map((r) => (
           <button
             key={r.id}
             onClick={() => { onChange(value === r.name ? '' : r.name); setOpen(false); }}
@@ -82,13 +97,16 @@ export function RoleFilter({ value, onChange }: { value: string; onChange: (v: s
             )}
           >
             <span className={cn(
-              'h-3.5 w-3.5 rounded-full border',
+              'h-3.5 w-3.5 rounded-full border shrink-0',
               value === r.name ? 'border-primary bg-primary' : 'border-muted-foreground/40',
             )} />
-            {r.name}
+            <span className="flex-1 truncate">{r.name}</span>
+            {counts && (
+              <span className="text-xs text-muted-foreground">({counts[r.name] ?? 0})</span>
+            )}
           </button>
         ))}
-        {roles.length === 0 && (
+        {visibleRoles.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-2">No roles available</p>
         )}
       </PopoverContent>
@@ -101,17 +119,27 @@ export function CompanyFilter({
   value,
   onChange,
   includeDrafts = false,
+  counts,
 }: {
   value: string[];
   onChange: (v: string[]) => void;
   includeDrafts?: boolean;
+  /** Faceted counts per company given the other active filters. When provided,
+   *  companies with a count of 0 are hidden (unless currently selected) and the
+   *  displayed count reflects the current filter context. */
+  counts?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const { data: companies = [], isLoading } = useCompaniesWithCounts(includeDrafts);
   const active = value.length > 0;
   const label = value.length === 0 ? 'Company' : value.length === 1 ? value[0] : `Company (${value.length})`;
-  const filtered = companies.filter((c) => c.company_name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = companies.filter((c) => {
+    if (!c.company_name.toLowerCase().includes(search.toLowerCase())) return false;
+    // Hide companies with no questions under the other active filters.
+    if (counts && (counts[c.company_name] ?? 0) === 0 && !value.includes(c.company_name)) return false;
+    return true;
+  });
 
   const toggle = (company: string) => {
     onChange(value.includes(company) ? value.filter((c) => c !== company) : [...value, company]);
@@ -150,7 +178,7 @@ export function CompanyFilter({
                 className="h-3.5 w-3.5 rounded border-border accent-primary"
               />
               <span className="flex-1 truncate">{c.company_name}</span>
-              <span className="text-xs text-muted-foreground">({c.question_count})</span>
+              <span className="text-xs text-muted-foreground">({counts ? (counts[c.company_name] ?? 0) : c.question_count})</span>
             </label>
           ))}
           {!isLoading && filtered.length === 0 && (
@@ -169,14 +197,22 @@ export function CompanyFilter({
 export function CategoryFilter({
   value,
   onChange,
+  counts,
 }: {
   value: string[];
   onChange: (v: string[]) => void;
+  /** Faceted counts per category given the other active filters. When provided,
+   *  categories with a count of 0 are hidden (unless currently selected). */
+  counts?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
   const { data: categories = [], isLoading } = useCategories();
   const active = value.length > 0;
   const label = value.length === 0 ? 'Category' : value.length === 1 ? value[0] : `Category (${value.length})`;
+
+  const visibleCategories = counts
+    ? categories.filter((c) => (counts[c.name] ?? 0) > 0 || value.includes(c.name))
+    : categories;
 
   const toggle = (cat: string) => {
     onChange(value.includes(cat) ? value.filter((c) => c !== cat) : [...value, cat]);
@@ -197,10 +233,10 @@ export function CategoryFilter({
         {isLoading && (
           <p className="text-xs text-muted-foreground text-center py-2">Loading…</p>
         )}
-        {!isLoading && categories.length === 0 && (
+        {!isLoading && visibleCategories.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-2">No categories available</p>
         )}
-        {categories.map((c) => (
+        {visibleCategories.map((c) => (
           <label key={c.id} className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm hover:bg-muted cursor-pointer">
             <input
               type="checkbox"
@@ -208,7 +244,10 @@ export function CategoryFilter({
               onChange={() => toggle(c.name)}
               className="h-3.5 w-3.5 rounded border-border accent-primary"
             />
-            <span className="truncate" title={c.name}>{c.name}</span>
+            <span className="flex-1 truncate" title={c.name}>{c.name}</span>
+            {counts && (
+              <span className="text-xs text-muted-foreground">({counts[c.name] ?? 0})</span>
+            )}
           </label>
         ))}
       </PopoverContent>
@@ -222,12 +261,20 @@ const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 export function GeneralFilter({
   difficulties,
   onDifficultiesChange,
+  counts,
 }: {
   difficulties: string[];
   onDifficultiesChange: (v: string[]) => void;
+  /** Faceted counts per difficulty given the other active filters. When provided,
+   *  difficulties with a count of 0 are hidden (unless currently selected). */
+  counts?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
   const active = difficulties.length > 0;
+
+  const visibleDifficulties = counts
+    ? DIFFICULTIES.filter((d) => (counts[d] ?? 0) > 0 || difficulties.includes(d))
+    : DIFFICULTIES;
 
   const toggleDiff = (d: string) => {
     onDifficultiesChange(
@@ -249,7 +296,7 @@ export function GeneralFilter({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-2" sideOffset={6}>
         <p className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase">Difficulty</p>
-        {DIFFICULTIES.map((d) => (
+        {visibleDifficulties.map((d) => (
           <label key={d} className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-sm hover:bg-muted cursor-pointer">
             <input
               type="checkbox"
@@ -257,9 +304,15 @@ export function GeneralFilter({
               onChange={() => toggleDiff(d)}
               className="h-3.5 w-3.5 rounded border-border accent-primary"
             />
-            {d}
+            <span className="flex-1">{d}</span>
+            {counts && (
+              <span className="text-xs text-muted-foreground">({counts[d] ?? 0})</span>
+            )}
           </label>
         ))}
+        {counts && visibleDifficulties.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-2">No difficulties available</p>
+        )}
         {active && (
           <div className="mt-2 px-1">
             <button
