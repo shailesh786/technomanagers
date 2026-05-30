@@ -319,13 +319,3 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `get_companies_with_counts(include_inactive)` | Returns company name + published question count |
 | `is_admin(user_id)` | RLS helper — returns true if user has `is_admin = true` in profiles |
 
----
-
-## Pending Migrations (apply via Supabase Dashboard)
-
-Two migration files have been created but must be **manually applied** to production via Supabase Dashboard → SQL Editor if auto-migrations aren't configured:
-
-| File | What it creates |
-|------|----------------|
-| `supabase/migrations/20260530000001_hero_slides.sql` | `hero_slides` table + RLS policies + updated_at trigger |
-| `supabase/migrations/20260530000002_cohort_settings.sql` | `cohort_settings` table + RLS policies + seed row with current CTA links |
