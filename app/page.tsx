@@ -19,7 +19,6 @@ import { ArrowRight, BookOpen, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FeaturedQuestionsSection from '@/components/home/FeaturedQuestionsSection';
 import HeroSlideshow from '@/components/home/HeroSlideshow';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { HeroSlide } from '@/types';
 
 // ISR: rebuild page at most once every 5 minutes
@@ -48,7 +47,15 @@ const steps = [
 // to flush this immediately without waiting for the 5-minute window.
 const getHotQuestions = unstable_cache(
   async () => {
-    const supabase = await createSupabaseServerClient();
+    // Cookieless anon client — NOT createSupabaseServerClient(), which reads
+    // cookies(). Next 14 throws when cookies() is accessed inside
+    // unstable_cache(), which silently emptied this prefetch and forced the
+    // featured-questions list to refetch client-side. Published questions are
+    // public to the anon role via RLS, so no session cookie is needed.
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
     const { data } = await supabase
       .from('questions')
       .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')

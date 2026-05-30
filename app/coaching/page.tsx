@@ -6,7 +6,7 @@
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import CoachingPage from '@/components/coaching/CoachingPage';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabasePublicClient } from '@/lib/supabase/public';
 
 // ISR: rebuild at most once every 5 minutes — avoids a fresh Supabase hit on every visit
 export const revalidate = 300;
@@ -31,7 +31,7 @@ export default async function Coaching() {
   await queryClient.prefetchQuery({
     queryKey: ['coaching', 'All'],
     queryFn: async () => {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createSupabasePublicClient();
       const { data } = await supabase
         .from('coaching_services')
         .select('id, title, service_type, short_description, price, original_price, duration, platform, rating, external_url, badge_text, display_order, status')
