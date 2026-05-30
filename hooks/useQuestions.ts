@@ -13,6 +13,12 @@ export function useQuestions(filters?: {
   companies?: string[];
   difficulties?: string[];
   role?: string;
+  /**
+   * Homepage pill filter: match a question whose `role` column equals the value
+   * OR whose `category` array contains it. Pills are role names, but some
+   * questions only carry the equivalent category tag — this surfaces both.
+   */
+  roleOrCategory?: string;
   search?: string;
   sort?: string;
   limit?: number;
@@ -30,6 +36,11 @@ export function useQuestions(filters?: {
       // Homepage single-pill filter
       if (filters?.category && filters.category !== 'All') {
         query = query.contains('category', [filters.category]);
+      }
+      // Homepage pill: role column OR category array contains the value
+      if (filters?.roleOrCategory && filters.roleOrCategory !== 'All') {
+        const v = filters.roleOrCategory;
+        query = query.or(`role.eq.${v},category.cs.{${v}}`);
       }
       // Questions-page multi-category filter (OR logic)
       if (filters?.categories && filters.categories.length > 0) {
