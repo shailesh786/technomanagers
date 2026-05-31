@@ -1,9 +1,19 @@
 /**
  * Home page (Server Component)
  *
- * Static sections are server-rendered. FeaturedQuestionsSection is wrapped
- * in HydrationBoundary so questions are pre-populated in the TanStack Query
- * cache on the server — no loading skeleton on first paint.
+ * Rendering strategy (mirrors /questions for optimal FCP/LCP):
+ *   - HeroSlideshow: SSR'd — hero h1 is in the initial HTML, paints immediately.
+ *   - FeaturedQuestionsSection: ssr:false — code-split into a separate JS chunk
+ *     so it does NOT block the hero from painting. The questions data is still
+ *     server-prefetched into TanStack Query's HydrationBoundary cache, so the
+ *     section loads instantly from cache once the chunk arrives (no extra round
+ *     trip to Supabase).
+ *
+ * Why ssr:false for FeaturedQuestionsSection:
+ *   Without it, every hook imported by FeaturedQuestionsSection (useQuestions,
+ *   useSavedQuestions, useToggleLike, QuestionCard, …) lands in the critical
+ *   bundle. That 200 kB blocks the hero h1 from painting and bloats FCP/LCP.
+ *   The same pattern applied to /questions lifted it from RES 83 → RES 100.
  *
  * ISR: page is statically generated and rebuilt in the background every 5 min.
  * The Supabase query is additionally cached via unstable_cache so the DB is
@@ -15,11 +25,57 @@ import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { ArrowRight, BookOpen, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FeaturedQuestionsSection from '@/components/home/FeaturedQuestionsSection';
+import { Skeleton } from '@/components/ui/skeleton';
 import HeroSlideshow from '@/components/home/HeroSlideshow';
 import type { HeroSlide } from '@/types';
+
+// ── ssr:false: skips server-rendering FeaturedQuestionsSection ──────────────
+// Code-splits the component + all its hooks/imports into a separate JS chunk
+// that is fetched AFTER the hero section paints. The TanStack Query
+// HydrationBoundary still ships the dehydrated questions cache in the HTML, so
+// the section populates from cache the moment the chunk loads — no extra fetch.
+const FeaturedQuestionsSection = dynamic(
+  () => import('@/components/home/FeaturedQuestionsSection'),
+  { ssr: false, loading: () => <FeaturedQuestionsLoading /> },
+);
+
+function FeaturedQuestionsLoading() {
+  return (
+    <section className="container py-16 space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+      {/* pill row */}
+      <div className="flex flex-wrap gap-2">
+        {[80, 160, 170, 195, 170].map((w, i) => (
+          <Skeleton key={i} className="h-8 rounded-full" style={{ width: w }} />
+        ))}
+      </div>
+      {/* question cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border p-5 space-y-3 min-h-[120px]">
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <div className="flex gap-3 pt-1">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 // ISR: rebuild page at most once every 5 minutes
 export const revalidate = 300;
@@ -117,9 +173,13 @@ export default async function HomePage() {
           hardcoded default slide when no active slides are configured. */}
       <HeroSlideshow slides={heroSlides} />
 
-      {/* Featured Questions — pre-populated from server via HydrationBoundary */}
+      {/* Featured Questions — pre-populated from server via HydrationBoundary.
+           HydrationBoundary must wrap Suspense (not be inside it) so the
+           dehydrated cache state ships in the HTML before the component mounts. */}
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <FeaturedQuestionsSection />
+        <Suspense fallback={<FeaturedQuestionsLoading />}>
+          <FeaturedQuestionsSection />
+        </Suspense>
       </HydrationBoundary>
 
       {/* How It Works */}
