@@ -37,18 +37,18 @@ export default function Admin() {
   const { data: flaggedCount = 0 } = useFlaggedCount();
 
   const tabs = [
-    { id: 'homepage' as const, label: 'Homepage Hero', icon: GalleryHorizontalEnd },
-    { id: 'cohort' as const, label: 'Cohort', icon: Rocket },
-    { id: 'questions' as const, label: 'Questions', icon: HelpCircle },
-    { id: 'roles' as const, label: 'Roles', icon: Tags },
-    { id: 'categories' as const, label: 'Categories', icon: Tags },
-    { id: 'companies' as const, label: 'Companies', icon: Building2 },
-    { id: 'courses' as const, label: 'Courses', icon: GraduationCap },
-    { id: 'coaching' as const, label: 'Coaching', icon: BookOpen },
-    { id: 'events' as const, label: 'Events', icon: Calendar },
-    { id: 'moderation' as const, label: 'Moderation', icon: ShieldAlert, badge: flaggedCount },
-    { id: 'users' as const, label: 'Users', icon: Users },
-    { id: 'waitlist' as const, label: 'Waitlist', icon: Mail },
+    { id: 'homepage' as const,   label: 'Homepage Hero', shortLabel: 'Hero',  icon: GalleryHorizontalEnd },
+    { id: 'cohort' as const,     label: 'Cohort',                              icon: Rocket },
+    { id: 'questions' as const,  label: 'Questions',                           icon: HelpCircle },
+    { id: 'roles' as const,      label: 'Roles',                               icon: Tags },
+    { id: 'categories' as const, label: 'Categories',   shortLabel: 'Cats',   icon: Tags },
+    { id: 'companies' as const,  label: 'Companies',    shortLabel: 'Cos',    icon: Building2 },
+    { id: 'courses' as const,    label: 'Courses',                             icon: GraduationCap },
+    { id: 'coaching' as const,   label: 'Coaching',                            icon: BookOpen },
+    { id: 'events' as const,     label: 'Events',                              icon: Calendar },
+    { id: 'moderation' as const, label: 'Moderation',   shortLabel: 'Flags',  icon: ShieldAlert, badge: flaggedCount },
+    { id: 'users' as const,      label: 'Users',                               icon: Users },
+    { id: 'waitlist' as const,   label: 'Waitlist',                            icon: Mail },
   ];
 
   return (
@@ -81,20 +81,36 @@ export default function Admin() {
         ))}
       </aside>
 
-      {/* Mobile tabs */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background flex z-50">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs ${
-              tab === t.id ? 'text-secondary' : 'text-muted-foreground'
-            }`}
-          >
-            <t.icon className="h-4 w-4" />
-            {t.label}
-          </button>
-        ))}
+      {/* Mobile bottom nav — horizontally scrollable so all 12 tabs fit without squishing */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background z-50 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex">
+          {tabs.map((t) => {
+            const isActive = tab === t.id;
+            const displayLabel = ('shortLabel' in t ? t.shortLabel : undefined) ?? t.label;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`relative flex-shrink-0 flex flex-col items-center justify-center gap-1 px-4 py-3 min-w-[68px] text-[10px] font-medium transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                {/* Active indicator bar at top */}
+                {isActive && (
+                  <span className="absolute inset-x-0 top-0 h-0.5 bg-primary rounded-b-full" />
+                )}
+                <t.icon className="h-5 w-5 shrink-0" />
+                <span className="leading-tight whitespace-nowrap">{displayLabel}</span>
+                {/* Badge for flagged count */}
+                {'badge' in t && (t as any).badge > 0 && (
+                  <span className="absolute top-1.5 right-2 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+                    {(t as any).badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Content */}
