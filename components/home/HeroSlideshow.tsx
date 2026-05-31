@@ -105,42 +105,63 @@ export default function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
     return () => clearInterval(timer);
   }, [hasMultiple, effectiveSlides.length]);
 
-  const slide = effectiveSlides[index];
-
   return (
     <section className="bg-gradient-hero py-20 md:py-28 relative overflow-hidden">
-      <div className="container text-center max-w-3xl mx-auto space-y-6">
-        <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl leading-tight tracking-tight">
-          <HeroTitle title={slide.title} highlight={slide.highlight} />
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          {slide.description}
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-          {slide.primary_cta_label && slide.primary_cta_href && (
-            <CtaButton
-              label={slide.primary_cta_label}
-              href={slide.primary_cta_href}
-              variant="primary"
-            />
-          )}
-          {slide.secondary_cta_label && slide.secondary_cta_href && (
-            <CtaButton
-              label={slide.secondary_cta_label}
-              href={slide.secondary_cta_href}
-              variant="secondary"
-            />
-          )}
-        </div>
+      {/*
+       * All slides are rendered simultaneously in a stacking context.
+       * The active slide is `relative` (drives the section height) while
+       * inactive slides are `absolute inset-0` so they perfectly overlay it.
+       * Opacity transitions on each slide produce a smooth cross-fade with no
+       * layout jump when the index changes.
+       */}
+      <div className="relative">
+        {effectiveSlides.map((slide, i) => (
+          <div
+            key={slide.id}
+            className={cn(
+              'transition-opacity duration-700 ease-in-out',
+              i === index
+                ? 'relative opacity-100'
+                : 'pointer-events-none absolute inset-0 select-none opacity-0',
+            )}
+            aria-hidden={i !== index}
+          >
+            <div className="container text-center max-w-3xl mx-auto space-y-6">
+              <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl leading-tight tracking-tight">
+                <HeroTitle title={slide.title} highlight={slide.highlight} />
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+                {slide.description}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+                {slide.primary_cta_label && slide.primary_cta_href && (
+                  <CtaButton
+                    label={slide.primary_cta_label}
+                    href={slide.primary_cta_href}
+                    variant="primary"
+                  />
+                )}
+                {slide.secondary_cta_label && slide.secondary_cta_href && (
+                  <CtaButton
+                    label={slide.secondary_cta_label}
+                    href={slide.secondary_cta_href}
+                    variant="secondary"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {hasMultiple && (
         <>
+          {/* Arrows: hidden on mobile (dots + swipe are sufficient), visible on md+ */}
           <button
             type="button"
             aria-label="Previous slide"
             onClick={() => goTo(index - 1)}
-            className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+            className="absolute left-6 top-1/2 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -148,11 +169,12 @@ export default function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
             type="button"
             aria-label="Next slide"
             onClick={() => goTo(index + 1)}
-            className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+            className="absolute right-6 top-1/2 -translate-y-1/2 hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-background/70 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
 
+          {/* Dot indicators: visible on all screen sizes */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
             {effectiveSlides.map((s, i) => (
               <button
