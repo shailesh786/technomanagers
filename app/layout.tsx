@@ -65,11 +65,12 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   icons: {
-    // app/favicon.ico is a Next.js special file — it is automatically served at
-    // /favicon.ico and a <link rel="icon"> tag is injected without any metadata
-    // entry needed. Do NOT add shortcut/icon here — "shortcut" is a deprecated
-    // rel value that modern browsers ignore, and it overrides the auto-generated
-    // tag, which is why the favicon was not showing.
+    // `icon` generates <link rel="icon"> — the correct, non-deprecated tag.
+    // app/favicon.ico is served at /favicon.ico by Next.js but does NOT
+    // auto-inject the <link> tag; it must be declared here explicitly.
+    // Do NOT use `shortcut` — it emits the deprecated rel="shortcut icon"
+    // which modern browsers ignore.
+    icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
   },
 };
