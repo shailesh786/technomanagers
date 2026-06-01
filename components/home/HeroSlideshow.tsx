@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -87,45 +87,89 @@ export default function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
   const effectiveSlides = slides.length > 0 ? slides : [FALLBACK_SLIDE];
   const hasMultiple = effectiveSlides.length > 1;
   const [index, setIndex] = useState(0);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+
+  // indexRef avoids stale-closure bugs inside the setInterval callback.
+  const indexRef = useRef(0);
+  indexRef.current = index;
 
   const goTo = useCallback(
     (next: number) => {
       const count = effectiveSlides.length;
-      setIndex(((next % count) + count) % count);
+      const safeNext = ((next % count) + count) % count;
+      const current = indexRef.current;
+      if (safeNext === current) return;
+
+      // Forward = moving to a later slide (or wrapping from last → first).
+      // Backward = moving to an earlier slide (or wrapping from first → last).
+      const isForward =
+        safeNext > current ||
+        (current === count - 1 && safeNext === 0);
+
+      setDirection(isForward ? 'forward' : 'backward');
+      setPrevIndex(current);
+      setIndex(safeNext);
     },
     [effectiveSlides.length],
   );
+
+  // Clear the exiting slide after the animation finishes (~550 ms).
+  useEffect(() => {
+    if (prevIndex === null) return;
+    const id = setTimeout(() => setPrevIndex(null), 550);
+    return () => clearTimeout(id);
+  }, [prevIndex]);
 
   // Auto-advance only when there's more than one slide.
   useEffect(() => {
     if (!hasMultiple) return;
     const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % effectiveSlides.length);
+      goTo(indexRef.current + 1);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timer);
-  }, [hasMultiple, effectiveSlides.length]);
+  }, [hasMultiple, goTo]);
 
   return (
     <section className="bg-gradient-hero py-20 md:py-28 relative overflow-hidden">
       {/*
-       * All slides are rendered simultaneously in a stacking context.
-       * The active slide is `relative` (drives the section height) while
-       * inactive slides are `absolute inset-0` so they perfectly overlay it.
-       * Opacity transitions on each slide produce a smooth cross-fade with no
-       * layout jump when the index changes.
+       * Direction-aware slide transition:
+       *   - Entering slide slides in from the right (forward) or left (backward).
+       *   - Exiting slide slides out to the left (forward) or right (backward).
+       *   - `forwards` fill mode keeps the exiting slide at its final off-screen
+       *     position until React removes it (~550 ms timeout above).
+       *   - The active slide is `relative` (drives section height); all others
+       *     are `absolute inset-0` so they overlay it without a layout jump.
        */}
       <div className="relative">
-        {effectiveSlides.map((slide, i) => (
-          <div
-            key={slide.id}
-            className={cn(
-              'transition-opacity duration-700 ease-in-out',
-              i === index
-                ? 'relative opacity-100'
-                : 'pointer-events-none absolute inset-0 select-none opacity-0',
-            )}
-            aria-hidden={i !== index}
-          >
+        {effectiveSlides.map((slide, i) => {
+          const isActive = i === index;
+          const isExiting = i === prevIndex;
+
+          let animationClass = '';
+          if (isActive) {
+            animationClass =
+              direction === 'forward'
+                ? 'animate-slide-in-from-right'
+                : 'animate-slide-in-from-left';
+          } else if (isExiting) {
+            animationClass =
+              direction === 'forward'
+                ? 'animate-slide-out-to-left'
+                : 'animate-slide-out-to-right';
+          }
+
+          return (
+            <div
+              key={slide.id}
+              className={cn(
+                isActive ? 'relative' : 'absolute inset-0',
+                !isActive && !isExiting && 'pointer-events-none select-none opacity-0',
+                isExiting && 'pointer-events-none select-none',
+                animationClass,
+              )}
+              aria-hidden={!isActive}
+            >
             <div className="container text-center max-w-3xl mx-auto space-y-6">
               <h1 className="font-heading font-extrabold text-4xl md:text-5xl lg:text-6xl leading-tight tracking-tight">
                 <HeroTitle title={slide.title} highlight={slide.highlight} />
@@ -151,7 +195,8 @@ export default function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {hasMultiple && (
