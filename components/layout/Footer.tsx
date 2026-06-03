@@ -44,10 +44,14 @@ export default function Footer() {
           <div className="space-y-3">
             <h4 className="font-heading font-semibold text-sm">Connect</h4>
             <p className="text-sm text-muted-foreground">Business | Management | Technology</p>
+            <div className="flex flex-col gap-2">
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
+            </div>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          © 2026 TechnoManagers. All rights reserved.
+        <div className="mt-8 pt-8 border-t flex flex-col sm:flex-row items-center justify-center gap-x-4 gap-y-2 text-center text-sm text-muted-foreground">
+          <span>© 2026 TechnoManagers. All rights reserved.</span>
+          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
         </div>
       </div>
     </footer>
