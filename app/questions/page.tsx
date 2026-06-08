@@ -74,11 +74,11 @@ const getDefaultQuestions = unstable_cache(
       .from('questions')
       .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
       .eq('status', 'published')
-      .order('upvotes', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(0, 19);
     return data ?? [];
   },
-  ['questions-default-hot'],
+  ['questions-default-newest'],
   { revalidate: 60, tags: ['questions'] },
 );
 
@@ -160,7 +160,7 @@ export default async function QuestionsPage() {
   //
   //  QuestionsClient default state (no URL params):
   //    categories=[], companies=[], difficulties=[], role=undefined,
-  //    search='', sort='Hot', limit=20, offset=0
+  //    search='', sort='Newest', limit=20, offset=0
   //
   //  Previous key used `category:'All'` — wrong; client uses `categories:[]`.
   //  That mismatch caused the HydrationBoundary cache to be ignored and the
@@ -173,7 +173,7 @@ export default async function QuestionsPage() {
         difficulties: [],
         role: undefined,
         search: '',
-        sort: 'Hot',
+        sort: 'Newest',
         limit: 20,
         offset: 0,
       }],
