@@ -42,7 +42,7 @@ export default function QuestionsClient() {
     const d = searchParams.get('difficulty');
     return d ? d.split(',') : [];
   }, [searchParams]);
-  const sort = searchParams.get('sort') || 'Hot';
+  const sort = searchParams.get('sort') || 'Newest';
   const search = searchParams.get('q') || '';
 
   // Local state for search input — avoids a URL round-trip on every keystroke
@@ -74,7 +74,7 @@ export default function QuestionsClient() {
   const setSort = useCallback(
     (v: string) => {
       const params = new URLSearchParams(window.location.search);
-      if (v && v !== 'Hot') params.set('sort', v);
+      if (v && v !== 'Newest') params.set('sort', v);
       else params.delete('sort');
       router.replace(`/questions?${params.toString()}`, { scroll: false });
     },
