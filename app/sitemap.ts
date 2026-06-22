@@ -7,7 +7,7 @@
  */
 
 import type { MetadataRoute } from 'next';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabasePublicClient } from '@/lib/supabase/public';
 
 const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
 const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
@@ -59,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabasePublicClient();
     const { data: questions } = await supabase
       .from('questions')
       .select('id, updated_at')
