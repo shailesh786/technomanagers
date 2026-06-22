@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminModeration from '@/components/admin/AdminModeration';
 import { useFlaggedCount } from '@/hooks/useModeration';
@@ -507,6 +507,11 @@ function AdminQuestions() {
                       </td>
                       <td className="p-3 text-right whitespace-nowrap">
                         <Button size="icon" variant="ghost" onClick={() => { setEditQuestion(q); setShowForm(true); }}><Pencil className="h-4 w-4" /></Button>
+                        <Link href={`/questions/${q.id}?preview=1`} target="_blank" rel="noopener noreferrer">
+                          <Button size="icon" variant="ghost" title={q.status === 'draft' ? 'Preview draft' : 'View question'}>
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </Link>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button size="icon" variant="ghost"><Trash2 className="h-4 w-4 text-destructive" /></Button>
