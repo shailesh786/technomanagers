@@ -1,14 +1,23 @@
 /**
  * Questions listing page (Server Component)
  *
- * QuestionsClient uses ssr:false to avoid hydration mismatches from
- * useSearchParams(), Radix UI Popovers (useId()), and auth state — all of
- * which produce different output on the server vs the first client render.
+ * QuestionsClient is server-rendered (ssr: true, the default). The Suspense
+ * boundary around it handles useSearchParams() correctly in Next.js 14 App
+ * Router — the component renders server-side with the default empty-params
+ * state, and the HydrationBoundary pre-populates the TanStack Query cache so
+ * questions paint immediately with no loading flash.
  *
- * The server renders the loading skeleton; the client hydrates it cleanly,
- * then immediately swaps in QuestionsClient from the HydrationBoundary cache.
+ * Why ssr:false was removed:
+ *   With ssr:false, Google's Wave 1 HTML crawl saw only a loading skeleton —
+ *   zero question content. The page was flagged as thin content and
+ *   deprioritised for indexing. Removing ssr:false lets Google see the full
+ *   questions list in the initial HTML, directly in Wave 1.
  *
- * SEO: individual /questions/[id] pages are fully SSR'd for crawlers.
+ * Hydration:
+ *   - useSearchParams() inside Suspense is handled by Next.js App Router.
+ *   - Radix UI useId() mismatches are suppressed automatically in Next 14.
+ *   - Auth state: server renders unauthenticated state; client hydrates with
+ *     the real session — a standard pattern (brief cosmetic diff only).
  *
  * Performance:
  * - revalidate = 60  →  ISR: page is cached at the edge; only re-generated
@@ -46,10 +55,12 @@ function getAnonClient() {
   );
 }
 
-// ── ssr:false: skips server-rendering QuestionsClient ──────────────────────
+// Dynamic import keeps QuestionsClient code-split (separate JS chunk) so it
+// doesn't bloat the critical bundle. ssr:true (default) means it IS rendered
+// on the server — Google sees actual question content in the initial HTML.
 const QuestionsClient = dynamic(
   () => import('@/components/questions/QuestionsClient'),
-  { ssr: false, loading: () => <QuestionsLoading /> },
+  { loading: () => <QuestionsLoading /> },
 );
 
 export const metadata: Metadata = {
