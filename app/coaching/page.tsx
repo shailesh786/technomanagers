@@ -15,11 +15,13 @@ export const metadata: Metadata = {
   title: '1:1 Coaching | Technomanagers',
   description:
     'Get personalized 1:1 coaching from experienced Product Managers. Mock interviews, resume reviews, mentorship sessions, and masterclasses.',
+  alternates: { canonical: '/coaching' },
   openGraph: {
     title: '1:1 Coaching | Technomanagers',
     description:
       'Personalized PM coaching — mock interviews, resume reviews, and mentorship from industry experts.',
     type: 'website',
+    url: '/coaching',
   },
 };
 

@@ -91,10 +91,12 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   return {
     title,
     description,
+    alternates: { canonical: `/questions/${params.id}` },
     openGraph: {
       title,
       description,
       type: 'article',
+      url: `/questions/${params.id}`,
     },
   };
 }

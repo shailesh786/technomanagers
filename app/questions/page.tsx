@@ -67,11 +67,13 @@ export const metadata: Metadata = {
   title: 'PM Interview Questions | Technomanagers',
   description:
     'Browse and practice real product management interview questions from Google, Meta, Amazon, Microsoft, and more top tech companies.',
+  alternates: { canonical: '/questions' },
   openGraph: {
     title: 'PM Interview Questions | Technomanagers',
     description:
       'Practice with real PM interview questions from top tech companies.',
     type: 'website',
+    url: '/questions',
   },
 };
 

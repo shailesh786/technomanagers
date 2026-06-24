@@ -10,11 +10,13 @@ export const metadata: Metadata = {
   title: 'Privacy Policy | Technomanagers',
   description:
     'How Technomanagers collects, uses, and protects your personal information across our interview prep, coaching, courses, events, and cohort programmes.',
+  alternates: { canonical: '/privacy' },
   openGraph: {
     title: 'Privacy Policy | Technomanagers',
     description:
       'How Technomanagers collects, uses, and protects your personal information.',
     type: 'website',
+    url: '/privacy',
   },
 };
 
