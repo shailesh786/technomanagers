@@ -84,11 +84,13 @@ export const metadata: Metadata = {
   title: 'Technomanagers — Crack Your PM Interview',
   description:
     'Practice with real product management interview questions from top tech companies. Get coached by industry experts.',
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'Technomanagers — Crack Your PM Interview',
     description:
       'Practice with real PM interview questions from Google, Meta, Amazon, and more.',
     type: 'website',
+    url: '/',
   },
 };
 

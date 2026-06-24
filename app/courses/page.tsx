@@ -15,11 +15,13 @@ export const metadata: Metadata = {
   title: 'PM Courses | Technomanagers',
   description:
     'Level up your product management skills with structured courses designed by industry experts.',
+  alternates: { canonical: '/courses' },
   openGraph: {
     title: 'PM Courses | Technomanagers',
     description:
       'Structured PM courses to sharpen your product strategy, execution, and interview skills.',
     type: 'website',
+    url: '/courses',
   },
 };
 
