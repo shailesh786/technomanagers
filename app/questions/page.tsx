@@ -1,20 +1,19 @@
 /**
  * Questions listing page (Server Component)
  *
- * QuestionsClient is server-rendered (ssr: true, the default). The Suspense
- * boundary around it handles useSearchParams() correctly in Next.js 14 App
- * Router — the component renders server-side with the default empty-params
- * state, and the HydrationBoundary pre-populates the TanStack Query cache so
+ * QuestionsClient is fully server-rendered. It reads URL filters via
+ * useLocationSearch() (hooks/useLocationSearch.ts) instead of next/navigation's
+ * useSearchParams() — useSearchParams() on a statically generated route makes
+ * Next 14 bail the ENTIRE page out to client rendering, shipping an empty
+ * <main> (zero crawlable content; question detail pages were orphaned).
+ * useLocationSearch() returns '' during SSG, so the default list — real cards
+ * with real <a href="/questions/[id]"> links — is baked into the static HTML,
+ * and the HydrationBoundary pre-populates the TanStack Query cache so
  * questions paint immediately with no loading flash.
  *
- * Why ssr:false was removed:
- *   With ssr:false, Google's Wave 1 HTML crawl saw only a loading skeleton —
- *   zero question content. The page was flagged as thin content and
- *   deprioritised for indexing. Removing ssr:false lets Google see the full
- *   questions list in the initial HTML, directly in Wave 1.
- *
  * Hydration:
- *   - useSearchParams() inside Suspense is handled by Next.js App Router.
+ *   - Filtered URLs (?role=…): server HTML shows the default list; the client
+ *     re-renders with filters right after hydration (brief, rare, acceptable).
  *   - Radix UI useId() mismatches are suppressed automatically in Next 14.
  *   - Auth state: server renders unauthenticated state; client hydrates with
  *     the real session — a standard pattern (brief cosmetic diff only).
@@ -32,9 +31,7 @@ import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
-import { Skeleton } from '@/components/ui/skeleton';
+import QuestionsClient from '@/components/questions/QuestionsClient';
 
 export const revalidate = 60; // ISR: regenerate at most every 60 seconds
 
@@ -55,13 +52,12 @@ function getAnonClient() {
   );
 }
 
-// Dynamic import keeps QuestionsClient code-split (separate JS chunk) so it
-// doesn't bloat the critical bundle. ssr:true (default) means it IS rendered
-// on the server — Google sees actual question content in the initial HTML.
-const QuestionsClient = dynamic(
-  () => import('@/components/questions/QuestionsClient'),
-  { loading: () => <QuestionsLoading /> },
-);
+// QuestionsClient is server-rendered: it reads query params via
+// useLocationSearch() (NOT useSearchParams(), which would force this whole
+// statically-generated page into an empty client-rendered shell with zero
+// crawlable content). During SSG the hook returns '' → the default question
+// list renders into the static HTML from the hydrated query cache below —
+// real cards, real <a href="/questions/[id]"> links for Googlebot.
 
 export const metadata: Metadata = {
   title: 'PM Interview Questions | Technomanagers',
@@ -138,32 +134,6 @@ const getPopularCompanies = unstable_cache(
   { revalidate: 300, tags: ['questions'] },
 );
 
-// ── Loading skeleton ────────────────────────────────────────────────────────
-// Heights are sized to match actual QuestionCard to minimise CLS on swap.
-
-function QuestionsLoading() {
-  return (
-    <div className="container py-8 space-y-4">
-      <div className="h-8 w-1/3 bg-muted rounded animate-pulse" />
-      <div className="h-4 w-2/3 bg-muted rounded animate-pulse" />
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="rounded-xl border p-5 space-y-3 min-h-[130px]">
-          <div className="flex gap-2">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-5 w-16" />
-          </div>
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <div className="flex gap-3 pt-1">
-            <Skeleton className="h-4 w-12" />
-            <Skeleton className="h-4 w-12" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default async function QuestionsPage() {
@@ -206,13 +176,13 @@ export default async function QuestionsPage() {
     }),
   ]);
 
-  // HydrationBoundary must wrap Suspense (not be inside it) so the dehydrated
-  // cache state is emitted into the HTML before QuestionsClient renders.
+  // HydrationBoundary hydrates the query cache during render — server-side
+  // too — so QuestionsClient's useQuestions() finds the data synchronously
+  // and the full default list (with crawlable links) renders into the
+  // static HTML.
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<QuestionsLoading />}>
-        <QuestionsClient />
-      </Suspense>
+      <QuestionsClient />
     </HydrationBoundary>
   );
 }

@@ -21,8 +21,15 @@ import FooterWrapper from '@/components/layout/FooterWrapper';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import SignInGateModal from '@/components/questions/SignInGateModal';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+// ⚠️ Use the /react variants, NOT /next. The /next variants call
+// useSearchParams() internally, which throws BAILOUT_TO_CLIENT_SIDE_RENDERING
+// during static generation. That abort RACES the streaming render of the page:
+// on slower pages (/questions with 20 cards) the main content sometimes lost
+// the race and the prerendered HTML shipped an EMPTY <main> — zero crawlable
+// content, non-deterministically per build. The /react variants track page
+// views without useSearchParams (raw paths instead of route patterns).
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import '@/app/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────

@@ -18,6 +18,7 @@
  */
 
 import { cache } from 'react';
+import { notFound } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import type { Metadata } from 'next';
@@ -106,6 +107,15 @@ export default async function QuestionDetailPage({ params, searchParams }: Props
 
   // Bypass ISR for admin preview requests so the draft is always fresh.
   if (isPreview) noStore();
+
+  // Return a real HTTP 404 for non-existent/unpublished questions. Without
+  // this, dead URLs render an error shell with status 200 (a "soft 404") and
+  // Google indexes them as thin content. React.cache() dedupes this fetch
+  // with generateMetadata and the prefetch below — no extra DB round-trip.
+  const question = isPreview
+    ? await getQuestionForPreview(params.id)
+    : await getPublishedQuestion(params.id);
+  if (!question) notFound();
 
   const queryClient = new QueryClient();
 
