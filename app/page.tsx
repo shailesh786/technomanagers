@@ -33,14 +33,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import HeroSlideshow from '@/components/home/HeroSlideshow';
 import type { HeroSlide } from '@/types';
 
-// ── ssr:false: skips server-rendering FeaturedQuestionsSection ──────────────
-// Code-splits the component + all its hooks/imports into a separate JS chunk
-// that is fetched AFTER the hero section paints. The TanStack Query
-// HydrationBoundary still ships the dehydrated questions cache in the HTML, so
-// the section populates from cache the moment the chunk loads — no extra fetch.
+// ── Server-rendered + code-split FeaturedQuestionsSection ───────────────────
+// dynamic() keeps the component's JS in a separate chunk (doesn't bloat the
+// critical bundle), while ssr:true (the default) server-renders its HTML so
+// question card links (<a href="/questions/[id]">) are crawlable by Googlebot.
+// Previously ssr:false meant the static HTML contained ZERO links to question
+// detail pages, orphaning them for search. The section hydrates from the
+// dehydrated query cache below — no extra fetch, no skeleton on first paint.
+// The `loading` fallback only shows during client-side navigations.
 const FeaturedQuestionsSection = dynamic(
   () => import('@/components/home/FeaturedQuestionsSection'),
-  { ssr: false, loading: () => <FeaturedQuestionsLoading /> },
+  { loading: () => <FeaturedQuestionsLoading /> },
 );
 
 function FeaturedQuestionsLoading() {

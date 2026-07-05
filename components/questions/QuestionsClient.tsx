@@ -2,7 +2,8 @@
 
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useLocationSearch } from '@/hooks/useLocationSearch';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,11 @@ import type { Question } from '@/types';
 const PAGE_SIZE = 20;
 
 export default function QuestionsClient() {
-  const searchParams = useSearchParams();
+  // NOT next/navigation's useSearchParams() — that forces the whole
+  // statically-generated page to render an empty HTML shell (zero crawlable
+  // content). This hook returns '' during SSG so the default list is baked
+  // into the static HTML, then live params after hydration. See the hook doc.
+  const searchParams = useLocationSearch();
   const router = useRouter();
 
   const [allQuestions, setAllQuestions] = useState<Question[]>([]);

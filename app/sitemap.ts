@@ -9,6 +9,11 @@
 import type { MetadataRoute } from 'next';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
 
+// ISR: regenerate the sitemap at most once an hour. Without this the sitemap
+// is baked once at build time and goes stale — questions published after the
+// last deploy never appear until the next deployment.
+export const revalidate = 3600;
+
 const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
 const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
 
