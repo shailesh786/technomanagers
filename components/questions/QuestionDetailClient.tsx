@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useQuestion, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
-import { useQuestionLikeCount, useUserLikedQuestion, useToggleQuestionLike } from '@/hooks/useLikes';
+import { useUserLikedQuestion, useToggleQuestionLike } from '@/hooks/useLikes';
 import { useCommentCount } from '@/hooks/useComments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
@@ -37,8 +37,10 @@ export default function QuestionDetailClient({ id }: Props) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
 
-  // Likes
-  const { data: likeCount = 0 } = useQuestionLikeCount(id);
+  // Likes — the displayed count is question.upvotes (the counter column),
+  // the SAME source the list/homepage cards render. Previously this page
+  // counted question_likes rows directly, which diverged from the cards
+  // whenever the counter and the rows fell out of sync.
   const { data: userLiked = false } = useUserLikedQuestion(id, user?.id);
   const toggleLike = useToggleQuestionLike();
 
@@ -139,7 +141,7 @@ export default function QuestionDetailClient({ id }: Props) {
             <TooltipTrigger asChild>
               <Button variant="outline" size="sm" onClick={handleLike} className="gap-1.5">
                 <Heart className={`h-4 w-4 ${userLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                {likeCount}
+                {question.upvotes ?? 0}
               </Button>
             </TooltipTrigger>
             {!user && <TooltipContent>Sign in to like</TooltipContent>}

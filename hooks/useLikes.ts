@@ -5,21 +5,6 @@ import type { Question } from '@/types';
 
 const supabase = createSupabaseBrowserClient();
 
-export function useQuestionLikeCount(questionId: string) {
-  return useQuery({
-    queryKey: ['question_like_count', questionId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('question_likes')
-        .select('id', { count: 'exact', head: true })
-        .eq('question_id', questionId);
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!questionId,
-  });
-}
-
 export function useUserLikedQuestion(questionId: string, userId?: string) {
   return useQuery({
     queryKey: ['user_liked_question', questionId, userId],
@@ -37,22 +22,63 @@ export function useUserLikedQuestion(questionId: string, userId?: string) {
   });
 }
 
+/**
+ * Toggle like from the question DETAIL page.
+ *
+ * ⚠️ MUST go through the toggle_question_like RPC — the same write path the
+ * list cards use (useToggleLike below). A previous version did a raw
+ * insert/delete on question_likes here, which never updated the
+ * questions.upvotes counter, so like counts on the detail page and the list
+ * cards drifted apart permanently.
+ *
+ * Optimistic: flips the heart state and the upvotes counter caches
+ * immediately, rolls back on error.
+ */
 export function useToggleQuestionLike() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ questionId, userId, liked }: { questionId: string; userId: string; liked: boolean }) => {
-      if (liked) {
-        const { error } = await supabase.from('question_likes').delete().eq('question_id', questionId).eq('user_id', userId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('question_likes').insert({ question_id: questionId, user_id: userId });
-        if (error) throw error;
+    mutationFn: async ({ questionId }: { questionId: string; userId: string; liked: boolean }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc('toggle_question_like', {
+        p_question_id: questionId,
+      });
+      if (error) throw error;
+      return data as { liked: boolean };
+    },
+    onMutate: async ({ questionId, userId, liked }) => {
+      const delta = liked ? -1 : 1;
+
+      // Heart fill state (detail page reads this key)
+      qc.setQueryData(['user_liked_question', questionId, userId], !liked);
+
+      // Upvote counter — detail cache and every cached list
+      qc.setQueryData<Question>(['question', questionId], (old) =>
+        old ? { ...old, upvotes: Math.max(0, (old.upvotes ?? 0) + delta) } : old,
+      );
+      qc.setQueriesData<Question[]>(
+        { queryKey: ['questions'], exact: false },
+        (old) =>
+          old?.map((q) =>
+            q.id === questionId ? { ...q, upvotes: Math.max(0, (q.upvotes ?? 0) + delta) } : q,
+          ),
+      );
+
+      return { questionId, userId, liked };
+    },
+    onError: (_err, vars, context) => {
+      // Roll back the optimistic flips and refetch the counters
+      if (context) {
+        qc.setQueryData(['user_liked_question', context.questionId, context.userId], context.liked);
       }
+      qc.invalidateQueries({ queryKey: ['question', vars.questionId] });
+      qc.invalidateQueries({ queryKey: ['questions'] });
+      toast.error('Failed to update like. Please try again.');
     },
     onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ['question_like_count', vars.questionId] });
+      // Sync the other caches that track the user's liked set
       qc.invalidateQueries({ queryKey: ['user_liked_question', vars.questionId] });
       qc.invalidateQueries({ queryKey: ['user_liked_questions'] });
+      qc.invalidateQueries({ queryKey: ['user_liked_question_ids'] });
     },
   });
 }
@@ -183,7 +209,6 @@ export function useToggleLike() {
     onSuccess: (_data, { questionId }) => {
       // Sync per-question state used by the detail page
       qc.invalidateQueries({ queryKey: ['user_liked_question', questionId] });
-      qc.invalidateQueries({ queryKey: ['question_like_count', questionId] });
     },
   });
 }
