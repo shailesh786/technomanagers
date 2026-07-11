@@ -19,7 +19,7 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { ThumbsUp, Bookmark, BookmarkCheck, Lock } from 'lucide-react';
+import { ThumbsUp, Bookmark, BookmarkCheck, Lock, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
 import { cn } from '@/lib/utils';
@@ -121,6 +121,18 @@ export default function QuestionCard({
           )}
           <span>{isSaved ? 'Saved' : 'Save'}</span>
         </button>
+        {/* Community answers count — from the question_comments(count) embed.
+            Conditional so any data path without the embed degrades gracefully. */}
+        {typeof question.comment_count === 'number' && (
+          <a
+            href={`/questions/${question.id}#comments-section`}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-secondary transition-colors"
+            aria-label={`${question.comment_count} community answers`}
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>{question.comment_count}</span>
+          </a>
+        )}
 
         {showLock && (
           <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">

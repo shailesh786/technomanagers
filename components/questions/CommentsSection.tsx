@@ -43,7 +43,7 @@ export default function CommentsSection({ questionId }: CommentsSectionProps) {
       <div className="flex items-center justify-between">
         <h2 className="font-heading font-bold text-lg flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
-          Discussion ({commentCount})
+          Community Answers ({commentCount})
         </h2>
         <div className="flex gap-2 text-sm">
           <button
@@ -83,7 +83,7 @@ export default function CommentsSection({ questionId }: CommentsSectionProps) {
                 />
                 <div className="flex justify-end">
                   <Button onClick={handlePost} disabled={addComment.isPending || !commentText.trim()}>
-                    Post Comment
+                    Post Answer
                   </Button>
                 </div>
               </div>
@@ -101,7 +101,7 @@ export default function CommentsSection({ questionId }: CommentsSectionProps) {
                 onClick={() => setGateOpen(true)}
                 className="text-sm font-medium text-primary hover:underline"
               >
-                Sign in to join the discussion
+                Sign in to share your answer
               </button>
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function CommentsSection({ questionId }: CommentsSectionProps) {
 
       {comments.length === 0 && (
         <p className="text-center text-muted-foreground text-sm py-8">
-          No comments yet. Be the first to share your thoughts!
+          No answers yet. Be the first to share your approach!
         </p>
       )}
 
