@@ -32,6 +32,7 @@ import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import QuestionsClient from '@/components/questions/QuestionsClient';
+import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
 
 export const revalidate = 60; // ISR: regenerate at most every 60 seconds
 
@@ -81,11 +82,13 @@ const getDefaultQuestions = unstable_cache(
     const supabase = getAnonClient();
     const { data } = await supabase
       .from('questions')
-      .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
+      .select(QUESTION_LIST_SELECT)
       .eq('status', 'published')
+      // count only non-deleted comments — must match useQuestions()/useCommentCount()
+      .is('question_comments.deleted_at', null)
       .order('created_at', { ascending: false })
       .range(0, 19);
-    return data ?? [];
+    return flattenCommentCount(data ?? []);
   },
   ['questions-default-newest'],
   { revalidate: 60, tags: ['questions'] },

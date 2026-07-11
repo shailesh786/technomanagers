@@ -24,6 +24,7 @@ import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
+import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
@@ -119,11 +120,13 @@ const getHotQuestions = unstable_cache(
     );
     const { data } = await supabase
       .from('questions')
-      .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
+      .select(QUESTION_LIST_SELECT)
       .eq('status', 'published')
+      // count only non-deleted comments — must match useQuestions()/useCommentCount()
+      .is('question_comments.deleted_at', null)
       .order('upvotes', { ascending: false })
       .range(0, 19);
-    return data ?? [];
+    return flattenCommentCount(data ?? []);
   },
   ['hot-questions'],
   { revalidate: 300, tags: ['questions'] },

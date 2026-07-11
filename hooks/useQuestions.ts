@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Question } from '@/types';
+import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
 
 const supabase = createSupabaseBrowserClient();
 
@@ -30,8 +31,10 @@ export function useQuestions(filters?: {
     queryFn: async () => {
       let query = supabase
         .from('questions')
-        .select('id, question_text, company, category, tags, difficulty, role, status, upvotes, created_at')
-        .eq('status', 'published');
+        .select(QUESTION_LIST_SELECT)
+        .eq('status', 'published')
+        // count only non-deleted comments — must match useCommentCount()
+        .is('question_comments.deleted_at', null);
 
       // Homepage single-pill filter
       if (filters?.category && filters.category !== 'All') {
@@ -73,7 +76,7 @@ export function useQuestions(filters?: {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Question[];
+      return flattenCommentCount(data ?? []) as unknown as Question[];
     },
   });
 }

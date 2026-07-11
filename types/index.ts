@@ -22,6 +22,8 @@ export interface Question {
   upvotes: number | null;
   created_at: string | null;
   updated_at: string | null;
+  /** Non-deleted comment count — present on list queries (question_comments(count) embed). */
+  comment_count?: number;
 }
 
 export interface Course {
