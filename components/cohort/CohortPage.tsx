@@ -19,7 +19,7 @@ import { useCohortSettings } from '@/hooks/useCohortSettings';
 import {
   ArrowRight, Check, X, Calendar, Clock, Video, Monitor, Mic, Trophy,
   Briefcase, TrendingUp, Code2, GraduationCap, Route, Puzzle, ChevronDown,
-  MessageCircle, Users, BookOpen, Award,
+  MessageCircle, Users, BookOpen, Award, ExternalLink, ChevronRight,
 } from 'lucide-react';
 
 const APPLY_URL = 'https://share-na2.hsforms.com/1vL9J0C6rR9yhuOz54UhLog41clik';
@@ -455,6 +455,10 @@ export default function CohortPage() {
   const { data: cohortSettings } = useCohortSettings();
   const applyUrl = cohortSettings?.apply_url || APPLY_URL;
   const waUrl = cohortSettings?.whatsapp_url || WA_URL;
+  // Optional link to the externally hosted "current cohort progress" page.
+  // Unlike the two CTAs above there is no hardcoded fallback: when the admin
+  // leaves it empty, every progress placement on this page is hidden.
+  const progressUrl = cohortSettings?.progress_url || '';
 
   const stats = [
     ['12', 'Weeks Live'], ['45', 'Live Sessions'], ['8h', 'Per Week'],
@@ -462,7 +466,7 @@ export default function CohortPage() {
   ];
 
   return (
-    <div style={{ ...body, color: C.text }} className="pb-24 md:pb-0">
+    <div style={{ ...body, color: C.text }} className={progressUrl ? 'pb-40 lg:pb-0' : 'pb-24 lg:pb-0'}>
       {/* HERO */}
       <section
         className="relative overflow-hidden"
@@ -526,6 +530,19 @@ export default function CohortPage() {
               <CTAPrimary href={applyUrl} light>Apply Now</CTAPrimary>
               <CTASecondary href={waUrl}>Ask on WhatsApp</CTASecondary>
             </div>
+            {progressUrl && (
+              <a href={progressUrl} target="_blank" rel="noopener noreferrer"
+                 className="inline-flex items-center gap-2.5 self-start text-[15px] font-medium transition hover:opacity-80"
+                 style={{ ...body, color: 'rgba(255,255,255,0.75)' }}>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.12em]"
+                      style={{ ...heading, color: C.cyan }}>
+                  <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan }} />
+                  LIVE NOW
+                </span>
+                <span className="underline underline-offset-4 decoration-white/35">See what the current cohort is building</span>
+                <ExternalLink className="w-[15px] h-[15px]" />
+              </a>
+            )}
           </div>
           <div className="lg:col-span-2 hidden lg:block">
             <div
@@ -579,6 +596,25 @@ export default function CohortPage() {
           ))}
         </div>
       </section>
+
+      {/* LIVE COHORT PROGRESS STRIP */}
+      {progressUrl && (
+        <section style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, borderBottom: `1px solid ${C.border}` }}>
+          <div className={`${PAGE_WRAP} py-[18px] flex flex-wrap items-center gap-5`}>
+            <span className="inline-flex items-center gap-2 px-3 py-[5px] rounded-full text-[11px] font-bold tracking-[0.14em]"
+                  style={{ ...heading, background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.4)', color: '#7dd8f0' }}>
+              <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan }} />LIVE
+            </span>
+            <span className="text-[17px] font-semibold text-white" style={heading}>A cohort is running right now</span>
+            <span className="text-[15px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Weekly updates from inside the batch</span>
+            <a href={progressUrl} target="_blank" rel="noopener noreferrer"
+               className="md:ml-auto inline-flex items-center gap-2 px-[22px] py-[11px] rounded-full text-sm font-semibold text-white transition hover:bg-white/10"
+               style={{ ...heading, border: '1px solid rgba(255,255,255,0.35)', borderRadius: 100 }}>
+              Follow the progress <ArrowRight className="w-[15px] h-[15px]" />
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* MAIN + SIDEBAR */}
       <div className={`${PAGE_WRAP} py-16 grid lg:grid-cols-[1fr_340px] gap-10`}>
@@ -831,6 +867,23 @@ export default function CohortPage() {
                 </a>
               </div>
             </div>
+            {progressUrl && (
+              <a href={progressUrl} target="_blank" rel="noopener noreferrer"
+                 className="block rounded-2xl p-5 transition hover:shadow-md"
+                 style={{ background: C.cyanLight, border: `1px solid ${C.cyan}` }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan }} />
+                  <span className="text-[11px] font-bold tracking-[0.14em]" style={{ ...heading, color: C.cyanDark }}>LIVE COHORT</span>
+                </div>
+                <div className="text-base font-bold leading-snug mb-1.5" style={{ ...heading, color: C.text }}>See the cohort in progress</div>
+                <div className="text-sm leading-relaxed mb-3" style={{ ...body, color: C.body }}>
+                  Weekly updates, prototypes and discussions from the batch that&rsquo;s running now.
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ ...heading, color: C.cyanDark }}>
+                  Open progress page <ExternalLink className="w-[15px] h-[15px]" />
+                </span>
+              </a>
+            )}
             <div className="rounded-2xl p-5 space-y-3 text-sm" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
               {[
                 [Calendar, '12 weeks · Live cohort'],
@@ -881,6 +934,17 @@ export default function CohortPage() {
           </div>
         </div>
       </section>
+
+      {/* MOBILE COHORT PROGRESS RIBBON — sits directly above the fixed CTA bar */}
+      {progressUrl && (
+        <a href={progressUrl} target="_blank" rel="noopener noreferrer"
+           className="lg:hidden fixed left-0 right-0 bottom-[68px] z-50 flex items-center gap-2.5 px-4 py-3"
+           style={{ background: C.cyanLight, borderTop: `1px solid ${C.cyan}59` }}>
+          <span className="w-[7px] h-[7px] rounded-full animate-pulse shrink-0" style={{ background: C.cyan }} />
+          <span className="text-sm font-semibold" style={{ ...heading, color: C.cyanDark }}>See the current cohort in progress</span>
+          <ChevronRight className="w-4 h-4 ml-auto shrink-0" style={{ color: C.cyanDark }} />
+        </a>
+      )}
 
       {/* MOBILE FIXED BOTTOM CTA */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-3 flex gap-2"
