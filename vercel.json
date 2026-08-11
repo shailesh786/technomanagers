@@ -3,6 +3,14 @@
   "buildCommand": "next build",
   "outputDirectory": ".next",
   "regions": ["bom1"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "technomanagers.vercel.app" }],
+      "destination": "https://www.technomanagers.in/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

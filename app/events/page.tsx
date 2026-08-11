@@ -12,7 +12,8 @@ import { createSupabasePublicClient } from '@/lib/supabase/public';
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Upcoming Events | Technomanagers',
+  // No "| Technomanagers" suffix — the root layout's title.template appends it.
+  title: 'Upcoming Events',
   description:
     'Join our upcoming webinars, workshops, and live sessions with industry PM experts.',
   alternates: { canonical: '/events' },

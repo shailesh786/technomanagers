@@ -12,7 +12,8 @@ import { createSupabasePublicClient } from '@/lib/supabase/public';
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'PM Courses | Technomanagers',
+  // No "| Technomanagers" suffix — the root layout's title.template appends it.
+  title: 'PM Courses',
   description:
     'Level up your product management skills with structured courses designed by industry experts.',
   alternates: { canonical: '/courses' },
