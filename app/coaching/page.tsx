@@ -12,7 +12,8 @@ import { createSupabasePublicClient } from '@/lib/supabase/public';
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: '1:1 Coaching | Technomanagers',
+  // No "| Technomanagers" suffix — the root layout's title.template appends it.
+  title: '1:1 Coaching',
   description:
     'Get personalized 1:1 coaching from experienced Product Managers. Mock interviews, resume reviews, mentorship sessions, and masterclasses.',
   alternates: { canonical: '/coaching' },

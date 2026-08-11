@@ -73,7 +73,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   if (!question) {
     return {
-      title: 'Question Not Found | Technomanagers',
+      title: 'Question Not Found',
     };
   }
 
@@ -84,7 +84,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       ? `${question.question_text.slice(0, 70).trimEnd()}…`
       : question.question_text;
 
-  const title = `${shortText} | Technomanagers`;
+  // No "| Technomanagers" suffix — the root layout's title.template appends it
+  // to the <title> tag. og:title below doesn't use the template, so it stays bare.
+  const title = shortText;
   const description = companiesStr
     ? `PM interview question from ${companiesStr}. Difficulty: ${question.difficulty ?? 'N/A'}. Practice with real questions on Technomanagers.`
     : `PM interview question. Difficulty: ${question.difficulty ?? 'N/A'}. Practice with real questions on Technomanagers.`;

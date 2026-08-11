@@ -7,7 +7,15 @@
  */
 
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import ProfilePage from '@/components/profile/ProfilePage';
+
+// Personalised, auth-gated page — no SEO value. Keep it out of Google's index
+// so it can't be flagged as thin/duplicate content in Search Console.
+export const metadata: Metadata = {
+  title: 'Profile',
+  robots: { index: false, follow: false },
+};
 
 export default function Profile() {
   return (

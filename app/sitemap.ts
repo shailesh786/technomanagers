@@ -14,7 +14,7 @@ import { createSupabasePublicClient } from '@/lib/supabase/public';
 // last deploy never appear until the next deployment.
 export const revalidate = 3600;
 
-const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technomanagers.com';
+const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.technomanagers.in';
 const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

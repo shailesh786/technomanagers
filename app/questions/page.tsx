@@ -61,7 +61,8 @@ function getAnonClient() {
 // real cards, real <a href="/questions/[id]"> links for Googlebot.
 
 export const metadata: Metadata = {
-  title: 'PM Interview Questions | Technomanagers',
+  // No "| Technomanagers" suffix — the root layout's title.template appends it.
+  title: 'PM Interview Questions',
   description:
     'Browse and practice real product management interview questions from Google, Meta, Amazon, Microsoft, and more top tech companies.',
   alternates: { canonical: '/questions' },

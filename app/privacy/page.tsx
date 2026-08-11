@@ -7,7 +7,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Technomanagers',
+  // No "| Technomanagers" suffix — the root layout's title.template appends it.
+  title: 'Privacy Policy',
   description:
     'How Technomanagers collects, uses, and protects your personal information across our interview prep, coaching, courses, events, and cohort programmes.',
   alternates: { canonical: '/privacy' },
