@@ -20,7 +20,7 @@ export function useCohortSettings() {
     queryFn: async (): Promise<CohortSettings | null> => {
       const { data, error } = await supabase
         .from('cohort_settings')
-        .select('id, apply_url, whatsapp_url, created_at, updated_at')
+        .select('id, apply_url, whatsapp_url, progress_url, created_at, updated_at')
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle();
@@ -33,6 +33,7 @@ export function useCohortSettings() {
 export type CohortSettingsInput = {
   apply_url: string;
   whatsapp_url: string;
+  progress_url: string | null;
 };
 
 /**

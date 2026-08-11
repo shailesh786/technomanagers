@@ -1170,6 +1170,7 @@ function AdminCohortSettings() {
   const updateMut = useUpdateCohortSettings();
   const [applyUrl, setApplyUrl] = useState('');
   const [whatsappUrl, setWhatsappUrl] = useState('');
+  const [progressUrl, setProgressUrl] = useState('');
   const [initialized, setInitialized] = useState(false);
 
   // Seed the form once the settings row loads.
@@ -1177,6 +1178,7 @@ function AdminCohortSettings() {
     if (!initialized && settings) {
       setApplyUrl(settings.apply_url ?? '');
       setWhatsappUrl(settings.whatsapp_url ?? '');
+      setProgressUrl(settings.progress_url ?? '');
       setInitialized(true);
     }
   }, [settings, initialized]);
@@ -1184,7 +1186,7 @@ function AdminCohortSettings() {
   const save = async () => {
     if (!applyUrl.trim() || !whatsappUrl.trim()) return;
     try {
-      await updateMut.mutateAsync({ apply_url: applyUrl.trim(), whatsapp_url: whatsappUrl.trim() });
+      await updateMut.mutateAsync({ apply_url: applyUrl.trim(), whatsapp_url: whatsappUrl.trim(), progress_url: progressUrl.trim() || null });
       toast.success('Cohort links updated');
     } catch (e: any) {
       toast.error(e.message);
@@ -1196,7 +1198,7 @@ function AdminCohortSettings() {
       <div>
         <h2 className="font-heading font-extrabold text-2xl">Cohort Page</h2>
         <p className="text-sm text-muted-foreground">
-          Configure the &ldquo;Apply Now&rdquo; and &ldquo;Ask on WhatsApp&rdquo; button links on the cohort page.
+          Configure the &ldquo;Apply Now&rdquo;, &ldquo;Ask on WhatsApp&rdquo; and progress-page links on the cohort page.
           If left unset, the page falls back to the built-in defaults.
         </p>
       </div>
@@ -1222,6 +1224,17 @@ function AdminCohortSettings() {
               placeholder="https://api.whatsapp.com/send/?phone=..."
             />
             <p className="text-xs text-muted-foreground mt-1">The WhatsApp chat link (wa.me or api.whatsapp.com).</p>
+          </div>
+          <div className="border-t pt-4">
+            <label className="text-sm font-medium block mb-1">Cohort progress page URL</label>
+            <Input
+              value={progressUrl}
+              onChange={(e) => setProgressUrl(e.target.value)}
+              placeholder="https://..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Public page showing how the running cohort is going. Leave empty to hide the link on the cohort page.
+            </p>
           </div>
           <div className="flex justify-end">
             <Button

@@ -92,6 +92,7 @@ export interface CohortSettings {
   id: string;
   apply_url: string;
   whatsapp_url: string;
+  progress_url: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
