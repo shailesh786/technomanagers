@@ -41,6 +41,22 @@ describe('HeroPriorityBoard', () => {
     expect(screen.getAllByText('Title c')).toHaveLength(2);
   });
 
+  it('uses an h2 for the visible heading — the page h1 lives in app/page.tsx', () => {
+    render(<HeroPriorityBoard items={three} />);
+    expect(screen.getByRole('heading', { level: 2, name: 'Start here.' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+  });
+
+  it('preloads only the first card image (LCP) in each breakpoint variant', () => {
+    const withImages = three.map((i) => ({ ...i, image_url: `https://cdn.example/${i.id}.webp` }));
+    const { container } = render(<HeroPriorityBoard items={withImages} />);
+    const imgs = [...container.querySelectorAll('img')];
+    expect(imgs).toHaveLength(6); // 3 desktop + 3 mobile
+    const prioritized = imgs.filter((img) => img.dataset.priority === 'true');
+    expect(prioritized).toHaveLength(2); // card 1 in both variants, same URL → one preload
+    prioritized.forEach((img) => expect(img).toHaveAttribute('src', 'https://cdn.example/a.webp'));
+  });
+
   it('shows a counter and one dot per item, first dot active', () => {
     render(<HeroPriorityBoard items={three} />);
     expect(screen.getByText('1 / 3')).toBeInTheDocument();
