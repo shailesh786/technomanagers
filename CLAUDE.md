@@ -69,7 +69,7 @@ technomanagers/
 │   ├── useQuestions.ts            ← Questions list, upvote, save
 │   ├── useQuestionFacets.ts       ← Faceted filter option counts
 │   ├── useRoles.ts / useCompanies.ts / useCoaching.ts / useCourses.ts / useEvents.ts
-│   ├── useHeroSlides.ts           ← Hero slideshow (admin CRUD + public read)
+│   ├── useHeroItems.ts            ← Hero Priority Board items (admin CRUD + moves)
 │   └── useCohortSettings.ts       ← Cohort CTA config (admin editable, single row)
 │
 ├── lib/
@@ -147,7 +147,7 @@ There are four Supabase clients. Using the wrong one causes hard-to-debug bugs.
 1. `unstable_cache(() => { ... })` — Next 14 **throws** when `cookies()` is accessed inside a cached function. The throw is swallowed by `prefetchQuery`, so the cache ships empty and the client refetches everything.
 2. A page component that uses `export const revalidate = N` for ISR — any `cookies()` call in the render opts the whole route into **dynamic rendering**, silently defeating the ISR.
 
-Use `createSupabasePublicClient()` (from `@/lib/supabase/public`) for any data that is publicly readable via RLS. All published questions, active courses, coaching services, events, hero slides, and cohort settings are public to the anon role.
+Use `createSupabasePublicClient()` (from `@/lib/supabase/public`) for any data that is publicly readable via RLS. All published questions, active courses, coaching services, events, hero items, and cohort settings are public to the anon role.
 
 ```ts
 // ✅ CORRECT — inside unstable_cache or an ISR page
@@ -268,7 +268,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | File | Purpose |
 |------|---------|
 | `app/layout.tsx` | Root layout — Providers, Navbar, Footer |
-| `app/page.tsx` | Homepage — hero slideshow + featured questions (ISR, 300 s) |
+| `app/page.tsx` | Homepage — Hero Priority Board + featured questions (ISR, 300 s) |
 | `app/questions/page.tsx` | Questions listing — server prefetch + HydrationBoundary (ISR, 60 s) |
 | `app/questions/[id]/page.tsx` | Question detail — dynamic SSR, `generateMetadata`, React.cache dedup |
 | `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |
@@ -279,16 +279,19 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `lib/supabase/public.ts` | Cookieless anon client — use for all ISR/cached public reads |
 | `lib/supabase/middleware-client.ts` | Session-refresh client (middleware.ts only) |
 | `middleware.ts` | Edge: refreshes auth cookie on every request |
-| `components/home/HeroSlideshow.tsx` | Auto-scrolling hero slideshow (5 s interval); falls back to hardcoded slide |
+| `components/home/HeroPriorityBoard.tsx` | Homepage hero: static 3-card board (md+), manual scroll-snap slideshow below; renders nothing with 0 visible items |
+| `components/home/HeroCard.tsx` | Single hero card (white/navy surface, 16:9 image or gradient fallback); whole card is one link |
+| `components/admin/AdminHeroBoard.tsx` | Admin hero slots UI — 3 priority slots, visibility switches, editor with live preview, bench |
+| `lib/hero.ts` | Hero selection logic: visibility + IST schedule window + priority sort + cap 3; promotion planner |
 | `components/cohort/CohortPage.tsx` | Cohort page; reads CTA links from `cohort_settings` table via `useCohortSettings` |
 | `components/admin/AdminPage.tsx` | Full admin panel — tabs for all content types + homepage + cohort config |
 | `components/questions/QuestionsClient.tsx` | Client-side question list — filters, search, pagination, facets |
 | `components/questions/QuestionFilters.tsx` | Faceted filter dropdowns (role, company, category, difficulty) |
 | `hooks/useQuestions.ts` | Questions data hook — supports single/multi category, role, company, difficulty, sort |
 | `hooks/useQuestionFacets.ts` | Fetches all questions client-side to compute per-filter option counts |
-| `hooks/useHeroSlides.ts` | Hero slide CRUD hooks + public read hook |
+| `hooks/useHeroItems.ts` | Hero item CRUD, optimistic visibility toggle, slot promote/demote |
 | `hooks/useCohortSettings.ts` | Cohort CTA config read + upsert hooks |
-| `types/index.ts` | Shared TypeScript interfaces (Profile, Question, Course, HeroSlide, CohortSettings, etc.) |
+| `types/index.ts` | Shared TypeScript interfaces (Profile, Question, Course, HeroItem, CohortSettings, etc.) |
 | `supabase/migrations/` | All SQL migrations — never touch existing files |
 
 ---
@@ -307,7 +310,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `coaching_services` | Coaching service listings |
 | `courses` | Course listings |
 | `events` | Event listings |
-| `hero_slides` | Homepage hero slideshow slides (title, description, CTAs, display_order, is_active) |
+| `hero_items` | Hero Priority Board items — priority 1..3 = slotted, NULL = bench; visible flag, IST schedule window, 16:9 image, surface |
 | `cohort_settings` | Single-row config for cohort page CTA links (apply_url, whatsapp_url) |
 
 ### Key RPCs

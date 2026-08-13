@@ -11,7 +11,7 @@
  */
 
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import QueryProvider from '@/providers/QueryProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QuestionAccessProvider } from '@/contexts/QuestionAccessContext';
@@ -65,6 +65,15 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  // Tag chips, eyebrows and counters only — three small weight subsets, never
+  // an LCP candidate. 500 (captions), 600 (labels), 700 (tag chips).
+  weight: ['500', '600', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
 // ─── Default metadata (each SSR page overrides via generateMetadata) ─────────
 
 export const metadata: Metadata = {
@@ -108,7 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${dmSans.variable}`}
+      className={`${plusJakartaSans.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex flex-col min-h-screen">
         <QueryProvider>

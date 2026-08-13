@@ -23,7 +23,7 @@ export default {
       fontFamily: {
         heading: ['"Plus Jakarta Sans"', 'sans-serif'],
         body: ['"DM Sans"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        mono: ['var(--font-mono)', '"JetBrains Mono"', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -99,35 +99,11 @@ export default {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-        // Hero slideshow — directional slide transitions
-        "slide-in-from-right": {
-          from: { transform: "translateX(100%)" },
-          to:   { transform: "translateX(0)" },
-        },
-        "slide-in-from-left": {
-          from: { transform: "translateX(-100%)" },
-          to:   { transform: "translateX(0)" },
-        },
-        "slide-out-to-left": {
-          from: { transform: "translateX(0)" },
-          to:   { transform: "translateX(-100%)" },
-        },
-        "slide-out-to-right": {
-          from: { transform: "translateX(0)" },
-          to:   { transform: "translateX(100%)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
-        // Hero slideshow — entering slides
-        "slide-in-from-right": "slide-in-from-right 0.5s ease-in-out",
-        "slide-in-from-left":  "slide-in-from-left 0.5s ease-in-out",
-        // `forwards` keeps the exiting slide at its final off-screen position
-        // until React removes it from the DOM (~550 ms timeout in the component)
-        "slide-out-to-left":  "slide-out-to-left 0.5s ease-in-out forwards",
-        "slide-out-to-right": "slide-out-to-right 0.5s ease-in-out forwards",
       },
     },
   },

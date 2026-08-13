@@ -73,17 +73,28 @@ export interface Event {
   updated_at: string | null;
 }
 
-export interface HeroSlide {
+/**
+ * One row of the homepage Hero Priority Board.
+ * priority 1..3 = slotted (renders on the homepage), null = bench (never rendered).
+ * Schedule window (show_from/hide_after) is evaluated in Asia/Kolkata by lib/hero.ts.
+ */
+export interface HeroItem {
   id: string;
+  priority: number | null;
+  visible: boolean;
+  kind: string;
   title: string;
-  highlight: string | null;
-  description: string;
-  primary_cta_label: string | null;
-  primary_cta_href: string | null;
-  secondary_cta_label: string | null;
-  secondary_cta_href: string | null;
-  display_order: number | null;
-  is_active: boolean | null;
+  subtitle: string;
+  meta: string;
+  cta_label: string;
+  cta_href: string;
+  tag_label: string | null;
+  tag_color: string;
+  image_url: string | null;
+  icon: string;
+  surface: 'white' | 'navy';
+  show_from: string | null;
+  hide_after: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

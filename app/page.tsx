@@ -2,7 +2,7 @@
  * Home page (Server Component)
  *
  * Rendering strategy (mirrors /questions for optimal FCP/LCP):
- *   - HeroSlideshow: SSR'd — hero h1 is in the initial HTML, paints immediately.
+ *   - HeroPriorityBoard: SSR'd — hero heading is in the initial HTML, paints immediately.
  *   - FeaturedQuestionsSection: ssr:false — code-split into a separate JS chunk
  *     so it does NOT block the hero from painting. The questions data is still
  *     server-prefetched into TanStack Query's HydrationBoundary cache, so the
@@ -31,8 +31,10 @@ import dynamic from 'next/dynamic';
 import { ArrowRight, BookOpen, Users, Star, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import HeroSlideshow from '@/components/home/HeroSlideshow';
-import type { HeroSlide } from '@/types';
+import HeroPriorityBoard from '@/components/home/HeroPriorityBoard';
+import { createSupabasePublicClient } from '@/lib/supabase/public';
+import { selectVisibleHeroItems } from '@/lib/hero';
+import type { HeroItem } from '@/types';
 
 // ── Server-rendered + code-split FeaturedQuestionsSection ───────────────────
 // dynamic() keeps the component's JS in a separate chunk (doesn't bloat the
@@ -132,36 +134,37 @@ const getHotQuestions = unstable_cache(
   { revalidate: 300, tags: ['questions'] },
 );
 
-// Active hero slides for the homepage slideshow. Cached & tagged 'hero' so the
-// admin can flush it via revalidateTag('hero'). Error-resilient: if the table
-// doesn't exist yet (migration not applied) it returns [], so the homepage
-// renders the hardcoded fallback hero instead of crashing.
+// Slotted, visible hero items for the Hero Priority Board. Cached & tagged
+// 'hero' so admin edits can flush it via revalidateTag('hero'). Error-resilient:
+// if the table doesn't exist yet (migration not applied) it returns [], and the
+// homepage simply renders no hero section (the board has no fallback state).
 //
-// IMPORTANT: this uses a plain, cookieless anon client — NOT createSupabaseServerClient,
-// which reads cookies(). Next 14 throws when cookies() is accessed inside
+// IMPORTANT: cookieless public client — NOT createSupabaseServerClient, which
+// reads cookies(). Next 14 throws when cookies() is accessed inside
 // unstable_cache, so a cookie-based client here would silently always return [].
-// Active slides are public to the anon role via RLS, so no session is needed.
-const getHeroSlides = unstable_cache(
-  async (): Promise<HeroSlide[]> => {
+// Visible slotted items are public to the anon role via RLS.
+//
+// Schedule windows (show_from/hide_after) are re-evaluated on each ISR rebuild,
+// so a window boundary takes effect within the 5-minute revalidate cadence.
+const getHeroItems = unstable_cache(
+  async (): Promise<HeroItem[]> => {
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      );
+      const supabase = createSupabasePublicClient();
       const { data, error } = await supabase
-        .from('hero_slides')
+        .from('hero_items')
         .select(
-          'id, title, highlight, description, primary_cta_label, primary_cta_href, secondary_cta_label, secondary_cta_href, display_order, is_active, created_at, updated_at',
+          'id, priority, visible, kind, title, subtitle, meta, cta_label, cta_href, tag_label, tag_color, image_url, icon, surface, show_from, hide_after, created_at, updated_at',
         )
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .eq('visible', true)
+        .not('priority', 'is', null)
+        .order('priority', { ascending: true });
       if (error) return [];
-      return (data ?? []) as HeroSlide[];
+      return (data ?? []) as HeroItem[];
     } catch {
       return [];
     }
   },
-  ['hero-slides'],
+  ['hero-items'],
   { revalidate: 300, tags: ['hero'] },
 );
 
@@ -173,13 +176,16 @@ export default async function HomePage() {
     queryFn: getHotQuestions,
   });
 
-  const heroSlides = await getHeroSlides();
+  // Schedule-window filter runs at render time (per ISR rebuild), in addition
+  // to the visible/slotted filters already applied in the cached query.
+  const heroItems = selectVisibleHeroItems(await getHeroItems());
 
   return (
     <div>
-      {/* Hero slideshow — configurable via admin panel, falls back to a
-          hardcoded default slide when no active slides are configured. */}
-      <HeroSlideshow slides={heroSlides} />
+      {/* Hero Priority Board — three admin-configured cards, static on
+          desktop, manual one-up slideshow on mobile. Renders nothing when
+          no items are visible. */}
+      <HeroPriorityBoard items={heroItems} />
 
       {/* Featured Questions — pre-populated from server via HydrationBoundary.
            HydrationBoundary must wrap Suspense (not be inside it) so the
