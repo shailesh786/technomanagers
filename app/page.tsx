@@ -182,6 +182,12 @@ export default async function HomePage() {
 
   return (
     <div>
+      {/* Keyword page heading for search & screen readers. Lives here (not in
+          the board) so the page always has exactly one h1 — even when zero
+          hero items are visible and the board renders nothing. The board's
+          visible "Start here." heading is an h2, per the design spec. */}
+      <h1 className="sr-only">Crack Your Next Product Management Interview</h1>
+
       {/* Hero Priority Board — three admin-configured cards, static on
           desktop, manual one-up slideshow on mobile. Renders nothing when
           no items are visible. */}

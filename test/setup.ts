@@ -22,10 +22,14 @@ if (!window.matchMedia) {
 }
 
 // next/image needs the Next.js runtime for optimization — render a plain img.
+// `priority` is surfaced as data-priority so tests can assert LCP preloading.
 vi.mock('next/image', () => ({
   default: (props: Record<string, unknown>) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { fill, sizes, priority, ...rest } = props;
-    return React.createElement('img', rest as React.ImgHTMLAttributes<HTMLImageElement>);
+    return React.createElement('img', {
+      ...(rest as React.ImgHTMLAttributes<HTMLImageElement>),
+      ...(priority ? { 'data-priority': 'true' } : {}),
+    });
   },
 }));

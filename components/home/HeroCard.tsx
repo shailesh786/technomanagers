@@ -39,7 +39,17 @@ export const HERO_FALLBACK_GRADIENT =
  * CTA row is a text affordance, not a nested control. Used at both breakpoints:
  * mobile sizes are the defaults, desktop sizes kick in at `md:`.
  */
-export default function HeroCard({ item, className }: { item: HeroItem; className?: string }) {
+export default function HeroCard({
+  item,
+  className,
+  imagePriority = false,
+}: {
+  item: HeroItem;
+  className?: string;
+  /** True for the first (LCP-candidate) card: preloads the image eagerly
+   *  instead of next/image's default lazy loading. */
+  imagePriority?: boolean;
+}) {
   const navy = item.surface === 'navy';
   const Glyph = heroGlyph(item.icon);
   const isExternal = /^https?:\/\//i.test(item.cta_href);
@@ -53,6 +63,7 @@ export default function HeroCard({ item, className }: { item: HeroItem; classNam
             src={item.image_url}
             alt=""
             fill
+            priority={imagePriority}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 33vw"
           />

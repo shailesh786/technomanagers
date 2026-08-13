@@ -69,9 +69,10 @@ export default function HeroPriorityBoard({ items }: { items: HeroItem[] }) {
       <div className="pb-[30px] pt-[26px] md:container md:pb-12 md:pt-[52px]">
         {/* Header row */}
         <div className="mb-4 flex items-baseline justify-between px-5 md:mb-7 md:px-0">
-          <h1 className="font-heading text-[22px] font-bold tracking-[-0.02em] text-foreground md:text-[32px] md:tracking-[-0.022em]">
+          {/* h2, not h1 — the page's sr-only keyword h1 lives in app/page.tsx */}
+          <h2 className="font-heading text-[22px] font-bold tracking-[-0.02em] text-foreground md:text-[32px] md:tracking-[-0.022em]">
             Start here.
-          </h1>
+          </h2>
           <span className="hidden font-body text-sm text-muted-foreground md:inline">
             Three things worth your next hour
           </span>
@@ -86,8 +87,10 @@ export default function HeroPriorityBoard({ items }: { items: HeroItem[] }) {
         {/* Desktop — static three-up grid. Fewer than three items simply
             render fewer cards; the columns don't stretch. */}
         <div className="hidden grid-cols-3 gap-[22px] md:grid">
-          {items.map((item) => (
-            <HeroCard key={item.id} item={item} />
+          {items.map((item, i) => (
+            // priority only on the lead card: it's the LCP candidate; the
+            // identical mobile instance dedupes to the same preload.
+            <HeroCard key={item.id} item={item} imagePriority={i === 0} />
           ))}
         </div>
 
@@ -111,10 +114,11 @@ export default function HeroPriorityBoard({ items }: { items: HeroItem[] }) {
           aria-label={`Start here — ${items.length} item${items.length === 1 ? '' : 's'}`}
           className="flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-5 [scroll-padding-left:20px] scrollbar-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:hidden"
         >
-          {items.map((item) => (
+          {items.map((item, i) => (
             <HeroCard
               key={item.id}
               item={item}
+              imagePriority={i === 0}
               className="w-[calc(100vw-86px)] flex-none snap-start"
             />
           ))}
