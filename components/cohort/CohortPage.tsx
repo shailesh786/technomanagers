@@ -46,7 +46,9 @@ const C = {
 const heading: CSSProperties = {};
 const body: CSSProperties = {};
 
-const PAGE_WRAP = 'max-w-[1200px] mx-auto px-5 sm:px-8 md:px-10 lg:px-12';
+// 1400px matches the site-wide `container` cap (see tailwind.config.ts), so
+// cohort sections align with the navbar content on wide screens.
+const PAGE_WRAP = 'max-w-[1400px] mx-auto px-5 sm:px-8 md:px-10 lg:px-12';
 
 function CTAPrimary({ children, href, light = false }: { children: React.ReactNode; href: string; light?: boolean }) {
   return (
@@ -515,9 +517,9 @@ export default function CohortPage() {
             <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Not a recorded course. You build 10+ projects, get mentor feedback every week, and present on Demo Day.
             </p>
-            <div className="flex flex-wrap items-stretch gap-x-6 gap-y-4 py-2">
+            <div className="flex flex-wrap items-stretch gap-x-4 gap-y-4 py-2">
               {stats.map(([n, l], i) => (
-                <div key={i} className="flex items-center gap-6">
+                <div key={i} className="flex items-center gap-4">
                   <div>
                     <div className="text-2xl md:text-3xl font-extrabold" style={{ ...heading, color: C.cyan }}>{n}</div>
                     <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</div>
@@ -596,25 +598,6 @@ export default function CohortPage() {
           ))}
         </div>
       </section>
-
-      {/* LIVE COHORT PROGRESS STRIP */}
-      {progressUrl && (
-        <section style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, borderBottom: `1px solid ${C.border}` }}>
-          <div className={`${PAGE_WRAP} py-[18px] flex flex-wrap items-center gap-5`}>
-            <span className="inline-flex items-center gap-2 px-3 py-[5px] rounded-full text-[11px] font-bold tracking-[0.14em]"
-                  style={{ ...heading, background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.4)', color: '#7dd8f0' }}>
-              <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan }} />LIVE
-            </span>
-            <span className="text-[17px] font-semibold text-white" style={heading}>A cohort is running right now</span>
-            <span className="text-[15px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Weekly updates from inside the batch</span>
-            <a href={progressUrl} target="_blank" rel="noopener noreferrer"
-               className="md:ml-auto inline-flex items-center gap-2 px-[22px] py-[11px] rounded-full text-sm font-semibold text-white transition hover:bg-white/10"
-               style={{ ...heading, border: '1px solid rgba(255,255,255,0.35)', borderRadius: 100 }}>
-              Follow the progress <ArrowRight className="w-[15px] h-[15px]" />
-            </a>
-          </div>
-        </section>
-      )}
 
       {/* MAIN + SIDEBAR */}
       <div className={`${PAGE_WRAP} py-16 grid lg:grid-cols-[1fr_340px] gap-10`}>
