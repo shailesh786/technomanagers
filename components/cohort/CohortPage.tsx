@@ -515,9 +515,9 @@ export default function CohortPage() {
             <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Not a recorded course. You build 10+ projects, get mentor feedback every week, and present on Demo Day.
             </p>
-            <div className="flex flex-wrap items-stretch gap-x-6 gap-y-4 py-2">
+            <div className="flex flex-wrap items-stretch gap-x-4 gap-y-4 py-2">
               {stats.map(([n, l], i) => (
-                <div key={i} className="flex items-center gap-6">
+                <div key={i} className="flex items-center gap-4">
                   <div>
                     <div className="text-2xl md:text-3xl font-extrabold" style={{ ...heading, color: C.cyan }}>{n}</div>
                     <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</div>
