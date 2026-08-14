@@ -493,7 +493,7 @@ export default function CohortPage() {
           className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full blur-3xl opacity-20"
           style={{ background: C.cyan2 }}
         />
-        <div className={`${PAGE_WRAP} py-20 md:py-28 relative grid lg:grid-cols-5 gap-12 items-center`}>
+        <div className={`${PAGE_WRAP} py-12 md:py-14 relative grid lg:grid-cols-5 gap-12 items-center`}>
           <div className="lg:col-span-3 space-y-6">
             <span
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
