@@ -46,7 +46,9 @@ const C = {
 const heading: CSSProperties = {};
 const body: CSSProperties = {};
 
-const PAGE_WRAP = 'max-w-[1200px] mx-auto px-5 sm:px-8 md:px-10 lg:px-12';
+// 1400px matches the site-wide `container` cap (see tailwind.config.ts), so
+// cohort sections align with the navbar content on wide screens.
+const PAGE_WRAP = 'max-w-[1400px] mx-auto px-5 sm:px-8 md:px-10 lg:px-12';
 
 function CTAPrimary({ children, href, light = false }: { children: React.ReactNode; href: string; light?: boolean }) {
   return (
