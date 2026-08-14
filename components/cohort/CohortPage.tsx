@@ -599,25 +599,6 @@ export default function CohortPage() {
         </div>
       </section>
 
-      {/* LIVE COHORT PROGRESS STRIP */}
-      {progressUrl && (
-        <section style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, borderBottom: `1px solid ${C.border}` }}>
-          <div className={`${PAGE_WRAP} py-[18px] flex flex-wrap items-center gap-5`}>
-            <span className="inline-flex items-center gap-2 px-3 py-[5px] rounded-full text-[11px] font-bold tracking-[0.14em]"
-                  style={{ ...heading, background: 'rgba(0,180,216,0.15)', border: '1px solid rgba(0,180,216,0.4)', color: '#7dd8f0' }}>
-              <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan }} />LIVE
-            </span>
-            <span className="text-[17px] font-semibold text-white" style={heading}>A cohort is running right now</span>
-            <span className="text-[15px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Weekly updates from inside the batch</span>
-            <a href={progressUrl} target="_blank" rel="noopener noreferrer"
-               className="md:ml-auto inline-flex items-center gap-2 px-[22px] py-[11px] rounded-full text-sm font-semibold text-white transition hover:bg-white/10"
-               style={{ ...heading, border: '1px solid rgba(255,255,255,0.35)', borderRadius: 100 }}>
-              Follow the progress <ArrowRight className="w-[15px] h-[15px]" />
-            </a>
-          </div>
-        </section>
-      )}
-
       {/* MAIN + SIDEBAR */}
       <div className={`${PAGE_WRAP} py-16 grid lg:grid-cols-[1fr_340px] gap-10`}>
         <main className="space-y-24 min-w-0">
