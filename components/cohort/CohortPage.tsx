@@ -108,6 +108,13 @@ function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?:
   );
 }
 
+/**
+ * Marks a curriculum session as newly added. Append as the 3rd tuple element on
+ * any session in PHASES — the week card then renders a "NEW" pill on the session
+ * and an "N NEW SESSIONS" pill on the collapsed week header.
+ */
+const NEW = 'new';
+
 const PHASES = [
   {
     label: 'PHASE 1 · WEEKS 1–3',
@@ -115,36 +122,33 @@ const PHASES = [
     weeks: [
       {
         n: 'WEEK 1', title: 'AI Fundamentals & Algorithms', sub: 'Lock your capstone problem statement',
-        goal: "Build AI literacy from first principles. Understand what makes a product 'AI-powered' and lock in your capstone problem statement.",
+        goal: "Build AI literacy from first principles. Understand what makes a product ‘AI-powered’ and lock in your capstone problem statement.",
         sessions: [
-          ['Sat AM — AI Fundamentals', 'Supervised vs Unsupervised Learning, AI Flywheel, AI product taxonomy'],
-          ['Sat PM — Algorithms & Use Cases', 'Logistic Regression, Clustering, Decision Trees, SVM, Random Forest, XGBoost'],
-          ['Sun AM — Interview Prep 1', 'CIRCLES and STAR frameworks, clarifying questions'],
-          ['Sun PM — Office Hours', 'Q&A + AI Opportunity Canvas review'],
+          ['Sat 10:30 AM — AI Fundamentals', 'Supervised vs Unsupervised Learning, AI Flywheel, AI product taxonomy'],
+          ['Sat 2:30 PM — AI Algorithms & Use Cases', 'Logistic Regression, Clustering, Decision Trees, SVM, Random Forest, Bandits'],
+          ['Sun 10:30 AM — Interview Prep 1', 'First-Principles Thinking and Clarifying Questions'],
+          ['Sun 2:30 PM — Demo: Website Building', 'GitHub, Node.js, Vercel, Supabase, development to deployment'],
         ],
-        outcome: 'AI Opportunity Canvas + clarifying question bank (10 Qs) delivered.',
       },
       {
         n: 'WEEK 2', title: 'Generative AI & ML Systems', sub: 'LLMs, transformers, production pipelines',
         goal: 'Build a real mental model of how LLMs and ML production systems actually work.',
         sessions: [
-          ['Sat AM — Generative AI Deep Dive', 'Deep Learning, transformers, LLMs, Advanced Prompting'],
-          ['Sat PM — ML Systems & Pipelines', 'Training vs inference, feature stores, monitoring'],
-          ['Sun AM — Interview Prep 2', 'AI Product Sense questions'],
-          ['Sun PM — Office Hours', 'GenAI Q&A + pipeline review'],
+          ['Sat 10:30 AM — Generative AI Deep Dive', 'Deep Learning, transformers, LLMs, Advanced Prompting'],
+          ['Sat 2:30 PM — ML & LLM Systems & Pipelines', 'MLOps & LLMOps, monitoring, ML & LLM system architecture'],
+          ['Sun 10:30 AM — Interview Prep 2', 'AI Product Sense questions'],
+          ['Sun 2:30 PM — Demo: App Building', 'Native (Android & iOS) app building using AI', NEW],
         ],
-        outcome: 'GenAI feature defined. ML pipeline map + 2 product sense answers.',
       },
       {
         n: 'WEEK 3', title: 'GenAI Tools, AI PM Role & RAG', sub: 'Ship your first working RAG prototype',
         goal: 'Understand the modern AI stack and ship your first working RAG prototype.',
         sessions: [
-          ['Sat AM — GenAI Tools & AI PM Role', 'Tool landscape, AI product stack, What AI PMs do in 2026'],
-          ['Sat PM — RAG Deep Dive', 'RAG architecture, Vector DBs, embeddings, chunking, RAG vs fine-tuning'],
-          ['Sun AM — Interview Prep 3', 'Metrics RCA & Guesstimate'],
-          ['Sun PM — Demo Hours', 'Build RAG Prototype'],
+          ['Sat 10:30 AM — GenAI Tools & AI PM Role', 'Tool landscape, AI product stack, What AI PMs do in 2026'],
+          ['Sat 2:30 PM — RAG Deep Dive', 'RAG architecture, parsing, chunking, retrieval, reranking, metrics for RAG'],
+          ['Sun 10:30 AM — Interview Prep 3', 'Metrics RCA & Guesstimate for AI Products'],
+          ['Sun 2:30 PM — Demo: Building RAG', 'Build RAG Prototype'],
         ],
-        outcome: 'AI stack diagram + RAG prototype + 3 RCA / guesstimate answers.',
       },
     ],
   },
@@ -156,45 +160,41 @@ const PHASES = [
         n: 'WEEK 4', title: 'AI Agents: Concept + Hands-on Build', sub: 'Design and prototype your AI agent same day',
         goal: 'Design and prototype an AI agent — autonomy levels, tool use, memory, HITL.',
         sessions: [
-          ['Sat AM — AI Agents Deep Dive', 'Autonomy L1–L4, ReAct, multi-agent systems, MCP, A2A'],
-          ['Sat PM — Demo: Agent Hands-on Build', 'Using Claude, LangChain, or no-code tools'],
-          ['Sun AM — Interview Prep 4', 'Metrics NSM & Execution'],
-          ['Sun PM — Demo Hours', 'Agent Prototyping Continued'],
+          ['Sat 10:30 AM — AI Agents Deep Dive 1', 'AI agents, agentic architecture, multi-agentic workflows, agent failure & diagnosis'],
+          ['Sat 2:30 PM — Demo: Agent Hands-on Build', 'Using Claude, LangChain, or no-code tools'],
+          ['Sun 10:30 AM — Interview Prep 4', 'Metrics NSM & Execution'],
+          ['Sun 2:30 PM — AI Agents Deep Dive 2', 'MCP architecture, A2A architecture, economic frame & case studies'],
         ],
-        outcome: 'Agent architecture + prototype + NSM + execution answers.',
       },
       {
-        n: 'WEEK 5', title: 'Advanced Evals: Spec → Test → Launch Threshold', sub: "Write production evals, define 'good enough to ship'",
-        goal: "Write production evals, build a golden test set, decide 'good enough to ship.'",
+        n: 'WEEK 5', title: 'Advanced Evals: Spec → Test → Launch Threshold', sub: "Write production evals, define ‘good enough to ship’",
+        goal: "Write production evals, build a golden test set, decide ‘good enough to ship’.",
         sessions: [
-          ['Sat AM — Advanced Evals', 'BLEU, ROUGE, RAGAS, LLM-as-judge, eval pipeline tools'],
-          ['Sat PM — Demo: Evals Implementation', '10 golden test cases, launch threshold'],
-          ['Sun AM — Interview Prep 5', 'AI Strategy, Growth & Pricing'],
-          ['Sun PM — Office Hours', 'Eval Spec Review'],
+          ['Sat 10:30 AM — Advanced Evals', 'AI eval frameworks, LLM-as-judge, Cohen’s Kappa, eval scorecard'],
+          ['Sat 2:30 PM — Demo: Evals Implementation', 'AI eval demo, axial coding, open coding, eval prompting'],
+          ['Sun 10:30 AM — Interview Prep 5', 'Growth Strategy & Pricing Strategy questions'],
+          ['Sun 2:30 PM — Agent Harness', 'Architecture breakdown, prompt assembly, context management and session persistence', NEW],
         ],
-        outcome: 'Eval framework + golden test set (10 cases) + launch threshold + growth/pricing answers.',
       },
       {
         n: 'WEEK 6', title: 'Spec-Driven Dev & Live Build', sub: 'Spec → prototype → test → ship in one weekend',
         goal: 'Use Claude/AI tools to go from spec to working prototype in one weekend.',
         sessions: [
-          ['Sat AM — Spec-Driven Dev & Claude Skills', 'Spec anatomy, vibe coding, PRD-to-shipped'],
-          ['Sat PM — Demo: Spec → Prototype Live Build', ''],
-          ['Sun AM — Interview Prep 6', 'GTM & Market Entry'],
-          ['Sun PM — Demo Hours', 'Lovable Prototyping'],
+          ['Sat 10:30 AM — Spec-Driven Development', 'Spec anatomy, vibe coding, PRD-to-shipped'],
+          ['Sat 2:30 PM — Demo: Spec → Prototype Live Build', 'Product context, code context, spec-to-code generation for a feature'],
+          ['Sun 10:30 AM — Interview Prep 6', 'Market Entry & Go-to-Market interview questions'],
+          ['Sun 2:30 PM — Demo: Prototyping Using Tools', 'Lovable Prototyping'],
         ],
-        outcome: 'Full spec + working prototype + tested against evals + GTM answers.',
       },
       {
         n: 'WEEK 7', title: 'AI Product Design & UX Polish', sub: 'Trust signals, HITL, AI-native UX patterns',
         goal: 'Design for non-determinism. Polish prototype with trust signals, HITL, AI-native UX.',
         sessions: [
-          ['Sat AM — AI Product Design & UX', 'Non-determinism, HITL patterns, explainability UX'],
-          ['Sat PM — Demo: UX Audit & Prototype Polish', ''],
-          ['Sun AM — Interview Prep 8', 'Behavioural Interview'],
-          ['Sun PM — Demo Hours', 'N8N Agent Building'],
+          ['Sat 10:30 AM — AI Product Design & UX', 'Non-determinism, HITL patterns, Claude design demo'],
+          ['Sat 2:30 PM — Privacy & Security for AI Products', 'AI governance, data privacy, data residency, enterprise security', NEW],
+          ['Sun 10:30 AM — Interview Prep 7', 'Behavioural Interview preparation'],
+          ['Sun 2:30 PM — Demo: Agent Building Using Tools', 'n8n Agent Building'],
         ],
-        outcome: 'UX audit complete + prototype polished + mini case study finalised.',
       },
     ],
   },
@@ -206,34 +206,31 @@ const PHASES = [
         n: 'WEEK 8', title: 'AI Risks, Biases & Product Metrics', sub: 'Responsible AI + the full metrics stack',
         goal: 'Add the responsible-AI and analytics layer your capstone needs.',
         sessions: [
-          ['Sat AM — AI Risks & Biases', 'Bias types, hallucinations, EU AI Act, India DPDP Act'],
-          ['Sat PM — Product Metrics & AI Analytics', 'AI operational metrics, A/B testing AI, SQL + LLM'],
-          ['Sun AM — Interview Prep 8', 'AI General Questions'],
-          ['Sun PM — Office Hours', 'Risk + Metrics Q&A'],
+          ['Sat 10:30 AM — AI Risks & Biases', 'Bias types, hallucinations, EU AI Act, India DPDP Act'],
+          ['Sat 2:30 PM — Product Metrics & AI Analytics', 'Traces, AI operational metrics, A/B testing'],
+          ['Sun 10:30 AM — Interview Prep 8', 'AI General Questions'],
+          ['Sun 2:30 PM — Office Hours', 'Risk + Metrics Q&A'],
         ],
-        outcome: 'Risk audit + responsible AI section + full metrics stack + STAR bank (5 stories).',
       },
       {
         n: 'WEEK 9', title: 'GTM, Model Selection & Mock Interview Round 1', sub: 'Moats, model decisions, go-to-market + first full mock loop',
         goal: 'Lock GTM strategy, model selection, complete first 3-round mock interview loop.',
         sessions: [
-          ['Sat AM — GTM & Market Entry', 'PLG vs sales-led, competitive moats, launch playbook'],
-          ['Sat PM — Model Selection, Latency & Tradeoffs', 'Model comparison, cost-quality, build vs buy'],
-          ['Sun AM — Interview Prep 7', 'Evals, Model Selection & Tradeoffs'],
-          ['Sun PM — Mock Interview Round 1', 'Full 3-round loop (45–60 min), mentor scoring'],
+          ['Sat 10:30 AM — Winning in AI Markets', 'Strategy & competitive moats, launch playbook'],
+          ['Sat 2:30 PM — Model Selection, Latency & Tradeoffs', 'Model routing, KV caching, latency, quality, cost and reliability tradeoffs'],
+          ['Sun 10:30 AM — Interview Prep 9', 'Evals, Model Selection & Tradeoffs'],
+          ['Sun 2:30 PM — Mock Interview Round 1', 'Full 3-round loop (45–60 min), mentor scoring'],
         ],
-        outcome: 'GTM one-pager + model selection matrix + Mock Round 1 scores.',
       },
       {
         n: 'WEEK 10', title: 'Enterprise Case Studies & Mock Interview Round 2', sub: 'Pattern recognition + final interview mastery',
         goal: 'Analyse enterprise AI launches, complete both mock rounds, lock 15-answer story bank.',
         sessions: [
-          ['Sat AM — Enterprise AI Case Studies (B2C)', ''],
-          ['Sat PM — Enterprise AI Case Studies (B2B)', ''],
-          ['Sun AM — Mock Interview Round 2', 'Full 3-round loop, stricter scoring'],
-          ['Sun PM — Office Hours', 'Interview Debrief + Story Bank'],
+          ['Sat 10:30 AM — Enterprise AI Case Studies (B2C)', ''],
+          ['Sat 2:30 PM — Enterprise AI Case Studies (B2B)', ''],
+          ['Sun 10:30 AM — Mock Interview Round 2', 'Full 3-round loop, stricter scoring'],
+          ['Sun 2:30 PM — Office Hours', 'Interview Debrief + Story Bank'],
         ],
-        outcome: 'Case study teardown + 15-answer story bank. Both mock rounds complete.',
       },
     ],
   },
@@ -245,11 +242,10 @@ const PHASES = [
         n: 'WEEK 11', title: 'Capstone Refinement & Mock Demo', sub: 'Turn your capstone into a tight 8-minute story',
         goal: 'Turn capstone into tight 8-minute story. Rehearse until Demo-Day ready.',
         sessions: [
-          ['Sat AM — Capstone Refinement', 'Structure, peer review with scoring rubric'],
-          ['Sat PM — Mock Demo Presentations', '5 min each + feedback'],
-          ['Sun AM — Final Polish + Rehearsal', ''],
+          ['Sat 10:30 AM — Capstone Refinement', 'Structure, peer review with scoring rubric'],
+          ['Sat 2:30 PM — Mock Demo Presentations', '5 min each + feedback'],
+          ['Sun 10:30 AM — Final Polish + Rehearsal', ''],
         ],
-        outcome: 'Full deck (10–12 slides) + demo video + mock demo delivered.',
       },
       {
         n: 'WEEK 12', title: '🎤 Demo Day', sub: 'Live presentation · Portfolio published · Certificate awarded',
@@ -258,9 +254,8 @@ const PHASES = [
         sessions: [
           ['Demo Day Session 1', '8-min capstone + 5-min Q&A + scoring'],
           ['Demo Day Session 2', 'Remaining presentations + Best Project awards + speed interviews'],
-          ['Wrap-up', 'Portfolio published, LinkedIn post, certificate, alumni community, accountability partner'],
+          ['Wrap-up', 'Portfolio published, LinkedIn post, certificate, alumni community'],
         ],
-        outcome: '✅ COURSE COMPLETE. Portfolio-ready capstone delivered. Interview answers polished. AI PM job-ready.',
       },
     ],
   },
@@ -301,7 +296,6 @@ const INCLUDED = [
   'Certificate of completion',
   'Async course access + alumni community + job board',
   'All session recordings + bonus content vault',
-  'Accountability partner for post-cohort job search',
 ];
 
 const OUTCOMES = [
@@ -386,14 +380,15 @@ const COMPARISON: Array<[string, string, string]> = [
   ['Strategy & depth classes', '✕', 'GTM, AI Pricing, Model Selection, Latency, AI Safety, AI Analytics, AI ROI'],
   ['SDD + AI Agents + UX', '✕', 'Spec-Driven Development, Agents deep dive (MCP, A2A), UI/UX for AI'],
   ['AI Case Studies (B2C + B2B)', 'PDF book only', '4 hrs of live case study discussion with frameworks'],
-  ['Tools: N8N, Claude Skills, Lovable', 'Lovable demo only', 'Hands-on with all three + deployment'],
-  ['Peer community', '✕', 'Alumni network + job board + accountability partner'],
+  ['Tools: n8n, Claude Skills, Lovable', 'Lovable demo only', 'Hands-on with all three + deployment'],
+  ['Peer community', '✕', 'Alumni network + job board'],
   ['Best for', 'Learning AI PM concepts at your own speed', 'Getting job-ready with proof of work + portfolio'],
 ];
 
 function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boolean } }) {
   const [open, setOpen] = useState(false);
   const highlight = (w as any).highlight;
+  const newCount = (w.sessions as string[][]).filter(s => s[2] === NEW).length;
   return (
     <div
       className="rounded-2xl overflow-hidden transition"
@@ -410,6 +405,14 @@ function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boole
           <div className="font-bold text-base md:text-lg" style={{ ...heading, color: C.text }}>{w.title}</div>
           <div className="text-sm italic" style={{ ...body, color: C.body }}>{w.sub}</div>
         </div>
+        {newCount > 0 && (
+          <span
+            className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 whitespace-nowrap"
+            style={{ ...heading, background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}
+          >
+            {newCount} NEW SESSION{newCount > 1 ? 'S' : ''}
+          </span>
+        )}
         <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: C.body }} />
       </button>
       {open && (
@@ -420,18 +423,33 @@ function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boole
             </div>
           )}
           <div className="grid md:grid-cols-2 gap-3">
-            {w.sessions.map(([t, d]: [string, string], i: number) => (
-              <div key={i} className="p-4 rounded-xl" style={{ border: `1px solid ${C.border}` }}>
-                <div className="font-semibold text-sm mb-1" style={{ ...heading, color: C.text }}>{t}</div>
-                {d && <div className="text-sm" style={{ ...body, color: C.body }}>{d}</div>}
-              </div>
-            ))}
+            {(w.sessions as string[][]).map(([t, d, flag]: string[], i: number) => {
+              const isNew = flag === NEW;
+              return (
+                <div
+                  key={i}
+                  className="p-4 rounded-xl"
+                  style={{
+                    border: `${isNew ? 2 : 1}px solid ${isNew ? C.cyan : C.border}`,
+                    background: isNew ? 'rgba(224,247,250,0.45)' : 'transparent',
+                  }}
+                >
+                  <div className="font-semibold text-sm mb-1 flex items-center gap-2 flex-wrap" style={{ ...heading, color: C.text }}>
+                    <span>{t}</span>
+                    {isNew && (
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                        style={{ background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}
+                      >
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                  {d && <div className="text-sm" style={{ ...body, color: C.body }}>{d}</div>}
+                </div>
+              );
+            })}
           </div>
-          {w.outcome && (
-            <div className="p-4 rounded-xl text-sm" style={{ background: '#fef3c7', color: '#78350f', ...body }}>
-              <span className="font-bold" style={heading}>Milestone · </span>{w.outcome}
-            </div>
-          )}
         </div>
       )}
     </div>
