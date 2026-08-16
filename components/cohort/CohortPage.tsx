@@ -620,6 +620,29 @@ export default function CohortPage() {
       {/* MAIN + SIDEBAR */}
       <div className={`${PAGE_WRAP} py-16 grid lg:grid-cols-[1fr_340px] gap-10`}>
         <main className="space-y-24 min-w-0">
+          {/* CURRICULUM */}
+          <section id="curriculum">
+            <Eyebrow>— 12-WEEK CURRICULUM</Eyebrow>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Week-by-week breakdown</h2>
+            <p className="text-lg mb-10" style={{ color: C.body }}>
+              Saturdays + Sundays · 4 sessions/week (10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST) · 8 hrs/week · Weeks 1–10
+            </p>
+            <div className="space-y-10">
+              {PHASES.map((p, i) => (
+                <div key={i} className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap" style={{ ...heading, background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}>{p.label}</span>
+                    <div className="h-px flex-1" style={{ background: C.border }} />
+                    <span className="italic text-sm md:text-base" style={{ ...body, color: C.body }}>{p.name}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {p.weeks.map((w, j) => <WeekCard key={j} w={w as any} />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* WHO */}
           <section id="who">
             <Eyebrow>— WHO THIS IS FOR</Eyebrow>
@@ -744,29 +767,6 @@ export default function CohortPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
-
-          {/* CURRICULUM */}
-          <section id="curriculum">
-            <Eyebrow>— 12-WEEK CURRICULUM</Eyebrow>
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Week-by-week breakdown</h2>
-            <p className="text-lg mb-10" style={{ color: C.body }}>
-              Saturdays + Sundays · 4 sessions/week (10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST) · 8 hrs/week · Weeks 1–10
-            </p>
-            <div className="space-y-10">
-              {PHASES.map((p, i) => (
-                <div key={i} className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <span className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap" style={{ ...heading, background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}>{p.label}</span>
-                    <div className="h-px flex-1" style={{ background: C.border }} />
-                    <span className="italic text-sm md:text-base" style={{ ...body, color: C.body }}>{p.name}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {p.weeks.map((w, j) => <WeekCard key={j} w={w as any} />)}
-                  </div>
-                </div>
-              ))}
             </div>
           </section>
 
