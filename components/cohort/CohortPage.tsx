@@ -631,6 +631,23 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
             </div>
           </section>
 
+          {/* REVIEWS — admin-managed wall (see components/cohort/CohortTestimonials).
+              Rows arrive from the ISR-cached server fetch in app/cohort/page.tsx;
+              with none published the section drops out entirely rather than
+              rendering an empty heading. */}
+          {testimonials.length > 0 && (
+            <section id="reviews">
+              <Eyebrow>— REVIEWS &amp; TESTIMONIALS</Eyebrow>
+              <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>
+                What our <span className="italic font-normal" style={{ ...body, color: C.cyan }}>students</span> are saying
+              </h2>
+              <p className="text-lg mb-8" style={{ color: C.body }}>
+                Real feedback from students who&apos;ve learned with Shailesh across courses, YouTube, mentorship, and 1:1 coaching.
+              </p>
+              <CohortTestimonials items={testimonials} />
+            </section>
+          )}
+
           {/* WHO */}
           <section id="who">
             <Eyebrow>— WHO THIS IS FOR</Eyebrow>
@@ -649,23 +666,6 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               ))}
             </div>
           </section>
-
-          {/* REVIEWS — admin-managed wall (see components/cohort/CohortTestimonials).
-              Rows arrive from the ISR-cached server fetch in app/cohort/page.tsx;
-              with none published the section drops out entirely rather than
-              rendering an empty heading. */}
-          {testimonials.length > 0 && (
-            <section id="reviews">
-              <Eyebrow>— REVIEWS &amp; TESTIMONIALS</Eyebrow>
-              <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>
-                What our <span className="italic font-normal" style={{ ...body, color: C.cyan }}>students</span> are saying
-              </h2>
-              <p className="text-lg mb-8" style={{ color: C.body }}>
-                Real feedback from students who&apos;ve learned with Shailesh across courses, YouTube, mentorship, and 1:1 coaching.
-              </p>
-              <CohortTestimonials items={testimonials} />
-            </section>
-          )}
 
           {/* COMPARISON */}
           <section>
