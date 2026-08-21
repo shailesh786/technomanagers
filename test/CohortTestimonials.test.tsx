@@ -69,11 +69,11 @@ describe('CohortTestimonials', () => {
     render(<CohortTestimonials items={items} />);
 
     expect(screen.getByText('Showing 12 of 15 stories')).toBeInTheDocument();
-    expect(screen.getByText('Quote t14').closest('.break-inside-avoid')).toHaveClass('hidden');
+    expect(screen.getByText('Quote t14').closest('[data-testid="wall-item"]')).toHaveClass('hidden');
 
     fireEvent.click(screen.getByRole('button', { name: /load 3 more/i }));
 
-    expect(screen.getByText('Quote t14').closest('.break-inside-avoid')).not.toHaveClass('hidden');
+    expect(screen.getByText('Quote t14').closest('[data-testid="wall-item"]')).not.toHaveClass('hidden');
     expect(screen.getByText('All 15 stories from the cohort')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /load/i })).not.toBeInTheDocument();
   });
@@ -85,10 +85,62 @@ describe('CohortTestimonials', () => {
     // Googlebot renders JS but never clicks "Load more" — every quote must be
     // in the markup, just hidden, rather than absent from the DOM.
     expect(container.querySelectorAll('blockquote')).toHaveLength(15);
-    const hidden = [...container.querySelectorAll('.break-inside-avoid')].filter((el) =>
+    const hidden = [...container.querySelectorAll('[data-testid="wall-item"]')].filter((el) =>
       el.classList.contains('hidden'),
     );
     expect(hidden).toHaveLength(3);
+  });
+
+  it('renders exactly the admin order — videos are never re-shuffled', () => {
+    // The old "weave" moved video cards around; this pins the regression.
+    // jsdom's matchMedia mock matches nothing, so the wall settles on one
+    // column and DOM order IS reading order.
+    const items = [
+      row('t1', 'text', { display_order: 0 }),
+      row('v1', 'video', { display_order: 10 }),
+      row('t2', 'text', { display_order: 20 }),
+      row('v2', 'video', { display_order: 30 }),
+      row('i1', 'image', { display_order: 40 }),
+    ];
+    const { container } = render(<CohortTestimonials items={items} />);
+    const order = [...container.querySelectorAll('[data-testid="wall-item"]')].map(
+      (el) => el.textContent?.match(/Name \w\d+/)?.[0] ?? 'image',
+    );
+    expect(order).toEqual(['Name t1', 'Name v1', 'Name t2', 'Name v2', 'image']);
+  });
+
+  it('sorts by display_order, not by array position', () => {
+    const items = [
+      row('b', 'text', { display_order: 20 }),
+      row('a', 'text', { display_order: 10 }),
+    ];
+    const { container } = render(<CohortTestimonials items={items} />);
+    const order = [...container.querySelectorAll('[data-testid="wall-item"]')].map((el) => el.textContent);
+    expect(order[0]).toContain('Quote a');
+    expect(order[1]).toContain('Quote b');
+  });
+
+  it('keeps every already-visible card in place when more are revealed', () => {
+    const items = Array.from({ length: 15 }, (_, i) => row(`t${i}`, 'text', { display_order: i }));
+    const { container } = render(<CohortTestimonials items={items} />);
+
+    const positions = () => {
+      const map = new Map<string, string>();
+      [...container.querySelectorAll('[data-testid="wall-item"]')].forEach((el) => {
+        const name = el.textContent?.match(/Name t\d+/)?.[0];
+        const column = el.parentElement;
+        const indexInColumn = [...(column?.children ?? [])].indexOf(el);
+        if (name) map.set(name, `${[...(column?.parentElement?.children ?? [])].indexOf(column!)}:${indexInColumn}`);
+      });
+      return map;
+    };
+
+    const before = positions();
+    fireEvent.click(screen.getByRole('button', { name: /load 3 more/i }));
+    const after = positions();
+
+    // Every card that was on screen before is in the same column, same slot.
+    for (const [name, slot] of before) expect(after.get(name)).toBe(slot);
   });
 
   it('drops a video row whose URL is unusable, leaving no gap in the wall', () => {
@@ -100,8 +152,8 @@ describe('CohortTestimonials', () => {
     expect(screen.queryByRole('link', { name: /play video testimonial/i })).not.toBeInTheDocument();
     expect(screen.getByText('Quote t')).toBeInTheDocument();
     // The unrenderable row must be filtered out of the stream, not rendered as
-    // an empty wrapper that punches a hole in the masonry columns.
-    expect(container.querySelectorAll('.break-inside-avoid')).toHaveLength(1);
+    // an empty wrapper that punches a hole in the wall.
+    expect(container.querySelectorAll('[data-testid="wall-item"]')).toHaveLength(1);
     expect(screen.getByText('All 1 stories from the cohort')).toBeInTheDocument();
   });
 });

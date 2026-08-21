@@ -176,9 +176,9 @@ export default function AdminCohortTestimonials() {
         <div>
           <h2 className="font-heading font-extrabold text-2xl">Cohort Testimonials</h2>
           <p className="text-sm text-muted-foreground">
-            The review wall on <span className="font-medium">/cohort</span>. Videos, written quotes and screenshots are
-            woven into one stream. Drag a row, or use the arrows, to change the order — videos are then spread across
-            the wall&apos;s columns automatically so they never clump together.
+            The review wall on <span className="font-medium">/cohort</span> shows these in exactly this order.
+            Drag a row, or use the arrows, to change it — the wall reads left to right, then down, so rows 1, 2 and 3
+            here become the tops of columns 1, 2 and 3 on desktop.
           </p>
         </div>
         <Button onClick={() => open()} className="shrink-0">
