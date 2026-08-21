@@ -25,6 +25,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      {
+        // YouTube poster frames for cohort video testimonials. The wall renders
+        // these instead of embedding a player, so no youtube.com JS loads until
+        // a visitor actually clicks a card (see lib/youtube.ts).
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        pathname: '/vi/**',
+      },
     ],
   },
 

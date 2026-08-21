@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Eye, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket, MessageSquareQuote } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminModeration from '@/components/admin/AdminModeration';
 import { useFlaggedCount } from '@/hooks/useModeration';
@@ -21,6 +21,7 @@ import { useAllRoles, useRoles, useCreateRole, useUpdateRole, useDeleteRole } fr
 import { useAllCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useCategories';
 import { useCompaniesWithCounts, useAllCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany } from '@/hooks/useCompanies';
 import AdminHeroBoard from '@/components/admin/AdminHeroBoard';
+import AdminCohortTestimonials from '@/components/admin/AdminCohortTestimonials';
 import { useCohortSettings, useUpdateCohortSettings } from '@/hooks/useCohortSettings';
 import CompanyMultiSelect from '@/components/admin/CompanyMultiSelect';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -30,7 +31,7 @@ import type { Question, Course, CoachingService, Profile, Event } from '@/types'
 
 const supabase = createSupabaseBrowserClient();
 
-type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage' | 'cohort';
+type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage' | 'cohort' | 'testimonials';
 
 export default function Admin() {
   const [tab, setTab] = useState<AdminTab>('questions');
@@ -39,6 +40,7 @@ export default function Admin() {
   const tabs = [
     { id: 'homepage' as const,   label: 'Homepage Hero', shortLabel: 'Hero',  icon: GalleryHorizontalEnd },
     { id: 'cohort' as const,     label: 'Cohort',                              icon: Rocket },
+    { id: 'testimonials' as const, label: 'Testimonials', shortLabel: 'Revws', icon: MessageSquareQuote },
     { id: 'questions' as const,  label: 'Questions',                           icon: HelpCircle },
     { id: 'roles' as const,      label: 'Roles',                               icon: Tags },
     { id: 'categories' as const, label: 'Categories',   shortLabel: 'Cats',   icon: Tags },
@@ -117,6 +119,7 @@ export default function Admin() {
       <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto">
         {tab === 'homepage' && <AdminHeroBoard />}
         {tab === 'cohort' && <AdminCohortSettings />}
+        {tab === 'testimonials' && <AdminCohortTestimonials />}
         {tab === 'questions' && <AdminQuestions />}
         {tab === 'roles' && <AdminRoles />}
         {tab === 'categories' && <AdminCategories />}
