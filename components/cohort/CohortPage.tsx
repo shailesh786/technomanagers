@@ -1,21 +1,27 @@
 'use client';
 
 /**
- * components/cohort/CohortPage.tsx — Client Component ✅
+ * components/cohort/CohortPage.tsx — the AI Product Builder Cohort page.
  *
- * Next.js conversion of the AI Product Builder Cohort page:
- * - 'use client' added (useState in WeekCard + FAQItem)
- * - import Image from 'next/image' replaces all <img> tags
- * - Hero <img> → <Image fill> inside a relative wrapper
- * - Review <img> → <Image width/height> with style={{ width:'100%', height:'auto' }}
- * - CSSProperties imported from 'react' (replaces React.CSSProperties)
- * - Export renamed: Cohort → CohortPage
+ * A client component (WeekCard and FAQItem hold open/closed state) rendered by
+ * the ISR server route in app/cohort/page.tsx.
+ *
+ * Two things come from outside the file:
+ *   - CTA links, via useCohortSettings, with the constants below as fallback.
+ *   - Testimonials, passed in as props so the wall is server-rendered HTML.
+ *     Everything else on the page is static content held in the constants
+ *     below (PHASES, MILESTONES, INCLUDED, OUTCOMES, FAQS, WHO, COMPARISON).
+ *
+ * Colours all resolve through the `C` map to the site's design tokens — see
+ * the note above it before adding a new one.
  */
 
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import { useCohortSettings } from '@/hooks/useCohortSettings';
+import CohortTestimonials from '@/components/cohort/CohortTestimonials';
+import type { CohortTestimonial } from '@/types';
 import {
   ArrowRight, Check, X, Calendar, Clock, Video, Monitor, Mic, Trophy,
   Briefcase, TrendingUp, Code2, GraduationCap, Route, Puzzle, ChevronDown,
@@ -25,19 +31,35 @@ import {
 const APPLY_URL = 'https://share-na2.hsforms.com/1vL9J0C6rR9yhuOz54UhLog41clik';
 const WA_URL = 'https://api.whatsapp.com/send/?phone=918017145177&text=Hi+Anand%2C+I%27m+interested+in+the+AI+Product+Builder+Cohort&type=phone_number&app_absent=0';
 
+// Page palette, mapped onto the site-wide design tokens in app/globals.css.
+// This page used to carry its own navy/cyan scheme (#0a1628 / #00b4d8) which
+// matched nothing else on the site; every colour below now resolves to the
+// same CSS variables the navbar, homepage and question pages use, so a future
+// token change propagates here for free.
+//
+// Two conventions worth knowing before editing:
+//   - Filled surfaces that carry white text use `navy` (--primary). Brand blue
+//     only clears 4.08:1 against white, which fails AA for anything that is not
+//     large text, so it is reserved for icons, rules, numerals and text on
+//     light backgrounds.
+//   - On dark surfaces the accent is `cyan2` (--accent), not `cyan`: brand blue
+//     on brand navy is 3.3:1, while the cyan accent is 6.3:1.
 const C = {
-  navy: '#0a1628',
-  navy2: '#0d2847',
-  cyan: '#00b4d8',
-  cyan2: '#0ea5e9',
-  light: '#f8fafc',
-  text: '#0f172a',
-  body: '#475569',
-  muted: '#94a3b8',
-  border: '#e2e8f0',
-  wa: '#25d366',
-  cyanLight: '#e0f7fa',
-  cyanDark: '#006978',
+  navy: 'hsl(var(--primary))',                 // #0b2b6b — brand anchor, and any white-on-fill surface
+  navy2: 'hsl(217 78% 15%)',                   // darker navy, gradient partner only (no token exists)
+  cyan: 'hsl(var(--secondary))',               // #1d7de8 — accent on light surfaces
+  cyan2: 'hsl(var(--accent))',                 // #00bfff — accent on dark surfaces, gradient tail
+  light: 'hsl(var(--muted))',                  // #f5f7fa — sunken surface
+  text: 'hsl(var(--foreground))',              // #0f172a
+  body: 'hsl(var(--muted-foreground))',        // #64748b
+  muted: 'hsl(215 20% 65%)',                   // slate-400, table meta only (no token)
+  border: 'hsl(var(--border))',                // #e2e8f0
+  wa: '#25d366',                               // WhatsApp brand green — deliberately not a token
+  cyanLight: 'hsl(var(--secondary) / 0.10)',   // blue tint surface
+  cyanDark: 'hsl(var(--primary))',             // text/icon colour on a cyanLight surface
+  cyanBorder: 'hsl(var(--secondary) / 0.28)',  // tint-surface border
+  tint: 'hsl(var(--secondary) / 0.06)',        // faintest blue wash (highlighted table cells)
+  success: 'hsl(var(--success))',              // #22c55e — checklist ticks
 };
 
 // Use the project's global fonts (font-heading / font-body from tailwind.config.ts).
@@ -59,8 +81,8 @@ function CTAPrimary({ children, href, light = false }: { children: React.ReactNo
       className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold transition hover:scale-[1.02] hover:shadow-lg"
       style={{
         ...heading,
-        background: light ? '#fff' : C.cyan,
-        color: light ? C.cyan : '#fff',
+        background: light ? '#fff' : C.navy,
+        color: light ? C.navy : '#fff',
         borderRadius: 100,
       }}
     >
@@ -333,40 +355,6 @@ const WHO = [
   [Puzzle, 'Anyone who has watched scattered AI tutorials and wants a single, sequenced, mentor-led program'],
 ] as const;
 
-const VIDEOS: [string, string, string][] = [
-  ['https://res.cloudinary.com/topmate/video/upload/v1778235779/Harshit_Testimonial_x1dosu.mp4', "Harshit's Story", 'PM at Indeed'],
-  ['https://res.cloudinary.com/topmate/video/upload/v1778235794/WhatsApp_Video_2026-05-05_at_7.08.45_AM_iblof5.mp4', "Aishwarya's Story", 'PM at Microsoft'],
-  ['https://res.cloudinary.com/topmate/video/upload/v1778235800/WIN_20260427_21_20_21_Pro_dz8vjv.mp4', "Shikhar's Story", 'PM at Shipturtle'],
-];
-
-const REVIEW_COLS: string[][] = [
-  [
-    'https://res.cloudinary.com/topmate/image/upload/v1778235775/Screenshot_2026-04-30_at_11.49.13_PM_tzle9y.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.53.25_PM_xc7eih.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.19.17_PM_fgxsai.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235779/IMG_6584_gtjk82.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235780/Screenshot_2026-04-30_at_11.11.36_PM_jsjh5p.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.23.35_PM_djrk8n.png',
-  ],
-  [
-    'https://res.cloudinary.com/topmate/image/upload/v1778235775/Screenshot_2026-04-26_at_8.16.09_AM_flbn1y.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235775/IMG_6583_j62jhv.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.51.19_PM_vkc6ce.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235777/IMG_6560_mqbkn2.jpg',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235780/Screenshot_2026-04-30_at_11.13.30_PM_dfcc0t.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.18.27_PM_fwpnvh.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.25.03_PM_in8ujr.png',
-  ],
-  [
-    'https://res.cloudinary.com/topmate/image/upload/v1778235775/Screenshot_2026-04-30_at_11.36.18_PM_zq2fqx.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.17.00_PM_yvcsdz.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235778/IMG_6582_miriui.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235776/Screenshot_2026-04-30_at_11.22.22_PM_ctgpzf.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235780/Screenshot_2026-04-30_at_11.14.46_PM_ktbilv.png',
-    'https://res.cloudinary.com/topmate/image/upload/v1778235781/Screenshot_2026-04-30_at_11.21.24_PM_ntw6m9.png',
-  ],
-];
-
 const COMPARISON: Array<[string, string, string]> = [
   ['Format', '45 recorded videos, ~7 hrs total', '45 live sessions, ~90 hrs total'],
   ['Pace', 'Self-paced, lifetime access', 'Structured 12-week schedule'],
@@ -397,7 +385,7 @@ function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boole
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-4 p-5 text-left">
         <span
           className="px-3 py-1 rounded-full text-xs font-bold shrink-0"
-          style={{ ...heading, background: highlight ? C.cyan : C.cyanLight, color: highlight ? '#fff' : C.cyanDark, letterSpacing: '0.08em' }}
+          style={{ ...heading, background: highlight ? C.navy : C.cyanLight, color: highlight ? '#fff' : C.cyanDark, letterSpacing: '0.08em' }}
         >
           {w.n}
         </span>
@@ -408,7 +396,7 @@ function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boole
         {newCount > 0 && (
           <span
             className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 whitespace-nowrap"
-            style={{ ...heading, background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}
+            style={{ ...heading, background: C.navy, color: '#fff', letterSpacing: '0.08em' }}
           >
             {newCount} NEW SESSION{newCount > 1 ? 'S' : ''}
           </span>
@@ -431,7 +419,7 @@ function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boole
                   className="p-4 rounded-xl"
                   style={{
                     border: `${isNew ? 2 : 1}px solid ${isNew ? C.cyan : C.border}`,
-                    background: isNew ? 'rgba(224,247,250,0.45)' : 'transparent',
+                    background: isNew ? C.tint : 'transparent',
                   }}
                 >
                   <div className="font-semibold text-sm mb-1 flex items-center gap-2 flex-wrap" style={{ ...heading, color: C.text }}>
@@ -439,7 +427,7 @@ function WeekCard({ w }: { w: typeof PHASES[0]['weeks'][0] & { highlight?: boole
                     {isNew && (
                       <span
                         className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                        style={{ background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}
+                        style={{ background: C.navy, color: '#fff', letterSpacing: '0.08em' }}
                       >
                         NEW
                       </span>
@@ -469,7 +457,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-export default function CohortPage() {
+export default function CohortPage({ testimonials }: { testimonials: CohortTestimonial[] }) {
   // CTA links are admin-configurable; fall back to the hardcoded constants
   // when no config row exists (or the table hasn't been migrated yet).
   const { data: cohortSettings } = useCohortSettings();
@@ -519,13 +507,13 @@ export default function CohortPage() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', ...heading }}
             >
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.cyan }} />
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.cyan2 }} />
               Applications Open · 12-Week Live Bootcamp
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.05]" style={heading}>
               Become a Job Ready
               <br />
-              <span className="italic font-normal" style={{ ...body, color: C.cyan }}>AI First Product Manager</span>
+              <span className="italic font-normal" style={{ ...body, color: C.cyan2 }}>AI First Product Manager</span>
               <br />
               <span className="text-2xl md:text-4xl font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>in 12 Weeks</span>
             </h1>
@@ -539,7 +527,7 @@ export default function CohortPage() {
               {stats.map(([n, l], i) => (
                 <div key={i} className="flex items-center gap-4">
                   <div>
-                    <div className="text-2xl md:text-3xl font-extrabold" style={{ ...heading, color: C.cyan }}>{n}</div>
+                    <div className="text-2xl md:text-3xl font-extrabold" style={{ ...heading, color: C.cyan2 }}>{n}</div>
                     <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</div>
                   </div>
                   {i < stats.length - 1 && <div className="h-10 w-px" style={{ background: 'rgba(255,255,255,0.15)' }} />}
@@ -555,8 +543,8 @@ export default function CohortPage() {
                  className="inline-flex items-center gap-2.5 self-start text-[15px] font-medium transition hover:opacity-80"
                  style={{ ...body, color: 'rgba(255,255,255,0.75)' }}>
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.12em]"
-                      style={{ ...heading, color: C.cyan }}>
-                  <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan }} />
+                      style={{ ...heading, color: C.cyan2 }}>
+                  <span className="w-[7px] h-[7px] rounded-full animate-pulse" style={{ background: C.cyan2 }} />
                   LIVE NOW
                 </span>
                 <span className="underline underline-offset-4 decoration-white/35">See what the current cohort is building</span>
@@ -570,7 +558,7 @@ export default function CohortPage() {
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.15)',
-                boxShadow: '0 0 0 1px rgba(0,180,216,0.08), 0 20px 60px -20px rgba(0,180,216,0.25)',
+                boxShadow: '0 0 0 1px hsl(var(--accent) / 0.08), 0 20px 60px -20px hsl(var(--accent) / 0.25)',
               }}
             >
               {/* Hero image — Next.js Image with fill */}
@@ -586,10 +574,10 @@ export default function CohortPage() {
               </div>
               <div
                 className="p-5 space-y-1"
-                style={{ background: 'rgba(10,22,40,0.92)', borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ background: 'hsl(var(--primary) / 0.92)', borderTop: '1px solid rgba(255,255,255,0.08)' }}
               >
                 <div className="font-bold text-xl text-white" style={heading}>Shailesh Sharma</div>
-                <div className="font-semibold" style={{ color: C.cyan }}>AI Product Builder Cohort</div>
+                <div className="font-semibold" style={{ color: C.cyan2 }}>AI Product Builder Cohort</div>
                 <div className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>IIT Kanpur &amp; IIM Bangalore Alumni</div>
                 <div className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>YouTube · 15K Followers</div>
               </div>
@@ -631,7 +619,7 @@ export default function CohortPage() {
               {PHASES.map((p, i) => (
                 <div key={i} className="space-y-4">
                   <div className="flex items-center gap-4">
-                    <span className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap" style={{ ...heading, background: C.cyan, color: '#fff', letterSpacing: '0.08em' }}>{p.label}</span>
+                    <span className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap" style={{ ...heading, background: C.navy, color: '#fff', letterSpacing: '0.08em' }}>{p.label}</span>
                     <div className="h-px flex-1" style={{ background: C.border }} />
                     <span className="italic text-sm md:text-base" style={{ ...body, color: C.body }}>{p.name}</span>
                   </div>
@@ -662,64 +650,22 @@ export default function CohortPage() {
             </div>
           </section>
 
-          {/* REVIEWS */}
-          <section id="reviews">
-            <Eyebrow>— REVIEWS &amp; TESTIMONIALS</Eyebrow>
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>
-              What our <span className="italic font-normal" style={{ ...body, color: C.cyan }}>students</span> are saying
-            </h2>
-            <p className="text-lg mb-8" style={{ color: C.body }}>
-              Real feedback from students who&apos;ve learned with Shailesh across courses, YouTube, mentorship, and 1:1 coaching.
-            </p>
-            <div className="rounded-3xl p-6 md:p-12 lg:p-14 space-y-10" style={{ background: `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, color: '#fff' }}>
-              <div>
-                <div className="text-xs tracking-[0.2em] font-semibold mb-4" style={{ ...heading, color: C.cyan }}>🎬 VIDEO TESTIMONIALS</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                  {VIDEOS.map(([src, name, role], i) => (
-                    <div key={i} className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <video src={src} controls preload="metadata" className="w-full h-[320px] object-cover bg-black" />
-                      <div className="p-3">
-                        <div className="font-semibold text-sm" style={heading}>{name}</div>
-                        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{role}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs tracking-[0.2em] font-semibold mb-4" style={{ ...heading, color: C.cyan }}>📸 FEEDBACK &amp; REVIEWS</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {REVIEW_COLS.map((col, i) => (
-                    <div key={i} className="space-y-4">
-                      {col.map((url, j) => (
-                        <div key={j} className="relative w-full rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <Image
-                            src={url}
-                            alt=""
-                            width={800}
-                            height={600}
-                            style={{ width: '100%', height: 'auto' }}
-                            className="rounded-xl"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-wrap justify-around items-center gap-4 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                {[['⭐ 5/5', 'AVG RATING'], ['12 wks', 'IDEA TO PORTFOLIO'], ['100%', 'SHIPPED A CAPSTONE']].map(([n, l], i, arr) => (
-                  <div key={i} className="flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-extrabold" style={{ ...heading, color: C.cyan }}>{n}</div>
-                      <div className="text-xs tracking-wider mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</div>
-                    </div>
-                    {i < arr.length - 1 && <div className="hidden md:block h-10 w-px" style={{ background: 'rgba(255,255,255,0.15)' }} />}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+          {/* REVIEWS — admin-managed wall (see components/cohort/CohortTestimonials).
+              Rows arrive from the ISR-cached server fetch in app/cohort/page.tsx;
+              with none published the section drops out entirely rather than
+              rendering an empty heading. */}
+          {testimonials.length > 0 && (
+            <section id="reviews">
+              <Eyebrow>— REVIEWS &amp; TESTIMONIALS</Eyebrow>
+              <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>
+                What our <span className="italic font-normal" style={{ ...body, color: C.cyan }}>students</span> are saying
+              </h2>
+              <p className="text-lg mb-8" style={{ color: C.body }}>
+                Real feedback from students who&apos;ve learned with Shailesh across courses, YouTube, mentorship, and 1:1 coaching.
+              </p>
+              <CohortTestimonials items={testimonials} />
+            </section>
+          )}
 
           {/* COMPARISON */}
           <section>
@@ -737,7 +683,7 @@ export default function CohortPage() {
                   <tr>
                     <th className="text-left p-4 bg-white" />
                     <th className="text-left p-4 font-bold" style={{ ...heading, background: C.light, color: C.body }}>Self-Paced Course</th>
-                    <th className="text-left p-4 font-bold" style={{ ...heading, background: C.cyan, color: '#fff' }}>
+                    <th className="text-left p-4 font-bold" style={{ ...heading, background: C.navy, color: '#fff' }}>
                       12-Week Live Cohort<br /><span className="text-xs font-normal opacity-90">Starts Soon</span>
                     </th>
                   </tr>
@@ -747,7 +693,7 @@ export default function CohortPage() {
                     <tr key={i} style={{ borderTop: `1px solid ${C.border}` }}>
                       <td className="p-4 font-semibold" style={{ ...heading, color: C.text }}>{label}</td>
                       <td className="p-4" style={{ color: C.body }}>{a === '✕' ? <X className="w-4 h-4 inline" style={{ color: '#cbd5e1' }} /> : a}</td>
-                      <td className="p-4" style={{ background: 'rgba(0,180,216,0.06)', color: C.text }}>
+                      <td className="p-4" style={{ background: C.tint, color: C.text }}>
                         <span className="inline-flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: C.cyan }} />{b}</span>
                       </td>
                     </tr>
@@ -755,7 +701,7 @@ export default function CohortPage() {
                 </tbody>
               </table>
             </div>
-            <div className="mt-8 p-6 md:p-8 rounded-2xl" style={{ background: 'linear-gradient(135deg, #e0f7fa, #e0f2fe)', border: `1px solid ${C.cyan}40` }}>
+            <div className="mt-8 p-6 md:p-8 rounded-2xl" style={{ background: 'linear-gradient(135deg, hsl(var(--secondary) / 0.10), hsl(var(--accent) / 0.10))', border: `1px solid ${C.cyanBorder}` }}>
               <p className="text-base md:text-lg mb-6" style={{ color: C.text }}>
                 The course gives you <b>knowledge.</b> The cohort gives you knowledge + <b>proof of work</b> + <b>interview readiness</b> + <b>mentor access.</b>
               </p>
@@ -808,7 +754,7 @@ export default function CohortPage() {
             <div className="grid md:grid-cols-2 gap-4">
               {INCLUDED.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 p-4 rounded-xl" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
-                  <Check className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+                  <Check className="w-5 h-5 shrink-0 mt-0.5" style={{ color: C.success }} />
                   <span style={{ color: C.body }}>{item}</span>
                 </div>
               ))}
@@ -858,7 +804,7 @@ export default function CohortPage() {
               <div className="mt-5 space-y-3">
                 <a href={applyUrl} target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
-                  style={{ ...heading, background: `linear-gradient(135deg, ${C.cyan}, ${C.cyan2})`, color: '#fff' }}>
+                  style={{ ...heading, background: `linear-gradient(135deg, ${C.navy}, ${C.cyan})`, color: '#fff' }}>
                   <ArrowRight className="w-4 h-4" /> Apply Now
                 </a>
                 <a href={waUrl} target="_blank" rel="noopener noreferrer"
@@ -909,7 +855,7 @@ export default function CohortPage() {
                 'Alumni community + job board',
               ].map((t, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+                  <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: C.success }} />
                   <span style={{ color: C.body }}>{t}</span>
                 </div>
               ))}
@@ -940,7 +886,7 @@ export default function CohortPage() {
       {progressUrl && (
         <a href={progressUrl} target="_blank" rel="noopener noreferrer"
            className="lg:hidden fixed left-0 right-0 bottom-[68px] z-50 flex items-center gap-2.5 px-4 py-3"
-           style={{ background: C.cyanLight, borderTop: `1px solid ${C.cyan}59` }}>
+           style={{ background: C.cyanLight, borderTop: `1px solid ${C.cyanBorder}` }}>
           <span className="w-[7px] h-[7px] rounded-full animate-pulse shrink-0" style={{ background: C.cyan }} />
           <span className="text-sm font-semibold" style={{ ...heading, color: C.cyanDark }}>See the current cohort in progress</span>
           <ChevronRight className="w-4 h-4 ml-auto shrink-0" style={{ color: C.cyanDark }} />
@@ -952,7 +898,7 @@ export default function CohortPage() {
         style={{ background: '#fff', borderTop: `1px solid ${C.border}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
         <a href={applyUrl} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-bold text-sm"
-          style={{ ...heading, background: C.cyan, color: '#fff' }}>
+          style={{ ...heading, background: C.navy, color: '#fff' }}>
           <ArrowRight className="w-4 h-4" /> Apply Now
         </a>
         <a href={waUrl} target="_blank" rel="noopener noreferrer"

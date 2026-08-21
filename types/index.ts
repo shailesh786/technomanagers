@@ -108,6 +108,29 @@ export interface CohortSettings {
   updated_at: string | null;
 }
 
+export type CohortTestimonialKind = 'text' | 'video' | 'image';
+
+export interface CohortTestimonial {
+  id: string;
+  kind: CohortTestimonialKind;
+  visible: boolean;
+  display_order: number;
+  name: string;
+  role: string;
+  /** Pill copy, e.g. 'Offer at eGov Foundation'. Empty string = no pill. */
+  outcome: string;
+  /** Full quote on 'text' cards; short pull-quote overlay on 'video' cards. */
+  quote: string;
+  /** 'video' only — a YouTube link (or a direct media URL for legacy rows). */
+  video_url: string | null;
+  /** Display-only runtime, e.g. '2:14'. */
+  video_length: string;
+  /** 'image' screenshot, or an optional poster override on 'video' cards. */
+  image_url: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export interface SavedQuestion {
   id: string;
   user_id: string;

@@ -44,7 +44,7 @@ technomanagers/
 │   │   └── [id]/page.tsx         ← /questions/:id      (dynamic SSR)
 │   ├── coaching/page.tsx         ← /coaching           (ISR, 300 s)
 │   ├── courses/page.tsx          ← /courses            (ISR, 300 s)
-│   ├── cohort/page.tsx           ← /cohort             (static)
+│   ├── cohort/page.tsx           ← /cohort             (ISR, 300 s) + Course JSON-LD
 │   ├── events/page.tsx           ← /events             (ISR, 300 s)
 │   ├── auth/
 │   │   ├── page.tsx              ← /auth sign-in       (CSR)
@@ -54,7 +54,8 @@ technomanagers/
 │   │   └── page.tsx              ← /admin/*            (CSR, admin-only)
 │   └── api/revalidate/
 │       ├── hero/route.ts         ← POST → revalidateTag('hero')
-│       └── questions/route.ts    ← POST → revalidateTag('questions')
+│       ├── questions/route.ts    ← POST → revalidateTag('questions')
+│       └── cohort/route.ts       ← POST → revalidateTag('cohort-testimonials')
 │
 ├── components/                   ← React components
 │   ├── admin/                    ← Admin panel (questions, users, hero, cohort, etc.)
@@ -70,7 +71,8 @@ technomanagers/
 │   ├── useQuestionFacets.ts       ← Faceted filter option counts
 │   ├── useRoles.ts / useCompanies.ts / useCoaching.ts / useCourses.ts / useEvents.ts
 │   ├── useHeroItems.ts            ← Hero Priority Board items (admin CRUD + moves)
-│   └── useCohortSettings.ts       ← Cohort CTA config (admin editable, single row)
+│   ├── useCohortSettings.ts       ← Cohort CTA config (admin editable, single row)
+│   └── useCohortTestimonials.ts   ← Cohort testimonial CRUD + reorder
 │
 ├── lib/
 │   └── supabase/
@@ -103,7 +105,7 @@ technomanagers/
 | `/questions/[id]` | Dynamic SSR | Admin draft preview requires cookie session |
 | `/coaching` | Static + ISR 300 s | Public marketing page |
 | `/courses` | Static + ISR 300 s | Public marketing page |
-| `/cohort` | Static | Marketing page, content rarely changes |
+| `/cohort` | Static + ISR 300 s | Marketing page; testimonials are admin-managed and server-fetched |
 | `/events` | Static + ISR 300 s | Public marketing page |
 | `/auth` | CSR | Browser-only OAuth flow |
 | `/profile` | CSR | Authenticated-only, personalised content |
@@ -274,6 +276,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |
 | `app/api/revalidate/hero/route.ts` | Admin-gated POST → `revalidateTag('hero')` |
 | `app/api/revalidate/questions/route.ts` | Admin-gated POST → `revalidateTag('questions')` |
+| `app/api/revalidate/cohort/route.ts` | Admin-gated POST → `revalidateTag('cohort-testimonials')` |
 | `lib/supabase/server.ts` | Server Supabase client (cookies, for auth-gated RSC) |
 | `lib/supabase/client.ts` | Browser Supabase singleton |
 | `lib/supabase/public.ts` | Cookieless anon client — use for all ISR/cached public reads |
@@ -283,7 +286,12 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `components/home/HeroCard.tsx` | Single hero card (white/navy surface, 16:9 image or gradient fallback); whole card is one link |
 | `components/admin/AdminHeroBoard.tsx` | Admin hero slots UI — 3 priority slots, visibility switches, editor with live preview, bench |
 | `lib/hero.ts` | Hero selection logic: visibility + IST schedule window + priority sort + cap 3; promotion planner |
-| `components/cohort/CohortPage.tsx` | Cohort page; reads CTA links from `cohort_settings` table via `useCohortSettings` |
+| `components/cohort/CohortPage.tsx` | Cohort page; CTA links from `cohort_settings`, testimonials passed in as props from the server route. All colours resolve through the `C` map to design tokens — read the note above it before adding one |
+| `components/cohort/CohortTestimonials.tsx` | Testimonial wall — masonry stream of video / text / screenshot cards. Renders every card but hides those past the reveal so crawlers see them without the images being fetched |
+| `components/cohort/TestimonialLightbox.tsx` | Player/viewer, `next/dynamic`'d so no YouTube JS or Radix Dialog is in the initial bundle |
+| `components/admin/AdminCohortTestimonials.tsx` | Admin testimonial CRUD — drag or arrows to reorder, per-kind form, YouTube link validation |
+| `lib/youtube.ts` | Parses an admin-pasted URL into a YouTube id + poster chain, or a direct media file. Rejects anything else |
+| `lib/cohort-testimonials.ts` | Visibility/order selection, video weave across masonry columns, renderability check |
 | `components/admin/AdminPage.tsx` | Full admin panel — tabs for all content types + homepage + cohort config |
 | `components/questions/QuestionsClient.tsx` | Client-side question list — filters, search, pagination, facets |
 | `components/questions/QuestionFilters.tsx` | Faceted filter dropdowns (role, company, category, difficulty) |
@@ -312,6 +320,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `events` | Event listings |
 | `hero_items` | Hero Priority Board items — priority 1..3 = slotted, NULL = bench; visible flag, IST schedule window, 16:9 image, surface |
 | `cohort_settings` | Single-row config for cohort page CTA links (apply_url, whatsapp_url) |
+| `cohort_testimonials` | Cohort review wall — kind: text / video (YouTube) / image; visible flag, display_order |
 
 ### Key RPCs
 
