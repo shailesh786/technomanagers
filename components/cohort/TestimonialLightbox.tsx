@@ -29,6 +29,10 @@ export default function TestimonialLightbox({ item, onClose }: Props) {
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent
+        // The card behind the overlay already states who is speaking, so there
+        // is nothing a description would add. Passing undefined explicitly is
+        // Radix's documented way to opt out of aria-describedby.
+        aria-describedby={undefined}
         className={
           item.kind === 'image'
             ? 'max-w-3xl border-none bg-transparent p-0 shadow-none sm:rounded-none'
@@ -57,7 +61,7 @@ export default function TestimonialLightbox({ item, onClose }: Props) {
               src={source.embedUrl}
               title={label}
               className="absolute inset-0 h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
           </div>
