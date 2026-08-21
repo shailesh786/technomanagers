@@ -1,4 +1,4 @@
-import { revalidateTag } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -29,6 +29,14 @@ export async function POST() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // Both layers, deliberately. revalidateTag flushes the unstable_cache data
+  // entry; revalidatePath purges the route's rendered output directly. In
+  // production the tag alone proved unreliable at rebuilding the page — an
+  // admin edit fired it twice and /cohort still served a build from an hour
+  // earlier until a stale request finally forced a regeneration. The path
+  // purge is the deterministic lever: the next request re-renders, and the
+  // freshly-flushed tag guarantees that render reads fresh data.
   revalidateTag('cohort-testimonials');
+  revalidatePath('/cohort');
   return NextResponse.json({ revalidated: true });
 }

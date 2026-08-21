@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { TESTIMONIAL_COLUMNS } from '@/lib/cohort-testimonials';
 import type { CohortTestimonial, CohortTestimonialKind } from '@/types';
@@ -13,14 +14,25 @@ const supabase = createSupabaseBrowserClient() as any;
 export const COHORT_TESTIMONIALS_KEY = ['cohort_testimonials', 'all'] as const;
 
 /**
- * Flush the cohort page's ISR cache. Non-fatal on failure — the 5-minute
- * revalidate window picks the change up anyway.
+ * Flush the cohort page's ISR cache after an admin edit.
+ *
+ * Failure is non-fatal — the passive revalidate window still applies — but it
+ * is no longer silent: an edit that will not show up on /cohort for several
+ * minutes is exactly the thing an admin needs to be told about, having once
+ * spent an afternoon wondering whether a save worked.
  */
 export async function revalidateCohortCache() {
+  let ok = false;
   try {
-    await fetch('/api/revalidate/cohort', { method: 'POST' });
+    const res = await fetch('/api/revalidate/cohort', { method: 'POST' });
+    ok = res.ok;
   } catch {
-    /* non-fatal */
+    ok = false;
+  }
+  if (!ok) {
+    toast.warning('Saved, but refreshing the live page failed', {
+      description: 'Your change is stored and will appear on /cohort within a few minutes. To force it, toggle any testimonial off and on.',
+    });
   }
 }
 
