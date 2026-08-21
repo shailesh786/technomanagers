@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  distributeIntoColumns,
   isRenderable,
   selectVisibleTestimonials,
-  weaveTestimonials,
 } from '@/lib/cohort-testimonials';
 import { parseYouTubeId, resolveVideoSource } from '@/lib/youtube';
 import type { CohortTestimonial, CohortTestimonialKind } from '@/types';
@@ -24,12 +24,6 @@ const row = (id: string, kind: CohortTestimonialKind, overrides: Partial<CohortT
   ...overrides,
 });
 
-/** n text cards followed by m video cards — the worst case for CSS columns. */
-const clumped = (texts: number, videos: number): CohortTestimonial[] => [
-  ...Array.from({ length: videos }, (_, i) => row(`v${i}`, 'video', { display_order: i })),
-  ...Array.from({ length: texts }, (_, i) => row(`t${i}`, 'text', { display_order: 100 + i })),
-];
-
 describe('selectVisibleTestimonials', () => {
   it('drops hidden rows', () => {
     const rows = [row('a', 'text'), row('b', 'text', { visible: false })];
@@ -46,52 +40,41 @@ describe('selectVisibleTestimonials', () => {
   });
 });
 
-describe('weaveTestimonials', () => {
-  const opts = { columns: 3, initialCount: 12 };
+describe('distributeIntoColumns', () => {
+  const items = [0, 1, 2, 3, 4, 5, 6];
 
-  it('is a permutation — nothing is dropped or duplicated', () => {
-    for (const [texts, videos] of [[20, 4], [2, 6], [1, 1], [30, 1], [5, 5]]) {
-      const input = clumped(texts, videos);
-      const out = weaveTestimonials(input, opts);
-      expect(out).toHaveLength(input.length);
-      expect(new Set(out.map((r) => r.id)).size).toBe(input.length);
+  it('deals row-major: item i lands in column i % n', () => {
+    expect(distributeIntoColumns(items, 3)).toEqual([
+      [0, 3, 6],
+      [1, 4],
+      [2, 5],
+    ]);
+  });
+
+  it('reassembling the columns row by row reproduces the input order', () => {
+    const cols = distributeIntoColumns(items, 3);
+    const rebuilt: number[] = [];
+    for (let r = 0; r < Math.max(...cols.map((c) => c.length)); r++) {
+      cols.forEach((c) => { if (c[r] !== undefined) rebuilt.push(c[r]); });
     }
+    expect(rebuilt).toEqual(items);
   });
 
-  it('keeps non-video cards in their original relative order', () => {
-    const out = weaveTestimonials(clumped(20, 4), opts);
-    const texts = out.filter((r) => r.kind === 'text').map((r) => r.id);
-    expect(texts).toEqual(Array.from({ length: 20 }, (_, i) => `t${i}`));
+  it('growing the list never moves an existing item to another column', () => {
+    // This is the "Load more" guarantee: an item's column depends only on its
+    // own index, so appending items cannot relocate what is already shown.
+    const before = distributeIntoColumns(items.slice(0, 4), 3);
+    const after = distributeIntoColumns(items, 3);
+    before.forEach((col, c) => col.forEach((v) => expect(after[c]).toContain(v)));
   });
 
-  it('spreads videos so no two share a masonry column in the first reveal', () => {
-    const out = weaveTestimonials(clumped(20, 4), opts);
-    const perColumn = new Map<number, number>();
-    out.slice(0, opts.initialCount).forEach((item, i) => {
-      if (item.kind !== 'video') return;
-      // Multi-column fills column one top-to-bottom, then column two, ...
-      const column = Math.floor(i / (opts.initialCount / opts.columns));
-      perColumn.set(column, (perColumn.get(column) ?? 0) + 1);
-    });
-    expect(perColumn.size).toBe(opts.columns);
-    for (const count of perColumn.values()) expect(count).toBe(1);
+  it('clamps a nonsensical column count to a single column', () => {
+    expect(distributeIntoColumns(items, 0)).toEqual([items]);
+    expect(distributeIntoColumns(items, -2)).toEqual([items]);
   });
 
-  it('puts a video first, so the wall never opens on plain text', () => {
-    expect(weaveTestimonials(clumped(20, 4), opts)[0].kind).toBe('video');
-  });
-
-  it('leaves single-kind lists untouched', () => {
-    const onlyText = clumped(5, 0);
-    expect(weaveTestimonials(onlyText, opts)).toEqual(onlyText);
-    const onlyVideo = clumped(0, 5);
-    expect(weaveTestimonials(onlyVideo, opts)).toEqual(onlyVideo);
-  });
-
-  it('survives more videos than slots in the first reveal', () => {
-    const input = clumped(2, 10);
-    const out = weaveTestimonials(input, opts);
-    expect(new Set(out.map((r) => r.id)).size).toBe(12);
+  it('returns empty columns for an empty list', () => {
+    expect(distributeIntoColumns([], 3)).toEqual([[], [], []]);
   });
 });
 

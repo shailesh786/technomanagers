@@ -1,13 +1,22 @@
 'use client';
 
 /**
- * components/cohort/CohortTestimonials.tsx — the "woven" testimonial wall.
+ * components/cohort/CohortTestimonials.tsx — the cohort testimonial wall.
  *
- * Implements the Cohort Testimonials · Woven design: one masonry stream that
- * mixes video stories, written quotes and review screenshots, rather than
- * segregating them into separate blocks. Video is the scarce, highest-signal
- * asset, so `weaveTestimonials` spreads video cards across the columns instead
- * of letting them clump at the top of column one (see lib/cohort-testimonials).
+ * One column-based wall mixing video stories, written quotes and review
+ * screenshots.
+ *
+ * ── Ordering contract ─────────────────────────────────────────────────────
+ * The admin's order in /admin → Testimonials IS the wall's order: card i sits
+ * in column i % N, so the wall reads left-to-right across a row, then the
+ * next row — and "Load more" only appends to the bottoms of the columns,
+ * never moving a card that is already on screen.
+ *
+ * The columns are built in JS (distributeIntoColumns) rather than CSS
+ * multi-column for exactly those two guarantees: CSS columns lay out
+ * column-major (top-to-bottom, then the next column), which scrambles the
+ * perceived order, and they re-balance every card whenever items are
+ * appended, so each "Load more" used to shuffle the whole wall.
  *
  * ── Performance ───────────────────────────────────────────────────────────
  * This section sits well below the fold on a long page, so nothing here costs
@@ -25,26 +34,23 @@
  * Googlebot renders JavaScript but does not click buttons, so anything gated
  * behind the button would never be indexed — and these quotes are some of the
  * most valuable crawlable copy on the page. Hiding rather than unmounting
- * costs nothing at runtime either: browsers do not fetch images inside a
- * `display:none` subtree, so the posters and screenshots below the cut are
- * never requested until they are revealed.
+ * costs nothing at runtime either: the lazy-loaded images inside a
+ * `display:none` subtree are never requested until they are revealed.
  *
  * The section chrome (eyebrow, heading, lead paragraph) is owned by CohortPage
  * so this section keeps the same rhythm as every other one on the page.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { Play, CheckCircle2, ChevronDown, Expand } from 'lucide-react';
-import { selectVisibleTestimonials, weaveTestimonials, isRenderable } from '@/lib/cohort-testimonials';
+import { selectVisibleTestimonials, distributeIntoColumns, isRenderable } from '@/lib/cohort-testimonials';
 import { resolveVideoSource, type VideoSource } from '@/lib/youtube';
 import type { CohortTestimonial } from '@/types';
 
 const TestimonialLightbox = dynamic(() => import('./TestimonialLightbox'), { ssr: false });
 
-/** Widest column count the wall reaches (xl:columns-3), used to plan the weave. */
-const COLUMNS = 3;
 const INITIAL_COUNT = 12;
 const BATCH_SIZE = 12;
 
@@ -288,49 +294,92 @@ function ImageCard({ item, onOpen }: { item: CohortTestimonial; onOpen: () => vo
   );
 }
 
+/* ── Responsive column count ───────────────────────────────────────────── */
+
+/** Wall breakpoints, mirroring Tailwind's md and xl. First match wins. */
+const COLUMN_QUERIES: Array<[query: string, columns: number]> = [
+  ['(min-width: 1280px)', 3],
+  ['(min-width: 768px)', 2],
+];
+
+/**
+ * Server rendering has no viewport, so SSR and first client render use the
+ * desktop value (3) and an effect corrects it. The section sits thousands of
+ * pixels below the fold, so the correction lands long before the wall is
+ * scrolled into view; the container's flex-col fallback keeps the pre-
+ * hydration markup readable on a phone regardless.
+ */
+function useColumnCount(): number {
+  const [columns, setColumns] = useState(3);
+  useEffect(() => {
+    const lists = COLUMN_QUERIES.map(([query]) => window.matchMedia(query));
+    const apply = () => {
+      const first = lists.findIndex((l) => l.matches);
+      setColumns(first === -1 ? 1 : COLUMN_QUERIES[first][1]);
+    };
+    apply();
+    // Both signals: MediaQueryList 'change' is the precise one; plain
+    // 'resize' backs it up for environments that are lax about dispatching
+    // MQL events. setColumns bails out when the value is unchanged, so the
+    // duplicate events cost nothing.
+    lists.forEach((l) => l.addEventListener('change', apply));
+    window.addEventListener('resize', apply);
+    return () => {
+      lists.forEach((l) => l.removeEventListener('change', apply));
+      window.removeEventListener('resize', apply);
+    };
+  }, []);
+  return columns;
+}
+
 /* ── Section ───────────────────────────────────────────────────────────── */
 
 export default function CohortTestimonials({ items }: { items: CohortTestimonial[] }) {
   const [shown, setShown] = useState(INITIAL_COUNT);
   const [active, setActive] = useState<CohortTestimonial | null>(null);
+  const columns = useColumnCount();
 
-  const stream = useMemo(
-    () =>
-      weaveTestimonials(selectVisibleTestimonials(items).filter(isRenderable), {
-        columns: COLUMNS,
-        initialCount: INITIAL_COUNT,
-      }),
-    [items],
-  );
+  // Admin order, verbatim — display_order is the wall's reading order.
+  const stream = useMemo(() => selectVisibleTestimonials(items).filter(isRenderable), [items]);
 
   // Nothing publishable — render nothing rather than an empty shell, the same
   // contract HeroPriorityBoard uses on the homepage.
   if (stream.length === 0) return null;
 
   const remaining = Math.max(0, stream.length - shown);
+  // Distribute EVERY card, hidden ones included: an item's column comes from
+  // its index alone, so revealing more never relocates what is already shown,
+  // and the hidden tail stays in the DOM for crawlers.
+  const cols = distributeIntoColumns(stream.map((item, i) => ({ item, i })), columns);
 
   return (
     <>
-      <div className="columns-1 gap-5 md:columns-2 xl:columns-3">
-        {stream.map((item, i) => {
-          const hidden = i >= shown;
-          // Revealed cards animate in; the first batch is server-rendered and
-          // its animation would have finished long before anyone scrolls here.
-          const revealed = !hidden && i >= INITIAL_COUNT;
-          return (
-            <div
-              key={item.id}
-              className={`mb-5 break-inside-avoid ${hidden ? 'hidden' : ''} ${
-                revealed ? 'animate-fade-in motion-reduce:animate-none' : ''
-              }`}
-              style={revealed ? { animationDelay: `${Math.min((i - INITIAL_COUNT) % BATCH_SIZE, 8) * 40}ms` } : undefined}
-            >
-              {item.kind === 'video' && <VideoCard item={item} onOpen={() => setActive(item)} />}
-              {item.kind === 'text' && <TextCard item={item} />}
-              {item.kind === 'image' && <ImageCard item={item} onOpen={() => setActive(item)} />}
-            </div>
-          );
-        })}
+      <div className="flex flex-col gap-5 md:flex-row md:items-start">
+        {cols.map((column, c) => (
+          <div key={c} className="min-w-0 flex-1 space-y-5">
+            {column.map(({ item, i }) => {
+              const hidden = i >= shown;
+              // Revealed cards animate in; the first batch is server-rendered
+              // and its animation would have finished long before anyone
+              // scrolls here.
+              const revealed = !hidden && i >= INITIAL_COUNT;
+              return (
+                <div
+                  key={item.id}
+                  data-testid="wall-item"
+                  className={`${hidden ? 'hidden' : ''} ${
+                    revealed ? 'animate-fade-in motion-reduce:animate-none' : ''
+                  }`}
+                  style={revealed ? { animationDelay: `${Math.min((i - INITIAL_COUNT) % BATCH_SIZE, 8) * 40}ms` } : undefined}
+                >
+                  {item.kind === 'video' && <VideoCard item={item} onOpen={() => setActive(item)} />}
+                  {item.kind === 'text' && <TextCard item={item} />}
+                  {item.kind === 'image' && <ImageCard item={item} onOpen={() => setActive(item)} />}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-col items-center gap-3.5 pt-2">
