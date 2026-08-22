@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CohortPage from '@/components/cohort/CohortPage';
 import type { CohortTestimonial } from '@/types';
 
@@ -47,5 +47,17 @@ describe('CohortPage section order', () => {
     const ids = sectionIds(container);
     expect(ids).not.toContain('reviews');
     expect(ids.slice(0, 2)).toEqual(['curriculum', 'who']);
+  });
+});
+
+describe('CohortPage hero', () => {
+  it('renders the instructor card, with its YouTube and LinkedIn links, inside the hero section', () => {
+    const { container } = render(<CohortPage testimonials={[]} />);
+    // The hero is the first <section> on the page and sits outside <main>.
+    const hero = container.querySelector('section');
+    const card = screen.getByRole('complementary', { name: /your mentor/i });
+    expect(hero).toContainElement(card);
+    expect(card).toContainElement(screen.getByRole('link', { name: /youtube/i }));
+    expect(card).toContainElement(screen.getByRole('link', { name: /linkedin/i }));
   });
 });

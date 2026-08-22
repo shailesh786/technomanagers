@@ -18,9 +18,9 @@
 
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
-import Image from 'next/image';
 import { useCohortSettings } from '@/hooks/useCohortSettings';
 import CohortTestimonials from '@/components/cohort/CohortTestimonials';
+import InstructorCard from '@/components/cohort/InstructorCard';
 import type { CohortTestimonial } from '@/types';
 import {
   ArrowRight, Check, X, Calendar, Clock, Video, Monitor, Mic, Trophy,
@@ -553,35 +553,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
             )}
           </div>
           <div className="lg:col-span-2 hidden lg:block">
-            <div
-              className="rounded-3xl overflow-hidden backdrop-blur shadow-2xl"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                boxShadow: '0 0 0 1px hsl(var(--accent) / 0.08), 0 20px 60px -20px hsl(var(--accent) / 0.25)',
-              }}
-            >
-              {/* Hero image — Next.js Image with fill */}
-              <div className="relative h-[420px] w-full">
-                <Image
-                  src="https://res.cloudinary.com/topmate/image/upload/v1778317151/WhatsApp_Image_2026-05-09_at_2.06.10_PM_ae5sht.jpg"
-                  alt="Shailesh Sharma"
-                  fill
-                  className="object-cover"
-                  style={{ objectPosition: 'top center' }}
-                  priority
-                />
-              </div>
-              <div
-                className="p-5 space-y-1"
-                style={{ background: 'hsl(var(--primary) / 0.92)', borderTop: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <div className="font-bold text-xl text-white" style={heading}>Shailesh Sharma</div>
-                <div className="font-semibold" style={{ color: C.cyan2 }}>AI Product Builder Cohort</div>
-                <div className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>IIT Kanpur &amp; IIM Bangalore Alumni</div>
-                <div className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>YouTube · 15K Followers</div>
-              </div>
-            </div>
+            <InstructorCard />
           </div>
         </div>
       </section>
