@@ -287,6 +287,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `components/admin/AdminHeroBoard.tsx` | Admin hero slots UI — 3 priority slots, visibility switches, editor with live preview, bench |
 | `lib/hero.ts` | Hero selection logic: visibility + IST schedule window + priority sort + cap 3; promotion planner |
 | `components/cohort/CohortPage.tsx` | Cohort page; CTA links from `cohort_settings`, testimonials passed in as props from the server route. All colours resolve through the `C` map to design tokens — read the note above it before adding one |
+| `components/cohort/InstructorCard.tsx` | Mentor credentials card in the cohort hero (lg+ only) — portrait, practitioner tagline, three proof lines, YouTube + LinkedIn links. Profile URLs are the `INSTRUCTOR_*_URL` constants at the top of the file |
 | `components/cohort/CohortTestimonials.tsx` | Testimonial wall — video / text / screenshot cards in JS-built columns that read the admin's order left-to-right then down (card i → column i % N, stable across "Load more"). Renders every card but hides those past the reveal so crawlers see them without the images being fetched |
 | `components/cohort/TestimonialLightbox.tsx` | Player/viewer, `next/dynamic`'d so no YouTube JS or Radix Dialog is in the initial bundle |
 | `components/admin/AdminCohortTestimonials.tsx` | Admin testimonial CRUD — drag or arrows to reorder, per-kind form, YouTube link validation |
