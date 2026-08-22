@@ -20,9 +20,13 @@ export default {
       },
     },
     extend: {
+      // next/font (app/layout.tsx) registers each family under a hashed
+      // @font-face name and exposes it only through these CSS variables, so
+      // the variable must come first: the literal family name after it is
+      // only ever hit if the variable is undefined (e.g. a test render).
       fontFamily: {
-        heading: ['"Plus Jakarta Sans"', 'sans-serif'],
-        body: ['"DM Sans"', 'sans-serif'],
+        heading: ['var(--font-heading)', '"Plus Jakarta Sans"', 'sans-serif'],
+        body: ['var(--font-body)', '"DM Sans"', 'sans-serif'],
         mono: ['var(--font-mono)', '"JetBrains Mono"', 'monospace'],
       },
       colors: {
