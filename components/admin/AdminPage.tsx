@@ -510,7 +510,7 @@ function AdminQuestions() {
                       </td>
                       <td className="p-3 text-right whitespace-nowrap">
                         <Button size="icon" variant="ghost" onClick={() => { setEditQuestion(q); setShowForm(true); }}><Pencil className="h-4 w-4" /></Button>
-                        <Link href={`/questions/${q.id}?preview=1`} target="_blank" rel="noopener noreferrer">
+                        <Link href={`/questions/${q.id}/preview`} target="_blank" rel="noopener noreferrer">
                           <Button size="icon" variant="ghost" title={q.status === 'draft' ? 'Preview draft' : 'View question'}>
                             <Eye className="h-4 w-4 text-muted-foreground" />
                           </Button>

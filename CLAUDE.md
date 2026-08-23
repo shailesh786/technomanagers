@@ -41,7 +41,8 @@ technomanagers/
 │   ├── sitemap.ts                ← /sitemap.xml
 │   ├── questions/
 │   │   ├── page.tsx              ← /questions list     (ISR, 60 s)
-│   │   └── [id]/page.tsx         ← /questions/:id      (dynamic SSR)
+│   │   ├── [id]/page.tsx         ← /questions/:id      (ISR, 60 s) + Breadcrumb/paywall JSON-LD
+│   │   └── [id]/preview/page.tsx ← /questions/:id/preview (dynamic, admin drafts, noindex)
 │   ├── coaching/page.tsx         ← /coaching           (ISR, 300 s)
 │   ├── courses/page.tsx          ← /courses            (ISR, 300 s)
 │   ├── cohort/page.tsx           ← /cohort             (ISR, 300 s) + Course JSON-LD
@@ -102,7 +103,8 @@ technomanagers/
 |-------|-----------|--------|
 | `/` | Static + ISR 300 s | Public landing — SEO, fast FCP |
 | `/questions` | Static + ISR 60 s | Crawlable; data from server prefetch |
-| `/questions/[id]` | Dynamic SSR | Admin draft preview requires cookie session |
+| `/questions/[id]` | Static + ISR 60 s | Public data only — no cookies/searchParams, so ISR genuinely applies. Answer, related questions and breadcrumbs are in the HTML |
+| `/questions/[id]/preview` | Dynamic SSR | Admin draft preview — reads the session cookie; noindex |
 | `/coaching` | Static + ISR 300 s | Public marketing page |
 | `/courses` | Static + ISR 300 s | Public marketing page |
 | `/cohort` | Static + ISR 300 s | Marketing page; testimonials are admin-managed and server-fetched |
@@ -207,9 +209,13 @@ const getDefaultQuestions = unstable_cache(
 );
 ```
 
-### `ssr: false` on QuestionsClient
+### QuestionsClient is server-rendered (no `ssr: false`)
 
-`QuestionsClient` uses `useSearchParams()`, which returns empty params during ISR static generation. Server-rendering it would produce a mismatch on filtered URLs (e.g. `/questions?role=PM`). The skeleton is SSR'd; the cards hydrate instantly from the HydrationBoundary cache.
+`QuestionsClient` reads filters through `hooks/useLocationSearch.ts`, whose server snapshot is `''`, so static generation bakes the default unfiltered list — 20 question links land in the HTML — and filtered URLs (`/questions?role=PM`) hydrate without a mismatch. Do not reintroduce `useSearchParams()` there: it forces a client-only render and the list drops out of the HTML.
+
+### Question detail pages must stay free of request-time input
+
+`app/questions/[id]/page.tsx` is ISR. Reading `searchParams` or `cookies()` in it (or in its `generateMetadata`) silently turns every visit into a per-request render with `no-store` headers. Anything that needs the session — admin draft preview — belongs in `app/questions/[id]/preview/page.tsx`.
 
 ### Cache invalidation
 
@@ -272,7 +278,15 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `app/layout.tsx` | Root layout — Providers, Navbar, Footer |
 | `app/page.tsx` | Homepage — Hero Priority Board + featured questions (ISR, 300 s) |
 | `app/questions/page.tsx` | Questions listing — server prefetch + HydrationBoundary (ISR, 60 s) |
-| `app/questions/[id]/page.tsx` | Question detail — dynamic SSR, `generateMetadata`, React.cache dedup |
+| `app/questions/[id]/page.tsx` | Question detail — ISR 60 s. Loads the question, related clusters, prev/next neighbours and the first page of community answers (hydrated into the comments hooks' keys); emits QAPage/WebPage + BreadcrumbList JSON-LD |
+| `app/questions/[id]/preview/page.tsx` | Admin draft preview — dynamic, session cookie, noindex |
+| `components/questions/QuestionDetailClient.tsx` | Detail page body — breadcrumbs, badge/chip links to the filtered list, answer always in the DOM (collapsed; reveal goes through the free-view gate), community answers, then the related block |
+| `components/questions/RelatedQuestions.tsx` | Related clusters (same category ×3, same company ×2, trending fallback) rendered with `QuestionCard` + "View all" hub links, then `QuestionPager` |
+| `components/questions/QuestionPager.tsx` | ← Previous / Next → question links (newest-first chain); clicks go through the free-view gate like cards do |
+| `components/RelativeTime.tsx` | Hydration-safe "N days ago" `<time>` — renders the server label, recomputes after mount |
+| `lib/related-questions.ts` | Pure cluster selection: sizes, headings, hub hrefs, de-duplication, trending fallback, "View all N" threshold |
+| `lib/question-seo.ts` | Question `<title>`, meta description (sample-answer excerpt or template) and JSON-LD graph (QAPage/WebPage with paywall markup + BreadcrumbList) |
+| `lib/comments-query.ts` | Shared comments query shape (select, filters, order, page size, keys) used by `hooks/useComments.ts` and the question route's prefetch — keep both on it |
 | `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |
 | `app/api/revalidate/hero/route.ts` | Admin-gated POST → `revalidateTag('hero')` |
 | `app/api/revalidate/questions/route.ts` | Admin-gated POST → `revalidateTag('questions')` |

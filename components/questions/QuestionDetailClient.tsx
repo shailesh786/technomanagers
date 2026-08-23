@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Heart, Bookmark, BookmarkCheck, MessageCircle, ChevronDown, ChevronUp, Lock } from 'lucide-react';
+import { ChevronRight, Heart, Bookmark, BookmarkCheck, MessageCircle, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useQuestion, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
@@ -15,6 +15,8 @@ import { useCommentCount } from '@/hooks/useComments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
 import CommentsSection from '@/components/questions/CommentsSection';
+import RelatedQuestions from '@/components/questions/RelatedQuestions';
+import type { QuestionNeighbours, RelatedCluster } from '@/lib/related-questions';
 
 const difficultyColors: Record<string, string> = {
   Easy: 'bg-success/10 text-success border-success/20',
@@ -24,9 +26,12 @@ const difficultyColors: Record<string, string> = {
 
 interface Props {
   id: string;
+  /** Server-chosen related clusters and previous/next pair (lib/related-questions.ts). */
+  clusters: RelatedCluster[];
+  neighbours: QuestionNeighbours;
 }
 
-export default function QuestionDetailClient({ id }: Props) {
+export default function QuestionDetailClient({ id, clusters, neighbours }: Props) {
   const router = useRouter();
   const { data: question, isLoading } = useQuestion(id);
   const { user } = useAuth();
@@ -106,16 +111,39 @@ export default function QuestionDetailClient({ id }: Props) {
     document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const primaryCategory = question.category?.[0];
+
   return (
     <div className="container py-8 max-w-3xl">
-      <Link href="/questions" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-        <ArrowLeft className="h-4 w-4" /> Back to Questions
-      </Link>
+      {/* Breadcrumbs — mirrored by the BreadcrumbList JSON-LD the server route emits */}
+      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">
+        <ol className="flex flex-wrap items-center gap-1.5">
+          <li><Link href="/" className="hover:text-foreground">Home</Link></li>
+          <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
+          <li><Link href="/questions" className="hover:text-foreground">Questions</Link></li>
+          {primaryCategory && (
+            <>
+              <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
+              <li>
+                <Link href={`/questions?category=${encodeURIComponent(primaryCategory)}`} className="hover:text-foreground">
+                  {primaryCategory}
+                </Link>
+              </li>
+            </>
+          )}
+          <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
+          <li aria-current="page" className="truncate max-w-[16rem] text-foreground">{question.question_text}</li>
+        </ol>
+      </nav>
 
       <div className="space-y-4">
         {/* Header */}
         <div className="flex flex-wrap gap-2">
-          {question.company?.map((c) => <Badge key={c} variant="secondary">{c}</Badge>)}
+          {question.company?.map((c) => (
+            <Link key={c} href={`/questions?company=${encodeURIComponent(c)}`} className={badgeVariants({ variant: 'secondary' })}>
+              {c}
+            </Link>
+          ))}
           {question.difficulty && (
             <Badge variant="outline" className={difficultyColors[question.difficulty] || ''}>
               {question.difficulty}
@@ -129,9 +157,13 @@ export default function QuestionDetailClient({ id }: Props) {
 
         <div className="flex flex-wrap gap-2">
           {question.category?.map((cat) => (
-            <span key={cat} className="text-xs font-mono px-2 py-1 rounded-md bg-muted text-muted-foreground">
+            <Link
+              key={cat}
+              href={`/questions?category=${encodeURIComponent(cat)}`}
+              className="text-xs font-mono px-2 py-1 rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
               {cat}
-            </span>
+            </Link>
           ))}
         </div>
 
@@ -168,6 +200,8 @@ export default function QuestionDetailClient({ id }: Props) {
           <div className="rounded-xl border">
             <button
               onClick={handleShowAnswer}
+              aria-expanded={showAnswer}
+              aria-controls="sample-answer"
               className="w-full flex items-center justify-between p-4 text-left font-heading font-semibold"
             >
               <span className="flex items-center gap-2">
@@ -176,16 +210,24 @@ export default function QuestionDetailClient({ id }: Props) {
               </span>
               {showAnswer ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
-            {showAnswer && (
-              <div className="px-4 pb-4 text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {question.sample_answer}
-              </div>
-            )}
+            {/* Rendered whether or not it is revealed, so the answer is in the
+                server HTML. `.question-answer` is the paywall selector in the
+                route's JSON-LD. */}
+            <div
+              id="sample-answer"
+              hidden={!showAnswer}
+              className="question-answer px-4 pb-4 text-muted-foreground leading-relaxed whitespace-pre-wrap"
+            >
+              {question.sample_answer}
+            </div>
           </div>
         )}
 
         {/* Comments */}
         <CommentsSection questionId={question.id} />
+
+        {/* Related clusters + previous/next, below the community answers */}
+        <RelatedQuestions clusters={clusters} neighbours={neighbours} />
       </div>
     </div>
   );
