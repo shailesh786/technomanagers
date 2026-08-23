@@ -518,7 +518,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               <span className="text-2xl md:text-4xl font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>in 12 Weeks</span>
             </h1>
             <p className="text-lg max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              A 12-week, mentor-led live cohort for PMs, engineers &amp; builders who want to ship a portfolio-ready AI product — RAG, agents, evals, GTM, with dedicated interview prep baked in and a live Demo Day.
+              Alumni now ship AI at Google, Microsoft and Oracle. Saturdays go deep on RAG, agents, evals, LLM systems and model tradeoffs. Sundays are interview prep and hands-on building.
             </p>
             <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
               You don&apos;t finish with just a certificate. You leave with a working product, an eval framework, and the answers for the interview that follows.
