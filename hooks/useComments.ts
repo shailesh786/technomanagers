@@ -1,51 +1,28 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import {
+  COMMENT_SELECT,
+  commentCountQueryKey,
+  commentsQueryKey,
+  fetchCommentCount,
+  fetchCommentsPage,
+  nextCommentsPageParam,
+  type CommentSort,
+} from '@/lib/comments-query';
+
+export type { Comment } from '@/lib/comments-query';
 
 const supabase = createSupabaseBrowserClient();
 
-export interface Comment {
-  id: string;
-  question_id: string;
-  user_id: string;
-  parent_id: string | null;
-  content: string;
-  created_at: string;
-  updated_at: string;
-  profile?: { full_name: string | null; avatar_url: string | null };
-  like_count: number;
-  user_liked: boolean;
-  replies?: Comment[];
-}
-
-const PAGE_SIZE = 10;
-const COMMENT_SELECT = '*, profile:user_id(id, full_name, avatar_url)';
-
-export function useComments(questionId: string, sort: 'newest' | 'top' = 'newest') {
+// The query shape (select, filters, order, page size) lives in
+// lib/comments-query.ts so the question detail route can prefetch the first
+// page with the public client and hydrate this exact key. Keep it there.
+export function useComments(questionId: string, sort: CommentSort = 'newest') {
   return useInfiniteQuery({
-    queryKey: ['comments', questionId, sort],
+    queryKey: commentsQueryKey(questionId, sort),
     staleTime: 30 * 1000,
-    queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase
-        .from('question_comments')
-        .select(COMMENT_SELECT)
-        .eq('question_id', questionId)
-        .is('parent_id', null)
-        .is('deleted_at', null)
-        .range(pageParam, pageParam + PAGE_SIZE - 1);
-
-      query = query.order('created_at', { ascending: sort !== 'newest' });
-
-      const { data, error } = await query;
-      if (error) {
-        console.error('Failed to fetch comments:', error);
-        throw error;
-      }
-      return { data: data || [], nextOffset: pageParam + PAGE_SIZE };
-    },
-    getNextPageParam: (lastPage) => {
-      if (lastPage.data.length < PAGE_SIZE) return undefined;
-      return lastPage.nextOffset;
-    },
+    queryFn: ({ pageParam = 0 }) => fetchCommentsPage(supabase, questionId, sort, pageParam),
+    getNextPageParam: nextCommentsPageParam,
     initialPageParam: 0,
     enabled: !!questionId,
   });
@@ -74,19 +51,8 @@ export function useCommentReplies(parentId: string) {
 
 export function useCommentCount(questionId: string) {
   return useQuery({
-    queryKey: ['comment_count', questionId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('question_comments')
-        .select('id', { count: 'exact', head: true })
-        .eq('question_id', questionId)
-        .is('deleted_at', null);
-      if (error) {
-        console.error('Failed to fetch comment count:', error);
-        throw error;
-      }
-      return count || 0;
-    },
+    queryKey: commentCountQueryKey(questionId),
+    queryFn: () => fetchCommentCount(supabase, questionId),
     enabled: !!questionId,
   });
 }

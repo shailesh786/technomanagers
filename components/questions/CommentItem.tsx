@@ -17,7 +17,7 @@ import { useCommentLikeCounts, useUserLikedComments, useToggleCommentLike } from
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const supabase = createSupabaseBrowserClient();
-import { timeAgo } from '@/lib/timeAgo';
+import RelativeTime from '@/components/RelativeTime';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -124,7 +124,7 @@ export default function CommentItem({ comment, questionId, isReply = false }: Co
   const alreadyFlagged = comment.is_flagged;
 
   return (
-    <div className={isReply ? 'ml-8 md:ml-10 pl-4 border-l-2 border-border' : ''}>
+    <div id={`comment-${comment.id}`} className={isReply ? 'ml-8 md:ml-10 pl-4 border-l-2 border-border' : ''}>
       <div className="flex gap-3 py-4">
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarImage src={profileData?.avatar_url || ''} referrerPolicy="no-referrer" />
@@ -134,7 +134,7 @@ export default function CommentItem({ comment, questionId, isReply = false }: Co
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <span className="font-semibold">{profileData?.full_name || 'User'}</span>
-              <span className="text-muted-foreground text-xs">{timeAgo(comment.created_at)}</span>
+              <RelativeTime date={comment.created_at} className="text-muted-foreground text-xs" />
             </div>
             {user && !isOwner && (
               <DropdownMenu>
