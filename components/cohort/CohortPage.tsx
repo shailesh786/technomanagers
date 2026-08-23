@@ -521,7 +521,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               A 12-week, mentor-led live cohort for PMs, engineers &amp; builders who want to ship a portfolio-ready AI product — RAG, agents, evals, GTM, with dedicated interview prep baked in and a live Demo Day.
             </p>
             <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Not a recorded course. You build 10+ projects, get mentor feedback every week, and present on Demo Day.
+              You don&apos;t finish with just a certificate. You leave with a working product, an eval framework, and the answers for the interview that follows.
             </p>
             <div className="flex flex-wrap items-stretch gap-x-4 gap-y-4 py-2">
               {stats.map(([n, l], i) => (
