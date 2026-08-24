@@ -16,7 +16,7 @@ import { unstable_cache } from 'next/cache';
 import type { Metadata } from 'next';
 import CohortPage from '@/components/cohort/CohortPage';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
-import { TESTIMONIAL_COLUMNS, isRenderable, selectVisibleTestimonials } from '@/lib/cohort-testimonials';
+import { TESTIMONIAL_COLUMNS } from '@/lib/cohort-testimonials';
 import type { CohortTestimonial } from '@/types';
 
 export const revalidate = 300;
@@ -66,42 +66,21 @@ function resolveSiteUrl(): string {
 }
 
 /**
- * schema.org markup for the programme and its reviews.
+ * schema.org markup for the programme.
  *
  * Emitted from the Server Component so it ships in the static HTML and adds
  * nothing to the client bundle.
  *
- * Deliberately no `aggregateRating`: we collect written testimonials, not star
- * ratings, and inventing a score to win a rich result would be fabricating
- * data. Reviews are emitted without `reviewRating` for the same reason — that
- * costs the review-snippet rich result but keeps the markup truthful, and the
- * Course entity itself is the bulk of the SEO value here.
- *
- * Only `text` testimonials become reviews: screenshots have no machine-readable
- * body, and a video's pull-quote is a fragment rather than a review.
+ * Deliberately no `review`/`aggregateRating` markup: we collect written
+ * testimonials, not star ratings, and once multiple reviews are marked up
+ * Google requires an aggregateRating — Search Console flags the combination
+ * as a critical Review-snippets issue (seen Aug 2026). Unrated reviews can
+ * never produce the review-snippet rich result anyway, so the markup bought
+ * nothing; the quotes still reach crawlers as visible page content rendered
+ * by CohortPage. Truthful star ratings collected from students are the only
+ * legitimate way back to review markup here.
  */
-/**
- * Structured data is bytes in the HTML of every request, and long quotes add
- * up fast. Twenty reviews is well past the point of diminishing returns for
- * search engines while keeping the block to a few kB; the wall itself still
- * renders every published testimonial.
- */
-const MAX_JSONLD_REVIEWS = 20;
-
-function courseJsonLd(testimonials: CohortTestimonial[], siteUrl: string) {
-  const reviews = selectVisibleTestimonials(testimonials)
-    .filter((t) => t.kind === 'text' && isRenderable(t) && t.name.trim())
-    .slice(0, MAX_JSONLD_REVIEWS)
-    .map((t) => ({
-      '@type': 'Review',
-      author: {
-        '@type': 'Person',
-        name: t.name,
-        ...(t.role.trim() ? { jobTitle: t.role } : {}),
-      },
-      reviewBody: t.quote,
-    }));
-
+function courseJsonLd(siteUrl: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Course',
@@ -133,7 +112,6 @@ function courseJsonLd(testimonials: CohortTestimonial[], siteUrl: string) {
         byDay: ['https://schema.org/Saturday', 'https://schema.org/Sunday'],
       },
     },
-    ...(reviews.length ? { review: reviews } : {}),
   };
 }
 
@@ -145,9 +123,9 @@ export default async function Cohort() {
     <>
       <script
         type="application/ld+json"
-        // Server-rendered from our own database rows, never user input.
+        // Static course facts only — no user or database content.
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(courseJsonLd(testimonials, siteUrl)).replace(/</g, '\\u003c'),
+          __html: JSON.stringify(courseJsonLd(siteUrl)).replace(/</g, '\\u003c'),
         }}
       />
       <CohortPage testimonials={testimonials} />
