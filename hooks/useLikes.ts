@@ -37,7 +37,7 @@ export function useUserLikedQuestion(questionId: string, userId?: string) {
 export function useToggleQuestionLike() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ questionId }: { questionId: string; userId: string; liked: boolean }) => {
+    mutationFn: async ({ questionId }: { questionId: string; userId: string }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any).rpc('toggle_question_like', {
         p_question_id: questionId,
@@ -45,7 +45,18 @@ export function useToggleQuestionLike() {
       if (error) throw error;
       return data as { liked: boolean };
     },
-    onMutate: async ({ questionId, userId, liked }) => {
+    onMutate: async ({ questionId, userId }) => {
+      // Settle in-flight fetches of the keys we're about to write, so a
+      // response landing mid-toggle can't overwrite the optimistic state.
+      await Promise.all([
+        qc.cancelQueries({ queryKey: ['user_liked_question', questionId, userId] }),
+        qc.cancelQueries({ queryKey: ['question', questionId] }),
+      ]);
+
+      // The current heart state comes from the cache, not the caller — a
+      // component rendered before its liked-query resolved would pass a stale
+      // flag (false while loading) and move the counter the wrong way.
+      const liked = qc.getQueryData<boolean>(['user_liked_question', questionId, userId]) ?? false;
       const delta = liked ? -1 : 1;
 
       // Heart fill state (detail page reads this key)
@@ -74,9 +85,16 @@ export function useToggleQuestionLike() {
       qc.invalidateQueries({ queryKey: ['questions'] });
       toast.error('Failed to update like. Please try again.');
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (data, vars, context) => {
+      // The RPC returns the authoritative liked state — write it directly.
+      qc.setQueryData(['user_liked_question', vars.questionId, vars.userId], data.liked);
+      // If the server landed on the same state we started from, the optimistic
+      // flip (and its counter delta) was wrong — refetch the counters.
+      if (context && data.liked === context.liked) {
+        qc.invalidateQueries({ queryKey: ['question', vars.questionId] });
+        qc.invalidateQueries({ queryKey: ['questions'] });
+      }
       // Sync the other caches that track the user's liked set
-      qc.invalidateQueries({ queryKey: ['user_liked_question', vars.questionId] });
       qc.invalidateQueries({ queryKey: ['user_liked_questions'] });
       qc.invalidateQueries({ queryKey: ['user_liked_question_ids'] });
     },
@@ -174,6 +192,14 @@ export function useToggleLike() {
       return data as { liked: boolean };
     },
     onMutate: async ({ questionId, userId }) => {
+      // Settle in-flight fetches of the keys we're about to write. The broad
+      // ['questions'] lists are deliberately NOT cancelled — that would abort
+      // an unrelated Load More page fetch mid-flight.
+      await Promise.all([
+        qc.cancelQueries({ queryKey: ['user_liked_question_ids', userId] }),
+        qc.cancelQueries({ queryKey: ['question', questionId] }),
+      ]);
+
       const prevLikedIds =
         qc.getQueryData<Set<string>>(['user_liked_question_ids', userId]) ?? new Set<string>();
       const isCurrentlyLiked = prevLikedIds.has(questionId);
@@ -199,11 +225,14 @@ export function useToggleLike() {
 
       return { prevLikedIds };
     },
-    onError: (_err, { userId }, context) => {
+    onError: (_err, vars, context) => {
       if (context?.prevLikedIds) {
-        qc.setQueryData(['user_liked_question_ids', userId], context.prevLikedIds);
+        qc.setQueryData(['user_liked_question_ids', vars.userId], context.prevLikedIds);
       }
       qc.invalidateQueries({ queryKey: ['questions'] });
+      // The detail cache got the optimistic delta too — refetch it, or the
+      // detail page keeps showing the inflated count after a failed upvote.
+      qc.invalidateQueries({ queryKey: ['question', vars.questionId] });
       toast.error('Failed to update like. Please try again.');
     },
     onSuccess: (_data, { questionId }) => {

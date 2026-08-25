@@ -28,7 +28,10 @@ export function useQuestions(filters?: {
 }) {
   return useQuery({
     queryKey: ['questions', filters],
-    staleTime: 60 * 1000,
+    // 5 min ≥ every ISR window, so a mount on fresh HTML trusts the hydrated
+    // server prefetch instead of refetching it; mutations still refetch via
+    // invalidateQueries, which ignores staleTime.
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       let query = supabase
         .from('questions')
@@ -93,7 +96,8 @@ export function useQuestions(filters?: {
 export function useQuestion(id: string) {
   return useQuery({
     queryKey: ['question', id],
-    staleTime: 60 * 1000,
+    // Server-prefetched key — see useQuestions() staleTime note.
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('questions')

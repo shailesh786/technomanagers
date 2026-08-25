@@ -20,7 +20,9 @@ const supabase = createSupabaseBrowserClient();
 export function useComments(questionId: string, sort: CommentSort = 'newest') {
   return useInfiniteQuery({
     queryKey: commentsQueryKey(questionId, sort),
-    staleTime: 30 * 1000,
+    // 5 min ≥ the detail page's ISR window, so a mount on fresh HTML trusts
+    // the hydrated server prefetch; comment mutations invalidate explicitly.
+    staleTime: 5 * 60 * 1000,
     queryFn: ({ pageParam = 0 }) => fetchCommentsPage(supabase, questionId, sort, pageParam),
     getNextPageParam: nextCommentsPageParam,
     initialPageParam: 0,
@@ -52,6 +54,8 @@ export function useCommentReplies(parentId: string) {
 export function useCommentCount(questionId: string) {
   return useQuery({
     queryKey: commentCountQueryKey(questionId),
+    // Server-prefetched key — see useComments() staleTime note.
+    staleTime: 5 * 60 * 1000,
     queryFn: () => fetchCommentCount(supabase, questionId),
     enabled: !!questionId,
   });

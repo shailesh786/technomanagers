@@ -26,8 +26,11 @@ export default function FeaturedQuestionsSection() {
   // Pills are ROLE names (Product Management, Program Management, …). Most
   // questions carry the matching `role`, but a few only carry the equivalent
   // `category` tag — so we match on either to surface everything relevant.
+  // limit: 4 — the section renders 4 cards, and the key must match the
+  // homepage server prefetch (['questions', { sort: 'Hot', limit: 4 }]).
   const { data: questions, isLoading } = useQuestions({
     sort: 'Hot',
+    limit: 4,
     ...(selectedPill !== 'All' ? { roleOrCategory: selectedPill } : {}),
   });
 

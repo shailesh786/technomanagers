@@ -130,7 +130,8 @@ const getHotQuestions = unstable_cache(
       .order('upvotes', { ascending: false })
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
-      .range(0, 19);
+      // The featured section renders 4 cards — fetching 20 wasted 16 rows.
+      .range(0, 3);
     return flattenCommentCount(data ?? []);
   },
   ['hot-questions'],
@@ -174,8 +175,10 @@ const getHeroItems = unstable_cache(
 export default async function HomePage() {
   const queryClient = new QueryClient();
 
+  // limit must be part of the key on BOTH sides — FeaturedQuestionsSection
+  // passes { sort: 'Hot', limit: 4 } to useQuestions().
   await queryClient.prefetchQuery({
-    queryKey: ['questions', { sort: 'Hot' }],
+    queryKey: ['questions', { sort: 'Hot', limit: 4 }],
     queryFn: getHotQuestions,
   });
 

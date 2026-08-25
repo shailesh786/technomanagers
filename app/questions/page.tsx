@@ -33,6 +33,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import QuestionsClient from '@/components/questions/QuestionsClient';
 import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
+import { FACET_SELECT, type FacetRow } from '@/hooks/useQuestionFacets';
 
 export const revalidate = 60; // ISR: regenerate at most every 60 seconds
 
@@ -140,6 +141,22 @@ const getPopularCompanies = unstable_cache(
   { revalidate: 300, tags: ['questions'] },
 );
 
+// Facet rows for the filter dropdown counts. Without this prefetch the client
+// downloaded the whole published corpus on every /questions visit.
+const getQuestionFacets = unstable_cache(
+  async () => {
+    const supabase = getAnonClient();
+    const { data, error } = await supabase
+      .from('questions')
+      .select(FACET_SELECT)
+      .eq('status', 'published');
+    if (error) throw error;
+    return (data ?? []) as FacetRow[];
+  },
+  ['question-facets'],
+  { revalidate: 60, tags: ['questions'] },
+);
+
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default async function QuestionsPage() {
@@ -179,6 +196,10 @@ export default async function QuestionsPage() {
     queryClient.prefetchQuery({
       queryKey: ['companies', 'popular', 6],
       queryFn: getPopularCompanies,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ['question-facets'],
+      queryFn: getQuestionFacets,
     }),
   ]);
 
