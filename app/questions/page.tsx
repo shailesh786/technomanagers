@@ -87,7 +87,9 @@ const getDefaultQuestions = unstable_cache(
       .eq('status', 'published')
       // count only non-deleted comments — must match useQuestions()/useCommentCount()
       .is('question_comments.deleted_at', null)
+      // Sort chain must stay byte-identical to useQuestions()'s Newest branch.
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .range(0, 19);
     return flattenCommentCount(data ?? []);
   },

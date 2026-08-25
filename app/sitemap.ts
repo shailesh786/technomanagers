@@ -64,37 +64,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  try {
-    const supabase = createSupabasePublicClient();
-    const { data: questions } = await supabase
-      .from('questions')
-      .select('id, updated_at, company, category, role')
-      .eq('status', 'published');
-    const rows = questions ?? [];
+  const supabase = createSupabasePublicClient();
+  const { data: questions, error } = await supabase
+    .from('questions')
+    .select('id, updated_at, company, category, role')
+    .eq('status', 'published');
+  // Throw on DB failure: a 500 makes Google keep its cached sitemap, which is
+  // strictly better than shipping a valid 200 with every question+hub URL
+  // missing and caching that for an hour.
+  if (error) throw error;
+  const rows = questions ?? [];
 
-    const questionRoutes: MetadataRoute.Sitemap = rows.map((q) => ({
-      url: `${BASE_URL}/questions/${q.id}`,
-      lastModified: new Date(q.updated_at ?? Date.now()),
+  const questionRoutes: MetadataRoute.Sitemap = rows.map((q) => ({
+    url: `${BASE_URL}/questions/${q.id}`,
+    lastModified: new Date(q.updated_at ?? Date.now()),
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }));
+
+  // Hub pages, from the same rows. Only hubs past the indexability
+  // threshold are listed (smaller ones exist but are noindex), and each
+  // carries the latest updated_at of its questions as lastModified.
+  const taxonomy = buildHubTaxonomy(rows);
+  const hubRoutes: MetadataRoute.Sitemap = (['company', 'category', 'role'] as const).flatMap((kind) =>
+    taxonomy[kind].filter(isIndexable).map((hub) => ({
+      url: `${BASE_URL}${hubHref(kind, hub.name)}`,
+      lastModified: hub.lastModified ? new Date(hub.lastModified) : new Date(),
       changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    }));
+      priority: 0.7,
+    })),
+  );
 
-    // Hub pages, from the same rows. Only hubs past the indexability
-    // threshold are listed (smaller ones exist but are noindex), and each
-    // carries the latest updated_at of its questions as lastModified.
-    const taxonomy = buildHubTaxonomy(rows);
-    const hubRoutes: MetadataRoute.Sitemap = (['company', 'category', 'role'] as const).flatMap((kind) =>
-      taxonomy[kind].filter(isIndexable).map((hub) => ({
-        url: `${BASE_URL}${hubHref(kind, hub.name)}`,
-        lastModified: hub.lastModified ? new Date(hub.lastModified) : new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-      })),
-    );
-
-    return [...staticRoutes, ...hubRoutes, ...questionRoutes];
-  } catch {
-    // If Supabase is unavailable during build, return static routes only
-    return staticRoutes;
-  }
+  return [...staticRoutes, ...hubRoutes, ...questionRoutes];
 }

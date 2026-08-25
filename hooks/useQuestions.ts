@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { csContains, eqFilter, pgArrayLiteral } from '@/lib/postgrest';
 import { toast } from 'sonner';
 import type { Question } from '@/types';
 import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
@@ -38,19 +39,19 @@ export function useQuestions(filters?: {
 
       // Homepage single-pill filter
       if (filters?.category && filters.category !== 'All') {
-        query = query.contains('category', [filters.category]);
+        query = query.contains('category', pgArrayLiteral([filters.category]));
       }
       // Homepage pill: role column OR category array contains the value
       if (filters?.roleOrCategory && filters.roleOrCategory !== 'All') {
         const v = filters.roleOrCategory;
-        query = query.or(`role.eq.${v},category.cs.{${v}}`);
+        query = query.or([eqFilter('role', v), csContains('category', v)].join(','));
       }
       // Questions-page multi-category filter (OR logic)
       if (filters?.categories && filters.categories.length > 0) {
-        query = query.or(filters.categories.map(c => `category.cs.{${c}}`).join(','));
+        query = query.or(filters.categories.map(c => csContains('category', c)).join(','));
       }
       if (filters?.companies && filters.companies.length > 0) {
-        query = query.or(filters.companies.map(c => `company.cs.{${c}}`).join(','));
+        query = query.or(filters.companies.map(c => csContains('company', c)).join(','));
       }
       if (filters?.role) {
         query = query.eq('role', filters.role);
@@ -62,12 +63,20 @@ export function useQuestions(filters?: {
         query = query.ilike('question_text', `%${filters.search}%`);
       }
 
+      // Every sort ends on the unique id so equal-ranked rows keep a stable
+      // order across pages — without it, Load More repeats/skips rows.
+      // These chains are MIRRORED in the server prefetches (app/page.tsx
+      // getHotQuestions, app/questions/page.tsx getDefaultQuestions) — keep
+      // them byte-identical.
       if (filters?.sort === 'Newest') {
-        query = query.order('created_at', { ascending: false });
+        query = query.order('created_at', { ascending: false }).order('id', { ascending: false });
       } else if (filters?.sort === 'Oldest') {
-        query = query.order('created_at', { ascending: true });
+        query = query.order('created_at', { ascending: true }).order('id', { ascending: true });
       } else {
-        query = query.order('upvotes', { ascending: false });
+        query = query
+          .order('upvotes', { ascending: false })
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false });
       }
 
       const limit = filters?.limit ?? 20;

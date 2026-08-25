@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { csContains, pgArrayLiteral, pgQuote } from '@/lib/postgrest';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -279,13 +280,13 @@ function AdminQuestions() {
       if (statusFilter !== 'all') q = q.eq('status', statusFilter);
       if (selectedDifficulties.length > 0) q = q.in('difficulty', selectedDifficulties);
       if (selectedCategories.length > 0) {
-        q = q.or(selectedCategories.map((c) => `category.cs.{${c}}`).join(','));
+        q = q.or(selectedCategories.map((c) => csContains('category', c)).join(','));
       }
       if (selectedCompanies.length > 0) {
-        q = q.or(selectedCompanies.map((c) => `company.cs.{${c}}`).join(','));
+        q = q.or(selectedCompanies.map((c) => csContains('company', c)).join(','));
       }
       if (selectedRoles.length > 0) {
-        q = q.or(selectedRoles.map((r) => `tags.cs.{${r}}`).join(','));
+        q = q.or(selectedRoles.map((r) => csContains('tags', r)).join(','));
       }
       if (search) q = q.ilike('question_text', `%${search}%`);
 
@@ -1080,7 +1081,7 @@ function AdminCategories() {
           const { data: qs, error: qErr } = await supabase
             .from('questions')
             .select('id, category')
-            .contains('category', [oldName]);
+            .contains('category', pgArrayLiteral([oldName]));
           if (qErr) throw qErr;
           await Promise.all(
             (qs || []).map((q) => {
@@ -1118,7 +1119,7 @@ function AdminCategories() {
         const { data: qs, error: qErr } = await supabase
           .from('questions')
           .select('id, category')
-          .contains('category', [c.name]);
+          .contains('category', pgArrayLiteral([c.name]));
         if (qErr) throw qErr;
         await Promise.all(
           (qs || []).map((q) =>
@@ -1672,7 +1673,8 @@ function AdminUsers() {
         .range(from, to);
 
       if (debouncedSearch) {
-        query = query.or(`full_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+        const pattern = pgQuote(`%${debouncedSearch}%`);
+        query = query.or(`full_name.ilike.${pattern},email.ilike.${pattern}`);
       }
 
       const { data, error, count } = await query;
@@ -2249,7 +2251,7 @@ function AdminCompanies() {
           const { data: qs, error: qErr } = await supabase
             .from('questions')
             .select('id, company')
-            .contains('company', [oldName]);
+            .contains('company', pgArrayLiteral([oldName]));
           if (qErr) throw qErr;
           await Promise.all(
             (qs || []).map((q) => {
@@ -2287,7 +2289,7 @@ function AdminCompanies() {
         const { data: qs, error: qErr } = await supabase
           .from('questions')
           .select('id, company')
-          .contains('company', [c.name]);
+          .contains('company', pgArrayLiteral([c.name]));
         if (qErr) throw qErr;
         await Promise.all(
           (qs || []).map((q) =>

@@ -28,6 +28,7 @@ import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query
 import type { Metadata } from 'next';
 import QuestionDetailClient from '@/components/questions/QuestionDetailClient';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
+import { pgArrayLiteral } from '@/lib/postgrest';
 import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
 import {
   CATEGORY_CLUSTER_SIZE,
@@ -117,11 +118,12 @@ async function listByTag(
     .select(QUESTION_LIST_SELECT)
     .eq('status', 'published')
     .neq('id', excludeId)
-    .contains(column, [value])
+    .contains(column, pgArrayLiteral([value]))
     // count only non-deleted comments — must match useQuestions()/useCommentCount()
     .is('question_comments.deleted_at', null)
     .order('upvotes', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(limit);
   return flattenCommentCount(data ?? []) as unknown as Question[];
 }
@@ -132,7 +134,7 @@ async function countByTag(supabase: PublicClient, column: TagColumn, value: stri
     .from('questions')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'published')
-    .contains(column, [value]);
+    .contains(column, pgArrayLiteral([value]));
   return error ? null : count;
 }
 
@@ -145,6 +147,7 @@ async function listTrending(supabase: PublicClient, excludeId: string, limit: nu
     .is('question_comments.deleted_at', null)
     .order('upvotes', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(limit);
   return flattenCommentCount(data ?? []) as unknown as Question[];
 }
