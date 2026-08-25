@@ -77,6 +77,37 @@ export function nextCommentsPageParam(lastPage: CommentsPage): number | undefine
   return lastPage.data.length < COMMENTS_PAGE_SIZE ? undefined : lastPage.nextOffset;
 }
 
+/**
+ * Every non-deleted reply on a question, oldest first — ONE query for the
+ * whole page. Keyed on the question (not the visible parent ids) so "Load
+ * more comments" causes no key churn or refetch.
+ */
+export async function fetchQuestionReplies(client: AnyClient, questionId: string): Promise<Comment[]> {
+  const { data, error } = await client
+    .from('question_comments')
+    .select(COMMENT_SELECT)
+    .eq('question_id', questionId)
+    .not('parent_id', 'is', null)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch replies:', error);
+    throw error;
+  }
+  return (data ?? []) as unknown as Comment[];
+}
+
+/** Groups reply rows under their parent comment id, preserving row order. */
+export function groupRepliesByParent(rows: Comment[]): Record<string, Comment[]> {
+  const grouped: Record<string, Comment[]> = {};
+  for (const row of rows) {
+    if (!row.parent_id) continue;
+    (grouped[row.parent_id] ??= []).push(row);
+  }
+  return grouped;
+}
+
 /** Count of non-deleted comments (top-level and replies) on a question. */
 export async function fetchCommentCount(client: AnyClient, questionId: string): Promise<number> {
   const { count, error } = await client

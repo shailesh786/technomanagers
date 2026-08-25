@@ -1,14 +1,16 @@
 'use client';
 
 
-import { useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
-import { useComments, useCommentCount, useAddComment } from '@/hooks/useComments';
+import { useComments, useCommentCount, useAddComment, useQuestionReplies } from '@/hooks/useComments';
+import { useCommentLikeCounts, useUserLikedComments } from '@/hooks/useLikes';
+import { groupRepliesByParent } from '@/lib/comments-query';
 import CommentItem from '@/components/questions/CommentItem';
 import { toast } from 'sonner';
 
@@ -24,10 +26,22 @@ export default function CommentsSection({ questionId }: CommentsSectionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   const { data: commentCount = 0 } = useCommentCount(questionId);
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useComments(questionId, sort);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } = useComments(questionId, sort);
   const addComment = useAddComment();
 
-  const comments = data?.pages.flatMap((p) => p.data) || [];
+  const comments = useMemo(() => data?.pages.flatMap((p) => p.data) ?? [], [data]);
+
+  // One request for every reply on the question, and ONE like-counts +
+  // ONE user-liked query covering every visible comment and reply — instead
+  // of each CommentItem fetching its own (≈50 requests on a busy page).
+  const { data: replyRows } = useQuestionReplies(questionId);
+  const repliesByParent = useMemo(() => groupRepliesByParent(replyRows ?? []), [replyRows]);
+  const visibleIds = useMemo(
+    () => [...comments, ...(replyRows ?? [])].map((c) => c.id).sort(),
+    [comments, replyRows],
+  );
+  const { data: likeCounts = {} } = useCommentLikeCounts(visibleIds);
+  const { data: likedSet = new Set<string>() } = useUserLikedComments(visibleIds, user?.id);
 
   const handlePost = () => {
     if (!user) { setGateOpen(true); return; }
@@ -110,12 +124,19 @@ export default function CommentsSection({ questionId }: CommentsSectionProps) {
 
       {/* Comments list */}
       <div className="divide-y">
-        {comments.map((comment: any) => (
-          <CommentItem key={comment.id} comment={comment} questionId={questionId} />
+        {comments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            questionId={questionId}
+            replies={repliesByParent[comment.id]}
+            likeCounts={likeCounts}
+            likedSet={likedSet}
+          />
         ))}
       </div>
 
-      {comments.length === 0 && (
+      {!isPending && comments.length === 0 && (
         <p className="text-center text-muted-foreground text-sm py-8">
           No answers yet. Be the first to share your approach!
         </p>

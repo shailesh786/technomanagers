@@ -59,6 +59,11 @@ export interface QuestionJsonLdInput {
   question: Question;
   /** Top-level community answers that are in the HTML (first page). */
   comments: Comment[];
+  /**
+   * True total of community answers on the question (all pages, replies
+   * included). Without it answerCount undercounts to the first page.
+   */
+  totalAnswerCount?: number | null;
   siteUrl: string;
 }
 
@@ -76,7 +81,7 @@ export interface QuestionJsonLdInput {
  * - `BreadcrumbList` — Home › Interview Questions › primary category › this
  *   question — mirroring the visible trail.
  */
-export function questionJsonLd({ question, comments, siteUrl }: QuestionJsonLdInput) {
+export function questionJsonLd({ question, comments, totalAnswerCount, siteUrl }: QuestionJsonLdInput) {
   const url = `${siteUrl}/questions/${question.id}`;
   const site = { '@type': 'Organization', name: SITE_NAME, url: siteUrl };
   const sampleAnswer = question.sample_answer?.trim();
@@ -91,7 +96,7 @@ export function questionJsonLd({ question, comments, siteUrl }: QuestionJsonLdIn
       author: { '@type': 'Person', name: c.profile?.full_name?.trim() || 'Community member' },
     }));
 
-  const answerCount = suggestedAnswer.length + (sampleAnswer ? 1 : 0);
+  const answerCount = Math.max(suggestedAnswer.length, totalAnswerCount ?? 0) + (sampleAnswer ? 1 : 0);
 
   const page = {
     '@type': answerCount > 0 ? 'QAPage' : 'WebPage',

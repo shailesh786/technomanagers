@@ -51,14 +51,11 @@ vi.mock('@/contexts/QuestionAccessContext', () => ({
   useQuestionAccess: () => ({ setGateOpen: vi.fn() }),
 }));
 vi.mock('@/hooks/useComments', () => ({
-  useCommentReplies: () => ({ data: [] }),
   useAddComment: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateComment: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteComment: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock('@/hooks/useLikes', () => ({
-  useCommentLikeCounts: () => ({ data: {} }),
-  useUserLikedComments: () => ({ data: new Set<string>() }),
   useToggleCommentLike: () => ({ mutate: vi.fn() }),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -73,10 +70,17 @@ const baseComment = {
   profile: { full_name: 'Asha Author', avatar_url: '' },
 };
 
+// Replies and like state are per-page props now (fetched once by
+// CommentsSection) — CommentItem itself must not fetch anything.
 const renderItem = (overrides: Partial<typeof baseComment> = {}) =>
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <CommentItem comment={{ ...baseComment, ...overrides }} questionId="q1" />
+      <CommentItem
+        comment={{ ...baseComment, ...overrides }}
+        questionId="q1"
+        likeCounts={{}}
+        likedSet={new Set<string>()}
+      />
     </QueryClientProvider>,
   );
 

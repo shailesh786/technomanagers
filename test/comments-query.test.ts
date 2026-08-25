@@ -6,7 +6,10 @@ import {
   commentsQueryKey,
   fetchCommentCount,
   fetchCommentsPage,
+  fetchQuestionReplies,
+  groupRepliesByParent,
   nextCommentsPageParam,
+  type Comment,
 } from '@/lib/comments-query';
 
 /**
@@ -17,7 +20,7 @@ import {
 function fakeClient(result: { data?: unknown; count?: number | null; error?: unknown }) {
   const calls: [string, unknown[]][] = [];
   const builder: Record<string, unknown> = {};
-  for (const method of ['from', 'select', 'eq', 'is', 'order', 'range']) {
+  for (const method of ['from', 'select', 'eq', 'is', 'not', 'order', 'range']) {
     builder[method] = (...args: unknown[]) => {
       calls.push([method, args]);
       return builder;
@@ -73,6 +76,50 @@ describe('nextCommentsPageParam', () => {
   it('stops after a short page and continues after a full one', () => {
     expect(nextCommentsPageParam({ data: [], nextOffset: 10 })).toBeUndefined();
     expect(nextCommentsPageParam({ data: Array(COMMENTS_PAGE_SIZE).fill({}), nextOffset: 10 })).toBe(10);
+  });
+});
+
+describe('fetchQuestionReplies', () => {
+  it('requests every non-deleted reply on the question in one query, oldest first', async () => {
+    const rows = [{ id: 'r1' }];
+    const { client, calls } = fakeClient({ data: rows });
+    await expect(fetchQuestionReplies(client, 'q1')).resolves.toEqual(rows);
+    expect(calls).toEqual([
+      ['from', ['question_comments']],
+      ['select', [COMMENT_SELECT]],
+      ['eq', ['question_id', 'q1']],
+      ['not', ['parent_id', 'is', null]],
+      ['is', ['deleted_at', null]],
+      ['order', ['created_at', { ascending: true }]],
+    ]);
+  });
+
+  it('throws on a query error so callers can decide how to degrade', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { client } = fakeClient({ data: null, error: new Error('boom') });
+    await expect(fetchQuestionReplies(client, 'q1')).rejects.toThrow('boom');
+    spy.mockRestore();
+  });
+});
+
+describe('groupRepliesByParent', () => {
+  const reply = (id: string, parent_id: string | null): Comment =>
+    ({ id, parent_id, question_id: 'q1' } as Comment);
+
+  it('groups replies under their parent, preserving row order', () => {
+    const grouped = groupRepliesByParent([reply('r1', 'c1'), reply('r2', 'c2'), reply('r3', 'c1')]);
+    expect(grouped).toEqual({
+      c1: [reply('r1', 'c1'), reply('r3', 'c1')],
+      c2: [reply('r2', 'c2')],
+    });
+  });
+
+  it('returns an empty record for no rows', () => {
+    expect(groupRepliesByParent([])).toEqual({});
+  });
+
+  it('skips orphan rows with no parent id', () => {
+    expect(groupRepliesByParent([reply('r1', null)])).toEqual({});
   });
 });
 

@@ -195,8 +195,9 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
           </Button>
         </div>
 
-        {/* Answer */}
-        {question.sample_answer && (
+        {/* Answer — trimmed check so a whitespace-only sample answer doesn't
+            render an empty toggle (the JSON-LD trims the same way). */}
+        {!!question.sample_answer?.trim() && (
           <div className="rounded-xl border">
             <button
               onClick={handleShowAnswer}

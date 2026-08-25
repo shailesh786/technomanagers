@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import {
-  COMMENT_SELECT,
   commentCountQueryKey,
   commentsQueryKey,
   fetchCommentCount,
   fetchCommentsPage,
+  fetchQuestionReplies,
   nextCommentsPageParam,
   type CommentSort,
 } from '@/lib/comments-query';
@@ -30,24 +30,18 @@ export function useComments(questionId: string, sort: CommentSort = 'newest') {
   });
 }
 
-export function useCommentReplies(parentId: string) {
+/**
+ * ALL replies on a question in one request. CommentsSection groups them by
+ * parent (lib/comments-query groupRepliesByParent) and passes each comment its
+ * slice — replacing the old per-comment replies query that fired once per
+ * top-level comment.
+ */
+export function useQuestionReplies(questionId: string) {
   return useQuery({
-    queryKey: ['comment_replies', parentId],
-    staleTime: 30 * 1000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('question_comments')
-        .select(COMMENT_SELECT)
-        .eq('parent_id', parentId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: true });
-      if (error) {
-        console.error('Failed to fetch replies:', error);
-        throw error;
-      }
-      return data || [];
-    },
-    enabled: !!parentId,
+    queryKey: ['comment_replies', questionId],
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => fetchQuestionReplies(supabase, questionId),
+    enabled: !!questionId,
   });
 }
 
@@ -78,7 +72,7 @@ export function useAddComment() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['comments', vars.questionId] });
       qc.invalidateQueries({ queryKey: ['comment_count', vars.questionId] });
-      if (vars.parentId) qc.invalidateQueries({ queryKey: ['comment_replies', vars.parentId] });
+      if (vars.parentId) qc.invalidateQueries({ queryKey: ['comment_replies', vars.questionId] });
     },
   });
 }
