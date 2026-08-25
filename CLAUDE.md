@@ -349,7 +349,8 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | Function | Purpose |
 |----------|---------|
 | `increment_upvotes(question_id)` | Legacy upvote increment (security definer) |
-| `toggle_question_like(p_question_id, p_user_id)` | Idempotent like toggle; updates `upvotes` counter |
+| `toggle_question_like(p_question_id)` | Idempotent like toggle; updates `upvotes` counter |
+| `flag_comment(p_comment_id, p_reason, p_details)` | Atomic user report: flags the comment + writes the `moderation_log` row (security definer; authenticated only) |
 | `get_companies_with_counts(include_inactive)` | Returns company name + published question count |
 | `is_admin(user_id)` | RLS helper — returns true if user has `is_admin = true` in profiles |
 
