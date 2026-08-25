@@ -5,6 +5,7 @@
  */
 
 import type { Question } from '@/types';
+import { hubHref } from '@/lib/hubs';
 import type { Comment } from '@/lib/comments-query';
 
 const SITE_NAME = 'Technomanagers';
@@ -138,7 +139,7 @@ export function questionJsonLd({ question, comments, siteUrl }: QuestionJsonLdIn
     { name: 'Home', item: siteUrl },
     { name: 'Interview Questions', item: `${siteUrl}/questions` },
     ...(primaryCategory
-      ? [{ name: primaryCategory, item: `${siteUrl}/questions?category=${encodeURIComponent(primaryCategory)}` }]
+      ? [{ name: primaryCategory, item: `${siteUrl}${hubHref('category', primaryCategory)}` }]
       : []),
     { name: question.question_text, item: url },
   ];

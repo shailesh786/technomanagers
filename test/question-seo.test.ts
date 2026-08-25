@@ -103,7 +103,7 @@ describe('questionJsonLd', () => {
     expect((breadcrumb as { itemListElement: { position: number; name: string; item: string }[] }).itemListElement).toEqual([
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE },
       { '@type': 'ListItem', position: 2, name: 'Interview Questions', item: `${SITE}/questions` },
-      { '@type': 'ListItem', position: 3, name: 'Program Management', item: `${SITE}/questions?category=Program%20Management` },
+      { '@type': 'ListItem', position: 3, name: 'Program Management', item: `${SITE}/questions/category/program-management` },
       { '@type': 'ListItem', position: 4, name: question.question_text, item: `${SITE}/questions/q1` },
     ]);
   });

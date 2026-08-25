@@ -10,6 +10,7 @@
  * a dead end for a crawler or a reader.
  */
 
+import { hubHref } from '@/lib/hubs';
 import type { Question } from '@/types';
 
 export const CATEGORY_CLUSTER_SIZE = 3;
@@ -53,8 +54,8 @@ export function primaryCompany(question: Pick<Question, 'company'>): string | nu
   return question.company?.[0]?.trim() || null;
 }
 
-export const categoryHref = (category: string) => `/questions?category=${encodeURIComponent(category)}`;
-export const companyHref = (company: string) => `/questions?company=${encodeURIComponent(company)}`;
+export const categoryHref = (category: string) => hubHref('category', category);
+export const companyHref = (company: string) => hubHref('company', company);
 
 export function viewAllLabel(total: number | null): string {
   return total !== null && total >= VIEW_ALL_COUNT_THRESHOLD ? `View all ${total}` : 'View all';

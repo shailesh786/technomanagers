@@ -3,6 +3,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+import { hubHref } from '@/lib/hubs';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCourses } from '@/hooks/useCourses';
@@ -72,7 +73,7 @@ export function QuestionsDropdown({ active }: { active: boolean }) {
                 {roles.map((r) => (
                   <Link
                     key={r.id}
-                    href={`/questions?role=${encodeURIComponent(r.name)}`}
+                    href={hubHref('role', r.name)}
                     onClick={() => setOpen(false)}
                     className="block px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-accent/10"
                   >
@@ -91,7 +92,7 @@ export function QuestionsDropdown({ active }: { active: boolean }) {
                 {categories.map((cat) => (
                   <Link
                     key={cat.id}
-                    href={`/questions?category=${encodeURIComponent(cat.name)}`}
+                    href={hubHref('category', cat.name)}
                     onClick={() => setOpen(false)}
                     className="block px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-accent/10"
                   >
@@ -108,7 +109,7 @@ export function QuestionsDropdown({ active }: { active: boolean }) {
                 {popularCompanies.map((c) => (
                   <Link
                     key={c.company_name}
-                    href={`/questions?company=${encodeURIComponent(c.company_name)}`}
+                    href={hubHref('company', c.company_name)}
                     onClick={() => setOpen(false)}
                     className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                   >
@@ -234,7 +235,7 @@ export function MobileQuestionsMenu({ onClose }: { onClose: () => void }) {
           {categories.map((cat) => (
             <Link
               key={cat.id}
-              href={`/questions?category=${encodeURIComponent(cat.name)}`}
+              href={hubHref('category', cat.name)}
               onClick={onClose}
               className="block px-3 py-1.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
             >
@@ -246,7 +247,7 @@ export function MobileQuestionsMenu({ onClose }: { onClose: () => void }) {
             {popularCompanies.map((c) => (
               <Link
                 key={c.company_name}
-                href={`/questions?company=${encodeURIComponent(c.company_name)}`}
+                href={hubHref('company', c.company_name)}
                 onClick={onClose}
                 className="px-2.5 py-1 rounded-full text-xs bg-muted text-muted-foreground hover:bg-primary/10"
               >

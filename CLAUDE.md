@@ -42,7 +42,8 @@ technomanagers/
 │   ├── questions/
 │   │   ├── page.tsx              ← /questions list     (ISR, 60 s)
 │   │   ├── [id]/page.tsx         ← /questions/:id      (ISR, 60 s) + Breadcrumb/paywall JSON-LD
-│   │   └── [id]/preview/page.tsx ← /questions/:id/preview (dynamic, admin drafts, noindex)
+│   │   ├── [id]/preview/page.tsx ← /questions/:id/preview (dynamic, admin drafts, noindex)
+│   │   └── {company,category,role}/[slug]/page.tsx ← hub pages (ISR, 300 s; lib/hub-page.tsx)
 │   ├── coaching/page.tsx         ← /coaching           (ISR, 300 s)
 │   ├── courses/page.tsx          ← /courses            (ISR, 300 s)
 │   ├── cohort/page.tsx           ← /cohort             (ISR, 300 s) + Course JSON-LD
@@ -105,6 +106,7 @@ technomanagers/
 | `/questions` | Static + ISR 60 s | Crawlable; data from server prefetch |
 | `/questions/[id]` | Static + ISR 60 s | Public data only — no cookies/searchParams, so ISR genuinely applies. Answer, related questions and breadcrumbs are in the HTML |
 | `/questions/[id]/preview` | Dynamic SSR | Admin draft preview — reads the session cookie; noindex |
+| `/questions/company/[slug]` · `/questions/category/[slug]` · `/questions/role/[slug]` | Static + ISR 300 s | Hub landing pages built from question tags; noindex + off the sitemap under 3 questions (lib/hubs.ts) |
 | `/coaching` | Static + ISR 300 s | Public marketing page |
 | `/courses` | Static + ISR 300 s | Public marketing page |
 | `/cohort` | Static + ISR 300 s | Marketing page; testimonials are admin-managed and server-fetched |
@@ -285,6 +287,11 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `components/questions/QuestionPager.tsx` | ← Previous / Next → question links (newest-first chain); clicks go through the free-view gate like cards do |
 | `components/RelativeTime.tsx` | Hydration-safe "N days ago" `<time>` — renders the server label, recomputes after mount |
 | `lib/related-questions.ts` | Pure cluster selection: sizes, headings, hub hrefs, de-duplication, trending fallback, "View all N" threshold |
+| `lib/hubs.ts` | Pure hub logic: slugify, taxonomy from question tags, indexability threshold (3), titles/descriptions/intros, CollectionPage + Breadcrumb JSON-LD |
+| `lib/hub-data.ts` | Hub data loaders — taxonomy under `unstable_cache` tag 'questions'; hub question lists (cookieless) |
+| `lib/hub-page.tsx` | Shared server implementation of the three hub routes (`createHubPage(kind)`) |
+| `components/questions/HubQuestionList.tsx` | Hub page card list — QuestionCard + `useQuestionCardActions` |
+| `hooks/useQuestionCardActions.ts` | Like/save wiring for QuestionCard, shared by the listing, related clusters and hub pages |
 | `lib/question-seo.ts` | Question `<title>`, meta description (sample-answer excerpt or template) and JSON-LD graph (QAPage/WebPage with paywall markup + BreadcrumbList) |
 | `lib/comments-query.ts` | Shared comments query shape (select, filters, order, page size, keys) used by `hooks/useComments.ts` and the question route's prefetch — keep both on it |
 | `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |

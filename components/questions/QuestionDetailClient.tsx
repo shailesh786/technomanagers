@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
 import CommentsSection from '@/components/questions/CommentsSection';
 import RelatedQuestions from '@/components/questions/RelatedQuestions';
-import type { QuestionNeighbours, RelatedCluster } from '@/lib/related-questions';
+import { categoryHref, companyHref, type QuestionNeighbours, type RelatedCluster } from '@/lib/related-questions';
 
 const difficultyColors: Record<string, string> = {
   Easy: 'bg-success/10 text-success border-success/20',
@@ -125,7 +125,7 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
             <>
               <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
               <li>
-                <Link href={`/questions?category=${encodeURIComponent(primaryCategory)}`} className="hover:text-foreground">
+                <Link href={categoryHref(primaryCategory)} className="hover:text-foreground">
                   {primaryCategory}
                 </Link>
               </li>
@@ -140,7 +140,7 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
         {/* Header */}
         <div className="flex flex-wrap gap-2">
           {question.company?.map((c) => (
-            <Link key={c} href={`/questions?company=${encodeURIComponent(c)}`} className={badgeVariants({ variant: 'secondary' })}>
+            <Link key={c} href={companyHref(c)} className={badgeVariants({ variant: 'secondary' })}>
               {c}
             </Link>
           ))}
@@ -159,7 +159,7 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
           {question.category?.map((cat) => (
             <Link
               key={cat}
-              href={`/questions?category=${encodeURIComponent(cat)}`}
+              href={categoryHref(cat)}
               className="text-xs font-mono px-2 py-1 rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
               {cat}

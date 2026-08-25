@@ -68,14 +68,14 @@ const clusters: RelatedCluster[] = [
   {
     kind: 'category',
     heading: 'More Program Management Questions',
-    viewAllHref: '/questions?category=Program%20Management',
+    viewAllHref: '/questions/category/program-management',
     total: 2,
     items: [relatedRow('r1', 'Tell me about a time you influenced without authority.')],
   },
   {
     kind: 'company',
     heading: 'More Questions Asked at Amazon',
-    viewAllHref: '/questions?company=Amazon',
+    viewAllHref: '/questions/company/amazon',
     total: 5,
     items: [relatedRow('r2', 'How do you handle disagreements with engineering?')],
   },
@@ -120,13 +120,13 @@ describe('QuestionDetailClient — content in the HTML', () => {
 
   it('links company badges and category chips to the filtered list', () => {
     renderPage();
-    expect(screen.getByRole('link', { name: 'Amazon' })).toHaveAttribute('href', '/questions?company=Amazon');
-    expect(screen.getByRole('link', { name: 'Meta' })).toHaveAttribute('href', '/questions?company=Meta');
+    expect(screen.getByRole('link', { name: 'Amazon' })).toHaveAttribute('href', '/questions/company/amazon');
+    expect(screen.getByRole('link', { name: 'Meta' })).toHaveAttribute('href', '/questions/company/meta');
     // The category appears twice — breadcrumb and chip — and both must point at the filter.
     const categoryLinks = screen.getAllByRole('link', { name: 'Program Management' });
     expect(categoryLinks).toHaveLength(2);
     for (const link of categoryLinks) {
-      expect(link).toHaveAttribute('href', '/questions?category=Program%20Management');
+      expect(link).toHaveAttribute('href', '/questions/category/program-management');
     }
   });
 
@@ -137,7 +137,7 @@ describe('QuestionDetailClient — content in the HTML', () => {
     expect(links).toEqual([
       ['Home', '/'],
       ['Questions', '/questions'],
-      ['Program Management', '/questions?category=Program%20Management'],
+      ['Program Management', '/questions/category/program-management'],
     ]);
     expect(within(nav).getByText(question.question_text)).toHaveAttribute('aria-current', 'page');
   });

@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLocationSearch } from '@/hooks/useLocationSearch';
+import { hubHref } from '@/lib/hubs';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -343,14 +345,14 @@ export default function QuestionsClient() {
           <div className="rounded-xl border p-5 space-y-2.5">
             <h3 className="font-heading font-bold text-sm">Top Categories</h3>
             {Object.entries(categoryCounts).slice(0, 8).map(([cat, count]) => (
-              <button
+              <Link
                 key={cat}
-                onClick={() => setCategories([cat])}
+                href={hubHref('category', cat)}
                 className="flex justify-between items-center w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <span>{cat}</span>
                 <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{count}</span>
-              </button>
+              </Link>
             ))}
           </div>
 
@@ -358,16 +360,16 @@ export default function QuestionsClient() {
           <div className="rounded-xl border p-5 space-y-2.5">
             <h3 className="font-heading font-bold text-sm">Browse by Role</h3>
             {rolesList.map((r) => (
-              <button
+              <Link
                 key={r.id}
-                onClick={() => setRole(role === r.name ? '' : r.name)}
+                href={hubHref('role', r.name)}
                 className={`flex justify-between items-center w-full text-sm transition-colors ${
                   role === r.name ? 'text-primary font-medium' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>{r.name}</span>
                 <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{roleCounts[r.name] || 0}</span>
-              </button>
+              </Link>
             ))}
           </div>
 
@@ -376,13 +378,13 @@ export default function QuestionsClient() {
             <h3 className="font-heading font-bold text-sm">Trending Companies</h3>
             <div className="flex flex-wrap gap-2">
               {trendingCompanies.map((c) => (
-                <button
+                <Link
                   key={c.company_name}
-                  onClick={() => setCompanies([c.company_name])}
+                  href={hubHref('company', c.company_name)}
                   className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                 >
                   {c.company_name}
-                </button>
+                </Link>
               ))}
               {trendingCompanies.length === 0 && (
                 <p className="text-xs text-muted-foreground">No companies yet</p>
