@@ -148,6 +148,12 @@ describe('IST schedule helpers', () => {
     expect(istIsoFromLocalInput('')).toBeNull();
   });
 
+  it('accepts datetime-local values that already carry seconds', () => {
+    expect(istIsoFromLocalInput('2026-08-24T09:30:45')).toBe(
+      new Date('2026-08-24T09:30:45+05:30').toISOString(),
+    );
+  });
+
   it('round-trips ISO ↔ datetime-local through IST', () => {
     const iso = istIsoFromLocalInput('2026-08-24T09:30');
     expect(localInputFromIso(iso)).toBe('2026-08-24T09:30');

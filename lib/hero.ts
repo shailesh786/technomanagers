@@ -91,7 +91,10 @@ export function planPromotion(
  */
 export function istIsoFromLocalInput(value: string): string | null {
   if (!value) return null;
-  return new Date(`${value}:00+05:30`).toISOString();
+  // Browsers may emit 'YYYY-MM-DDTHH:mm:ss' when the value carries seconds —
+  // only append ':00' to the seconds-less form.
+  const v = value.length === 16 ? `${value}:00` : value;
+  return new Date(`${v}+05:30`).toISOString();
 }
 
 /** Formats a stored ISO instant back into a datetime-local value in IST. */

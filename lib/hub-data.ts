@@ -6,6 +6,7 @@
 
 import { unstable_cache } from 'next/cache';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
+import { pgArrayLiteral } from '@/lib/postgrest';
 import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
 import { buildHubTaxonomy, HUB_LIST_CAP, type HubKind, type HubTaxonomy } from '@/lib/hubs';
 import type { Question } from '@/types';
@@ -13,10 +14,13 @@ import type { Question } from '@/types';
 export const getHubTaxonomy = unstable_cache(
   async (): Promise<HubTaxonomy> => {
     const supabase = createSupabasePublicClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('questions')
       .select('company, category, role, updated_at')
       .eq('status', 'published');
+    // Throw so unstable_cache does NOT cache the result — a swallowed DB blip
+    // would otherwise cache an empty taxonomy and 404 every hub URL for 300s.
+    if (error) throw error;
     return buildHubTaxonomy(data ?? []);
   },
   ['question-hub-taxonomy'],
@@ -32,10 +36,11 @@ export async function getHubQuestions(kind: HubKind, name: string): Promise<Ques
     .eq('status', 'published')
     // count only non-deleted comments — must match useQuestions()/useCommentCount()
     .is('question_comments.deleted_at', null);
-  query = kind === 'role' ? query.eq('role', name) : query.contains(kind, [name]);
+  query = kind === 'role' ? query.eq('role', name) : query.contains(kind, pgArrayLiteral([name]));
   const { data } = await query
     .order('upvotes', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(HUB_LIST_CAP);
   return flattenCommentCount(data ?? []) as unknown as Question[];
 }
