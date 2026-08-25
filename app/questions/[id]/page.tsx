@@ -75,11 +75,17 @@ type TagColumn = 'category' | 'company';
 // means "this question does not exist (or is not published)".
 const NO_ROWS = 'PGRST116';
 
+// Anything that is not a UUID cannot be a question id. Without this guard the
+// DB rejects the cast (22P02), which the error handling below treats as an
+// outage and turns into a 500 — e.g. for /questions/company.
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Cookieless client — only published questions are visible to anon via RLS,
 // so an unpublished id reads as zero rows and falls through to notFound().
 // Any other failure is thrown: a 500 is never cached, whereas a 404 from a
 // transient outage would be served for the whole revalidate window.
 const getPublishedQuestion = cache(async (id: string): Promise<Question | null> => {
+  if (!UUID_PATTERN.test(id)) return null;
   const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from('questions')

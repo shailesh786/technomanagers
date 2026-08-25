@@ -51,9 +51,9 @@ describe('viewAllLabel', () => {
 });
 
 describe('hrefs', () => {
-  it('encode multi-word and special-character tag values', () => {
-    expect(categoryHref('Product Sense')).toBe('/questions?category=Product%20Sense');
-    expect(companyHref('A&M')).toBe('/questions?company=A%26M');
+  it('resolve to the hub pages', () => {
+    expect(categoryHref('Product Sense')).toBe('/questions/category/product-sense');
+    expect(companyHref('A&M')).toBe('/questions/company/a-m');
   });
 });
 
@@ -66,14 +66,14 @@ describe('buildClusters', () => {
     expect(clusters.map((c) => c.kind)).toEqual(['category', 'company']);
     expect(clusters[0]).toMatchObject({
       heading: 'More Product Sense Questions',
-      viewAllHref: '/questions?category=Product%20Sense',
+      viewAllHref: '/questions/category/product-sense',
       total: 12,
     });
     expect(ids(clusters[0].items)).toEqual(['c1', 'c2', 'c3']);
     expect(clusters[0].items).toHaveLength(CATEGORY_CLUSTER_SIZE);
     expect(clusters[1]).toMatchObject({
       heading: 'More Questions Asked at Google',
-      viewAllHref: '/questions?company=Google',
+      viewAllHref: '/questions/company/google',
       total: 14,
     });
     expect(ids(clusters[1].items)).toEqual(['g1', 'g2']);

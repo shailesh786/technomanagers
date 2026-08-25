@@ -36,5 +36,8 @@ export async function POST() {
   // Detail pages are plain time-based ISR (no cache tag), so they are purged
   // by path. 'page' covers every id under the dynamic segment.
   revalidatePath('/questions/[id]', 'page');
+  revalidatePath('/questions/company/[slug]', 'page');
+  revalidatePath('/questions/category/[slug]', 'page');
+  revalidatePath('/questions/role/[slug]', 'page');
   return NextResponse.json({ revalidated: true });
 }

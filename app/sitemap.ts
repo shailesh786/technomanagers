@@ -8,6 +8,7 @@
 
 import type { MetadataRoute } from 'next';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
+import { buildHubTaxonomy, hubHref, isIndexable } from '@/lib/hubs';
 
 // ISR: regenerate the sitemap at most once an hour. Without this the sitemap
 // is baked once at build time and goes stale — questions published after the
@@ -67,17 +68,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = createSupabasePublicClient();
     const { data: questions } = await supabase
       .from('questions')
-      .select('id, updated_at')
+      .select('id, updated_at, company, category, role')
       .eq('status', 'published');
+    const rows = questions ?? [];
 
-    const questionRoutes: MetadataRoute.Sitemap = (questions ?? []).map((q) => ({
+    const questionRoutes: MetadataRoute.Sitemap = rows.map((q) => ({
       url: `${BASE_URL}/questions/${q.id}`,
       lastModified: new Date(q.updated_at ?? Date.now()),
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     }));
 
-    return [...staticRoutes, ...questionRoutes];
+    // Hub pages, from the same rows. Only hubs past the indexability
+    // threshold are listed (smaller ones exist but are noindex), and each
+    // carries the latest updated_at of its questions as lastModified.
+    const taxonomy = buildHubTaxonomy(rows);
+    const hubRoutes: MetadataRoute.Sitemap = (['company', 'category', 'role'] as const).flatMap((kind) =>
+      taxonomy[kind].filter(isIndexable).map((hub) => ({
+        url: `${BASE_URL}${hubHref(kind, hub.name)}`,
+        lastModified: hub.lastModified ? new Date(hub.lastModified) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      })),
+    );
+
+    return [...staticRoutes, ...hubRoutes, ...questionRoutes];
   } catch {
     // If Supabase is unavailable during build, return static routes only
     return staticRoutes;

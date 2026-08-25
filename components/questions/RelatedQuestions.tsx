@@ -12,12 +12,9 @@
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
 import QuestionCard from '@/components/questions/QuestionCard';
 import QuestionPager from '@/components/questions/QuestionPager';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
-import { useUserLikedQuestionIds, useToggleLike } from '@/hooks/useLikes';
+import { useQuestionCardActions } from '@/hooks/useQuestionCardActions';
 import { viewAllLabel, type QuestionNeighbours, type RelatedCluster } from '@/lib/related-questions';
 
 interface Props {
@@ -26,27 +23,10 @@ interface Props {
 }
 
 export default function RelatedQuestions({ clusters, neighbours }: Props) {
-  const { user } = useAuth();
-  const { data: savedIds = [] } = useSavedQuestions(user?.id);
-  const { data: likedIds = new Set<string>() } = useUserLikedQuestionIds(user?.id);
-  const toggleLike = useToggleLike();
-  const save = useSaveQuestion();
-  const unsave = useUnsaveQuestion();
+  const { isAuthenticated, savedIds, likedIds, handleUpvote, handleToggleSave } = useQuestionCardActions();
 
   const hasNeighbours = Boolean(neighbours.prev || neighbours.next);
   if (!clusters.length && !hasNeighbours) return null;
-
-  // Mirrors QuestionsClient so the card's footer works the same way here.
-  const handleUpvote = (id: string) => {
-    if (!user) { toast.info('Sign in to upvote'); return; }
-    toggleLike.mutate({ questionId: id, userId: user.id });
-  };
-
-  const handleToggleSave = (id: string) => {
-    if (!user) { toast.info('Sign in to save questions'); return; }
-    if (savedIds.includes(id)) unsave.mutate({ userId: user.id, questionId: id });
-    else save.mutate({ userId: user.id, questionId: id });
-  };
 
   return (
     // `!mt-10`: the parent's space-y-4 sets margin-top on every child with a
@@ -75,7 +55,7 @@ export default function RelatedQuestions({ clusters, neighbours }: Props) {
                 isLiked={likedIds.has(q.id)}
                 onUpvote={() => handleUpvote(q.id)}
                 onToggleSave={() => handleToggleSave(q.id)}
-                isAuthenticated={!!user}
+                isAuthenticated={isAuthenticated}
               />
             ))}
           </div>

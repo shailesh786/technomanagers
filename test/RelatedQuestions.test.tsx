@@ -46,14 +46,14 @@ const clusters: RelatedCluster[] = [
   {
     kind: 'category',
     heading: 'More Execution Questions',
-    viewAllHref: '/questions?category=Execution',
+    viewAllHref: '/questions/category/execution',
     total: 6,
     items: [q('c1', 'How do you prioritise across competing workstreams?'), q('c2', 'How would you ship with half the team?')],
   },
   {
     kind: 'company',
     heading: 'More Questions Asked at Google',
-    viewAllHref: '/questions?company=Google',
+    viewAllHref: '/questions/company/google',
     total: 14,
     items: [q('g1', 'How would you improve Google Meet for hybrid teams?')],
   },
@@ -82,7 +82,7 @@ describe('RelatedQuestions', () => {
       within(section)
         .getAllByRole('link')
         .map((a) => a.getAttribute('href') ?? '')
-        .filter((h) => h.startsWith('/questions/') && !h.includes('#'));
+        .filter((h) => /^\/questions\/[^/#]+$/.test(h)); // question links only — no hub View-all, no #comments anchors
     expect(cardHrefs(category)).toEqual(['/questions/c1', '/questions/c2']);
     expect(cardHrefs(company)).toEqual(['/questions/g1']);
     expect(within(category).getAllByText('Asked at Google')).toHaveLength(2);
@@ -92,8 +92,8 @@ describe('RelatedQuestions', () => {
     render(<RelatedQuestions clusters={clusters} neighbours={neighbours} />);
     const category = screen.getByRole('region', { name: 'More Execution Questions' });
     const company = screen.getByRole('region', { name: 'More Questions Asked at Google' });
-    expect(within(category).getByRole('link', { name: 'View all' })).toHaveAttribute('href', '/questions?category=Execution');
-    expect(within(company).getByRole('link', { name: 'View all 14' })).toHaveAttribute('href', '/questions?company=Google');
+    expect(within(category).getByRole('link', { name: 'View all' })).toHaveAttribute('href', '/questions/category/execution');
+    expect(within(company).getByRole('link', { name: 'View all 14' })).toHaveAttribute('href', '/questions/company/google');
   });
 
   it('renders previous/next links that pass through the free-view gate before routing', () => {
