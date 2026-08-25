@@ -92,20 +92,12 @@ export default function CommentItem({ comment, questionId, isReply = false }: Co
     if (!user) return;
     setIsReporting(true);
     try {
-      const { error: flagErr } = await supabase
-        .from('question_comments')
-        .update({ is_flagged: true, flagged_at: new Date().toISOString(), flagged_by: user.id })
-        .eq('id', comment.id);
-      if (flagErr) throw flagErr;
-
-      const { error: logErr } = await supabase.from('moderation_log').insert({
-        admin_id: user.id,
-        comment_id: comment.id,
-        action: 'flag',
-        reason: reportReason,
-        metadata: { details: reportDetails, reporter_type: 'user' },
+      const { error } = await (supabase as any).rpc('flag_comment', {
+        p_comment_id: comment.id,
+        p_reason: reportReason,
+        p_details: reportDetails.trim() || null,
       });
-      if (logErr) throw logErr;
+      if (error) throw error;
 
       toast.success('Thanks for reporting. Our team will review this comment.');
       setShowReportDialog(false);
