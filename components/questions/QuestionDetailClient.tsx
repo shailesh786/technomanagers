@@ -94,7 +94,7 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
   };
 
   const handleLike = () => requireAuth(() => {
-    toggleLike.mutate({ questionId: question.id, userId: user!.id, liked: userLiked });
+    toggleLike.mutate({ questionId: question.id, userId: user!.id });
   });
 
   const handleToggleSave = () => requireAuth(() => {
