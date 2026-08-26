@@ -40,7 +40,8 @@ const comment = (id: string, over: Partial<Comment> = {}): Comment => ({
 });
 
 const SITE = 'https://www.technomanagers.in';
-const graph = (q: Question, comments: Comment[] = []) => questionJsonLd({ question: q, comments, siteUrl: SITE })['@graph'];
+const graph = (q: Question, comments: Comment[] = [], totalAnswerCount?: number | null) =>
+  questionJsonLd({ question: q, comments, totalAnswerCount, siteUrl: SITE })['@graph'];
 
 describe('questionTitle', () => {
   it('leaves short text alone and truncates long text with an ellipsis', () => {
@@ -146,6 +147,25 @@ describe('questionJsonLd', () => {
   it('counts both the sample answer and community answers', () => {
     const [page] = graph({ ...question, sample_answer: 'Yes.' }, [comment('c1')]) as Record<string, unknown>[];
     expect((page.mainEntity as { answerCount: number }).answerCount).toBe(2);
+  });
+
+  it('uses the true total when it exceeds the first page of community answers', () => {
+    const [page] = graph({ ...question, sample_answer: 'Yes.' }, [comment('c1'), comment('c2')], 27) as Record<string, unknown>[];
+    // 27 total community answers + 1 sample answer, not just the 2 on page 1.
+    expect((page.mainEntity as { answerCount: number }).answerCount).toBe(28);
+  });
+
+  it('falls back to the page-1 count when the total is null or smaller', () => {
+    const [withNull] = graph(question, [comment('c1')], null) as Record<string, unknown>[];
+    expect((withNull.mainEntity as { answerCount: number }).answerCount).toBe(1);
+    const [withSmaller] = graph(question, [comment('c1'), comment('c2')], 1) as Record<string, unknown>[];
+    expect((withSmaller.mainEntity as { answerCount: number }).answerCount).toBe(2);
+  });
+
+  it('stays a plain WebPage when the total is zero and there is nothing else to answer with', () => {
+    const [page] = graph(question, [], 0) as Record<string, unknown>[];
+    expect(page['@type']).toBe('WebPage');
+    expect(page).not.toHaveProperty('mainEntity');
   });
 });
 

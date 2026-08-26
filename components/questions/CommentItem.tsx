@@ -12,8 +12,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
-import { useCommentReplies, useAddComment, useUpdateComment, useDeleteComment } from '@/hooks/useComments';
-import { useCommentLikeCounts, useUserLikedComments, useToggleCommentLike } from '@/hooks/useLikes';
+import { useAddComment, useUpdateComment, useDeleteComment } from '@/hooks/useComments';
+import { useToggleCommentLike } from '@/hooks/useLikes';
+import type { Comment } from '@/lib/comments-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const supabase = createSupabaseBrowserClient();
@@ -21,13 +22,27 @@ import RelativeTime from '@/components/RelativeTime';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
+// Replies and like state are fetched ONCE per page by CommentsSection and
+// passed down — a CommentItem must not fetch its own (that's what caused
+// ~50 requests per commented page).
 interface CommentItemProps {
   comment: any;
   questionId: string;
   isReply?: boolean;
+  /** This comment's replies (omitted for reply items — no nesting below one level). */
+  replies?: Comment[];
+  likeCounts: Record<string, number>;
+  likedSet: Set<string>;
 }
 
-export default function CommentItem({ comment, questionId, isReply = false }: CommentItemProps) {
+export default function CommentItem({
+  comment,
+  questionId,
+  isReply = false,
+  replies,
+  likeCounts,
+  likedSet,
+}: CommentItemProps) {
   const { user, profile } = useAuth();
   const { setGateOpen } = useQuestionAccess();
   const queryClient = useQueryClient();
@@ -45,11 +60,6 @@ export default function CommentItem({ comment, questionId, isReply = false }: Co
   const updateComment = useUpdateComment();
   const deleteComment = useDeleteComment();
   const toggleLike = useToggleCommentLike();
-
-  const { data: replies } = useCommentReplies(isReply ? '' : comment.id);
-  const allCommentIds = [comment.id, ...(replies?.map((r: any) => r.id) || [])];
-  const { data: likeCounts = {} } = useCommentLikeCounts(allCommentIds);
-  const { data: likedSet = new Set() } = useUserLikedComments(allCommentIds, user?.id);
 
   const isOwner = user?.id === comment.user_id;
   const liked = likedSet.has(comment.id);
@@ -214,8 +224,15 @@ export default function CommentItem({ comment, questionId, isReply = false }: Co
 
           {!isReply && replies && replies.length > 0 && (
             <div className="mt-2">
-              {replies.map((reply: any) => (
-                <CommentItem key={reply.id} comment={reply} questionId={questionId} isReply />
+              {replies.map((reply) => (
+                <CommentItem
+                  key={reply.id}
+                  comment={reply}
+                  questionId={questionId}
+                  isReply
+                  likeCounts={likeCounts}
+                  likedSet={likedSet}
+                />
               ))}
             </div>
           )}

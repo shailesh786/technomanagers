@@ -267,7 +267,12 @@ export default async function QuestionDetailPage({ params }: Props) {
     });
   }
 
-  const jsonLd = questionJsonLd({ question, comments: comments?.data ?? [], siteUrl: resolveSiteUrl() });
+  const jsonLd = questionJsonLd({
+    question,
+    comments: comments?.data ?? [],
+    totalAnswerCount: commentCount,
+    siteUrl: resolveSiteUrl(),
+  });
 
   return (
     <>
