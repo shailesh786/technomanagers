@@ -28,6 +28,9 @@ function PagerLink({
   const href = `/questions/${question.id}`;
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    // Let the browser handle modified/middle clicks (new tab, etc.) — only a
+    // plain left click goes through the free-view gate.
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     if (recordView(question.id)) router.push(href);
   };

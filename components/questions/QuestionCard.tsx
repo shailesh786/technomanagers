@@ -49,9 +49,12 @@ export default function QuestionCard({
   isAuthenticated,
 }: QuestionCardProps) {
   const router = useRouter();
-  const { recordView, isExhausted } = useQuestionAccess();
+  const { recordView, isExhausted, isViewed } = useQuestionAccess();
 
   const handleClick = (e: React.MouseEvent) => {
+    // Let the browser handle modified/middle clicks (new tab, etc.) — only a
+    // plain left click goes through the free-view gate.
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     const allowed = recordView(question.id);
     if (allowed) {
@@ -59,8 +62,9 @@ export default function QuestionCard({
     }
   };
 
-  // Show lock styling only for non-authed users who exhausted free views
-  const showLock = !isAuthenticated && isExhausted;
+  // Lock styling for non-authed users out of free views — except questions
+  // they already viewed, whose answers stay readable.
+  const showLock = !isAuthenticated && isExhausted && !isViewed(question.id);
 
   return (
     <div className="group relative rounded-xl border bg-background p-5 shadow-sm hover:shadow-md transition-all duration-200">
