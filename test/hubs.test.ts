@@ -12,6 +12,7 @@ import {
   hubTitle,
   isIndexable,
   pickBrowseHubs,
+  roleNoun,
   slugify,
   type HubRef,
 } from '@/lib/hubs';
@@ -147,6 +148,46 @@ describe('copy', () => {
     expect(byCompany.crossNames).toEqual(['Meta', 'Google']);
   });
 
+  it('hubStats: dominant role is the modal role, ties alphabetical, null without roles', () => {
+    const mixed = hubStats({ kind: 'company' }, [
+      q('1', { role: 'Management Consulting' }),
+      q('2', { role: 'Management Consulting' }),
+      q('3', { role: 'Product Management' }),
+      q('4', { role: null }),
+    ]);
+    expect(mixed.dominantRole).toBe('Management Consulting');
+
+    const tie = hubStats({ kind: 'company' }, [
+      q('1', { role: 'Product Management' }),
+      q('2', { role: 'Management Consulting' }),
+    ]);
+    expect(tie.dominantRole).toBe('Management Consulting');
+
+    expect(hubStats({ kind: 'company' }, [q('1'), q('2')]).dominantRole).toBeNull();
+  });
+
+  it('roleNoun maps known roles and passes unknown ones through', () => {
+    expect(roleNoun('Product Management')).toBe('PM');
+    expect(roleNoun('Management Consulting')).toBe('Consulting');
+    expect(roleNoun('Program Management')).toBe('Program Management');
+    expect(roleNoun('Growth Marketing')).toBe('Growth Marketing');
+    expect(roleNoun(null)).toBe('PM');
+  });
+
+  it('company hubs title/describe by their dominant role (McKinsey ≠ PM)', () => {
+    const mckinsey = hub({ name: 'McKinsey', slug: 'mckinsey', count: 9 });
+    expect(hubTitle(mckinsey, 'Consulting')).toBe('McKinsey Consulting Interview Questions');
+    expect(hubDescription(mckinsey, ['Guesstimates'], 'Consulting')).toBe(
+      'Practice 9 real McKinsey Consulting interview questions, covering Guesstimates. Free, with sample answers and community answers.',
+    );
+    const intro = hubIntro(
+      mckinsey,
+      { difficulties: [['Medium', 9]], crossNames: [], dominantRole: 'Management Consulting' },
+      9,
+    );
+    expect(intro).toContain('asked in real McKinsey management consulting interviews');
+  });
+
   it('descriptions are data-driven per kind and degrade without cross names', () => {
     expect(hubDescription(hub({ kind: 'company', name: 'Google', count: 14 }), ['Product Sense', 'Analytical'])).toBe(
       'Practice 14 real Google PM interview questions, covering Product Sense and Analytical. Free, with sample answers and community answers.',
@@ -162,15 +203,40 @@ describe('copy', () => {
     );
   });
 
+  it('caps descriptions at 155 chars on a word boundary', () => {
+    const long = hubDescription(
+      hub({ kind: 'company', name: 'Pricewaterhousecoopers Strategy& Consulting', count: 42 }),
+      ['Mergers & Acquisitions Strategy', 'Corporate Development', 'Commercial Due Diligence'],
+    );
+    expect(long.length).toBeLessThanOrEqual(155);
+    expect(long.endsWith('…')).toBe(true);
+  });
+
   it('intro states count, mix and cross-tags factually', () => {
-    const intro = hubIntro(hub({ kind: 'company', name: 'Google', count: 2 }), {
-      difficulties: [['Medium', 1], ['Hard', 1]],
-      crossNames: ['Product Sense'],
-    });
+    const intro = hubIntro(
+      hub({ kind: 'company', name: 'Google', count: 2 }),
+      {
+        difficulties: [['Medium', 1], ['Hard', 1]],
+        crossNames: ['Product Sense'],
+        dominantRole: null,
+      },
+      2,
+    );
     expect(intro).toBe(
       '2 questions asked in real Google product management interviews — 1 medium, 1 hard. They span Product Sense. Open any question for the full page: sample answer, community answers and related questions.',
     );
-    expect(hubIntro(hub({ count: 1 }), { difficulties: [], crossNames: [] })).toContain('1 question asked');
+    expect(hubIntro(hub({ count: 1 }), { difficulties: [], crossNames: [], dominantRole: null }, 1)).toContain(
+      '1 question asked',
+    );
+  });
+
+  it('labels the difficulty mix as sampled when the hub exceeds the list cap', () => {
+    const intro = hubIntro(
+      hub({ kind: 'company', name: 'Google', count: 130 }),
+      { difficulties: [['Easy', 40], ['Hard', 60]], crossNames: [], dominantRole: null },
+      100,
+    );
+    expect(intro).toContain('— across the top 100: 40 easy, 60 hard.');
   });
 });
 

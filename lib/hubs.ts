@@ -12,6 +12,7 @@
  * holds INDEXABLE_MIN_QUESTIONS, so tiny hubs never register as thin pages.
  */
 
+import { excerpt } from '@/lib/question-seo';
 import type { Question } from '@/types';
 
 export type HubKind = 'company' | 'category' | 'role';
@@ -123,8 +124,25 @@ export function pickBrowseHubs(taxonomy: HubTaxonomy, current: HubRef, limit = 8
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
 
-export function hubTitle(hub: Pick<HubRef, 'kind' | 'name'>): string {
-  return hub.kind === 'company' ? `${hub.name} PM Interview Questions` : `${hub.name} Interview Questions`;
+/**
+ * The role word used in a company hub's title/description. McKinsey's
+ * questions are Management Consulting, not PM — hardcoding "PM" mismatched
+ * the query those pages should win. The noun comes from the hub's dominant
+ * role (hubStats); unknown roles pass through as-is, no role means "PM".
+ */
+const ROLE_NOUNS: Record<string, string> = {
+  'Product Management': 'PM',
+  'Management Consulting': 'Consulting',
+  'Program Management': 'Program Management',
+  'Category Management': 'Category Management',
+};
+
+export function roleNoun(role: string | null | undefined): string {
+  return role ? (ROLE_NOUNS[role] ?? role) : 'PM';
+}
+
+export function hubTitle(hub: Pick<HubRef, 'kind' | 'name'>, noun: string = 'PM'): string {
+  return hub.kind === 'company' ? `${hub.name} ${noun} Interview Questions` : `${hub.name} Interview Questions`;
 }
 
 export interface HubStats {
@@ -132,14 +150,19 @@ export interface HubStats {
   difficulties: [string, number][];
   /** For a company hub: its top categories. Otherwise: its top companies. */
   crossNames: string[];
+  /** Modal `role` across the hub's rows (ties alphabetical); null when none carry one. */
+  dominantRole: string | null;
 }
 
 export function hubStats(hub: Pick<HubRef, 'kind'>, questions: Question[]): HubStats {
   const difficulty = new Map<string, number>();
   for (const label of ['Easy', 'Medium', 'Hard']) difficulty.set(label, 0);
   const cross = new Map<string, number>();
+  const roles = new Map<string, number>();
   for (const q of questions) {
     if (q.difficulty) difficulty.set(q.difficulty, (difficulty.get(q.difficulty) ?? 0) + 1);
+    const role = q.role?.trim();
+    if (role) roles.set(role, (roles.get(role) ?? 0) + 1);
     const names = hub.kind === 'company' ? (q.category ?? []) : (q.company ?? []);
     for (const raw of names) {
       const name = raw?.trim();
@@ -152,33 +175,57 @@ export function hubStats(hub: Pick<HubRef, 'kind'>, questions: Question[]): HubS
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .slice(0, 3)
       .map(([name]) => name),
+    dominantRole:
+      [...roles.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? null,
   };
 }
 
 const listOut = (names: string[]) =>
   names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
 
-/** Meta description — unique per hub because it is built from the hub's own data. */
-export function hubDescription(hub: Pick<HubRef, 'kind' | 'name' | 'count'>, crossNames: string[]): string {
+/**
+ * Meta description — unique per hub because it is built from the hub's own
+ * data. Capped at 155 chars (word-boundary cut) so long name+cross-name
+ * combos don't truncate mid-sentence in SERPs.
+ */
+export function hubDescription(
+  hub: Pick<HubRef, 'kind' | 'name' | 'count'>,
+  crossNames: string[],
+  noun: string = 'PM',
+): string {
   const cross = crossNames.length ? listOut(crossNames) : '';
   const n = `${hub.count} real`;
   const plural = hub.count === 1 ? 'question' : 'questions';
   const tail = 'Free, with sample answers and community answers.';
-  if (hub.kind === 'company') {
-    return `Practice ${n} ${hub.name} PM interview ${plural}${cross ? `, covering ${cross}` : ''}. ${tail}`;
-  }
-  if (hub.kind === 'category') {
-    return `Practice ${n} ${hub.name.toLowerCase()} interview ${plural}${cross ? `, asked at ${cross}` : ''}. ${tail}`;
-  }
-  return `Practice ${n} ${hub.name} interview ${plural}${cross ? ` from ${cross}` : ''}. ${tail}`;
+  const desc =
+    hub.kind === 'company'
+      ? `Practice ${n} ${hub.name} ${noun} interview ${plural}${cross ? `, covering ${cross}` : ''}. ${tail}`
+      : hub.kind === 'category'
+        ? `Practice ${n} ${hub.name.toLowerCase()} interview ${plural}${cross ? `, asked at ${cross}` : ''}. ${tail}`
+        : `Practice ${n} ${hub.name} interview ${plural}${cross ? ` from ${cross}` : ''}. ${tail}`;
+  return excerpt(desc, 155);
 }
 
-/** The visible intro under the h1. Factual only — everything comes from the rows. */
-export function hubIntro(hub: Pick<HubRef, 'kind' | 'name' | 'count'>, stats: HubStats): string {
+/**
+ * The visible intro under the h1. Factual only — everything comes from the
+ * rows. `sampledCount` is how many rows the stats were computed from; on hubs
+ * larger than the list cap the difficulty mix is labelled as covering only
+ * those, so the intro never contradicts itself.
+ */
+export function hubIntro(
+  hub: Pick<HubRef, 'kind' | 'name' | 'count'>,
+  stats: HubStats,
+  sampledCount: number,
+): string {
   const mix = stats.difficulties.map(([label, n]) => `${n} ${label.toLowerCase()}`).join(', ');
+  const mixClause = mix
+    ? hub.count > sampledCount
+      ? ` — across the top ${sampledCount}: ${mix}`
+      : ` — ${mix}`
+    : '';
   const what =
     hub.kind === 'company'
-      ? `asked in real ${hub.name} product management interviews`
+      ? `asked in real ${hub.name} ${stats.dominantRole?.toLowerCase() ?? 'product management'} interviews`
       : hub.kind === 'category'
         ? `from real ${hub.name.toLowerCase()} interview rounds`
         : `asked in real ${hub.name.toLowerCase()} interviews`;
@@ -187,7 +234,7 @@ export function hubIntro(hub: Pick<HubRef, 'kind' | 'name' | 'count'>, stats: Hu
       ? ` They span ${listOut(stats.crossNames)}.`
       : ` Reported from interviews at ${listOut(stats.crossNames)}.`
     : '';
-  return `${hub.count} question${hub.count === 1 ? '' : 's'} ${what}${mix ? ` — ${mix}` : ''}.${cross} Open any question for the full page: sample answer, community answers and related questions.`;
+  return `${hub.count} question${hub.count === 1 ? '' : 's'} ${what}${mixClause}.${cross} Open any question for the full page: sample answer, community answers and related questions.`;
 }
 
 // ── Structured data ──────────────────────────────────────────────────────────
@@ -202,6 +249,8 @@ export interface HubJsonLdInput {
 export function hubJsonLd({ hub, questions, siteUrl }: HubJsonLdInput) {
   const url = `${siteUrl}${hubHref(hub.kind, hub.name)}`;
   const listed = questions.slice(0, HUB_LIST_CAP);
+  const stats = hubStats(hub, questions);
+  const noun = roleNoun(stats.dominantRole);
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -209,8 +258,8 @@ export function hubJsonLd({ hub, questions, siteUrl }: HubJsonLdInput) {
         '@type': 'CollectionPage',
         '@id': url,
         url,
-        name: hubTitle(hub),
-        description: hubDescription(hub, hubStats(hub, questions).crossNames),
+        name: hubTitle(hub, noun),
+        description: hubDescription(hub, stats.crossNames, noun),
         mainEntity: {
           '@type': 'ItemList',
           numberOfItems: listed.length,
