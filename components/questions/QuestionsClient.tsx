@@ -340,10 +340,11 @@ export default function QuestionsClient() {
             ))}
           </div>
 
-          {/* Browse by Role */}
+          {/* Browse by Role — only roles that actually have questions: a
+              zero-count role has no hub page (its link would 404). */}
           <div className="rounded-xl border p-5 space-y-2.5">
             <h2 className="font-heading font-bold text-sm">Browse by Role</h2>
-            {rolesList.map((r) => (
+            {rolesList.filter((r) => (roleCounts[r.name] || 0) > 0).map((r) => (
               <Link
                 key={r.id}
                 href={hubHref('role', r.name)}
@@ -361,7 +362,7 @@ export default function QuestionsClient() {
           <div className="rounded-xl border p-5 space-y-3">
             <h2 className="font-heading font-bold text-sm">Trending Companies</h2>
             <div className="flex flex-wrap gap-2">
-              {trendingCompanies.map((c) => (
+              {trendingCompanies.filter((c) => c.question_count > 0).map((c) => (
                 <Link
                   key={c.company_name}
                   href={hubHref('company', c.company_name)}
