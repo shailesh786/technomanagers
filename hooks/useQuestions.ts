@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { csContains, eqFilter, pgArrayLiteral } from '@/lib/postgrest';
 import { toast } from 'sonner';
@@ -7,7 +7,7 @@ import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-s
 
 const supabase = createSupabaseBrowserClient();
 
-export function useQuestions(filters?: {
+export interface QuestionFilters {
   /** Single category for homepage pill filter */
   category?: string;
   /** Multi-category for questions page filter */
@@ -25,8 +25,17 @@ export function useQuestions(filters?: {
   sort?: string;
   limit?: number;
   offset?: number;
-}) {
-  return useQuery({
+}
+
+/**
+ * Query options for one page of the questions list — shared by useQuestions()
+ * and the useQueries() pagination in QuestionsClient, so every loaded page is
+ * a live cache observer under the exact key the server prefetches hydrate.
+ * ⚠️ The key shape here is load-bearing: app/page.tsx and
+ * app/questions/page.tsx prefetch these keys — don't change one side alone.
+ */
+export function questionsQueryOptions(filters?: QuestionFilters) {
+  return queryOptions({
     queryKey: ['questions', filters],
     // 5 min ≥ every ISR window, so a mount on fresh HTML trusts the hydrated
     // server prefetch instead of refetching it; mutations still refetch via
@@ -91,6 +100,10 @@ export function useQuestions(filters?: {
       return flattenCommentCount(data ?? []) as unknown as Question[];
     },
   });
+}
+
+export function useQuestions(filters?: QuestionFilters) {
+  return useQuery(questionsQueryOptions(filters));
 }
 
 export function useQuestion(id: string) {
