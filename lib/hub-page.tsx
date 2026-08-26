@@ -28,6 +28,7 @@ import {
   hubTitle,
   isIndexable,
   pickBrowseHubs,
+  roleNoun,
   type HubKind,
   type HubRef,
 } from '@/lib/hubs';
@@ -82,8 +83,10 @@ export function createHubPage(kind: HubKind) {
     if (!data) return { title: 'Not Found' };
     const { hub, questions } = data;
 
-    const title = hubTitle(hub);
-    const description = hubDescription(hub, hubStats(hub, questions).crossNames);
+    const stats = hubStats(hub, questions);
+    const noun = roleNoun(stats.dominantRole);
+    const title = hubTitle(hub, noun);
+    const description = hubDescription(hub, stats.crossNames, noun);
     const path = hubHref(kind, hub.name);
     return {
       title,
@@ -102,6 +105,7 @@ export function createHubPage(kind: HubKind) {
     if (!data) notFound();
     const { taxonomy, hub, questions } = data;
     const browse = pickBrowseHubs(taxonomy, hub);
+    const stats = hubStats(hub, questions);
 
     return (
       <>
@@ -124,8 +128,12 @@ export function createHubPage(kind: HubKind) {
             </ol>
           </nav>
 
-          <h1 className="font-heading font-extrabold text-2xl md:text-3xl leading-tight mb-3">{hubTitle(hub)}</h1>
-          <p className="text-muted-foreground leading-relaxed mb-8 max-w-2xl">{hubIntro(hub, hubStats(hub, questions))}</p>
+          <h1 className="font-heading font-extrabold text-2xl md:text-3xl leading-tight mb-3">
+            {hubTitle(hub, roleNoun(stats.dominantRole))}
+          </h1>
+          <p className="text-muted-foreground leading-relaxed mb-8 max-w-2xl">
+            {hubIntro(hub, stats, questions.length)}
+          </p>
 
           <HubQuestionList questions={questions} />
 

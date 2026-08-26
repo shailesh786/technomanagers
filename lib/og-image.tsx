@@ -14,8 +14,8 @@
 import { ImageResponse } from 'next/og';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getHubTaxonomy } from '@/lib/hub-data';
-import { findHub, hubTitle, type HubKind } from '@/lib/hubs';
+import { getHubQuestions, getHubTaxonomy } from '@/lib/hub-data';
+import { findHub, hubStats, hubTitle, roleNoun, type HubKind } from '@/lib/hubs';
 
 export const OG_SIZE = { width: 1200, height: 630 };
 export const OG_CONTENT_TYPE = 'image/png';
@@ -128,9 +128,11 @@ export function createHubOgImage(kind: HubKind) {
     try {
       const hub = findHub(await getHubTaxonomy(), kind, params.slug);
       if (hub) {
+        // Same role-aware title as the page itself (McKinsey ≠ "PM").
+        const stats = hubStats(hub, await getHubQuestions(kind, hub.name));
         return renderOgCard({
           eyebrow: HUB_EYEBROW[kind],
-          title: hubTitle(hub),
+          title: hubTitle(hub, roleNoun(stats.dominantRole)),
           meta: `${hub.count} real question${hub.count === 1 ? '' : 's'} with sample answers`,
         });
       }
