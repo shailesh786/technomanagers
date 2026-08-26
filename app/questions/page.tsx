@@ -82,7 +82,7 @@ export const metadata: Metadata = {
 const getDefaultQuestions = unstable_cache(
   async () => {
     const supabase = getAnonClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('questions')
       .select(QUESTION_LIST_SELECT)
       .eq('status', 'published')
@@ -92,6 +92,9 @@ const getDefaultQuestions = unstable_cache(
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .range(0, 19);
+    // Throw so a transient DB error is NOT cached as an empty list for the
+    // revalidate window (the throw-on-error contract from PR #41).
+    if (error) throw error;
     return flattenCommentCount(data ?? []);
   },
   ['questions-default-newest'],
@@ -101,11 +104,12 @@ const getDefaultQuestions = unstable_cache(
 const getActiveRoles = unstable_cache(
   async () => {
     const supabase = getAnonClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('roles')
       .select('*')
       .eq('is_active', true)
       .order('display_order', { ascending: true });
+    if (error) throw error;
     return data ?? [];
   },
   ['roles-active'],
@@ -116,11 +120,12 @@ const getRoleCounts = unstable_cache(
   async () => {
     const supabase = getAnonClient();
     // Use `role` column (not `tags`) to match the client-side filter logic
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('questions')
       .select('role')
       .eq('status', 'published')
       .not('role', 'is', null);
+    if (error) throw error;
     const counts: Record<string, number> = {};
     (data ?? []).forEach((q: { role: string | null }) => {
       if (q.role) counts[q.role] = (counts[q.role] || 0) + 1;
@@ -134,7 +139,8 @@ const getRoleCounts = unstable_cache(
 const getPopularCompanies = unstable_cache(
   async () => {
     const supabase = getAnonClient();
-    const { data } = await supabase.rpc('get_companies_with_counts', { include_inactive: false });
+    const { data, error } = await supabase.rpc('get_companies_with_counts', { include_inactive: false });
+    if (error) throw error;
     return ((data ?? []) as Array<{ company_name: string; question_count: number }>).slice(0, 6);
   },
   ['companies-popular-6'],

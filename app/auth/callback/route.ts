@@ -20,15 +20,15 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { safeNextPath } from '@/lib/safe-redirect';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  // 'next' param lets us redirect to the page the user was trying to access.
-  // Only allow relative paths that start with '/' and not '//' (protocol-relative
-  // URLs) to prevent open-redirect attacks.
-  const rawNext = searchParams.get('next') ?? '/';
-  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
+  // 'next' lets us return the user to the page they came from. safeNextPath
+  // guarantees a same-origin relative path (rejecting off-site targets and the
+  // `/<backslash>evil.com` escape), so open redirects are impossible.
+  const next = safeNextPath(searchParams.get('next'), request.url, '/');
 
   if (code) {
     const supabase = await createSupabaseServerClient();

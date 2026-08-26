@@ -111,7 +111,7 @@ function courseJsonLd(siteUrl: string) {
     hasCourseInstance: {
       '@type': 'CourseInstance',
       courseMode: 'online',
-      courseWorkload: 'P8H',      // 8 hours per week, ISO 8601 duration
+      courseWorkload: 'PT8H',     // 8 hours per week — ISO 8601 time durations need the 'T'
       courseSchedule: {
         '@type': 'Schedule',
         duration: 'P12W',

@@ -235,7 +235,23 @@ export function useToggleLike() {
       qc.invalidateQueries({ queryKey: ['question', vars.questionId] });
       toast.error('Failed to update like. Please try again.');
     },
-    onSuccess: (_data, { questionId }) => {
+    onSuccess: (data, { questionId, userId }, context) => {
+      // Reconcile with the server's authoritative liked state — the same fix
+      // useToggleQuestionLike got. onMutate flipped the ids set from a possibly
+      // stale cache (a rapid double-click, or an empty set before the ids query
+      // resolved), so if the server disagrees with that optimistic flip, correct
+      // the set and refetch the counters it moved the wrong way.
+      const optimisticLiked = !(context?.prevLikedIds?.has(questionId) ?? false);
+      if (data.liked !== optimisticLiked) {
+        qc.setQueryData<Set<string>>(['user_liked_question_ids', userId], (prev) => {
+          const next = new Set(prev ?? []);
+          if (data.liked) next.add(questionId);
+          else next.delete(questionId);
+          return next;
+        });
+        qc.invalidateQueries({ queryKey: ['questions'] });
+        qc.invalidateQueries({ queryKey: ['question', questionId] });
+      }
       // Sync per-question state used by the detail page
       qc.invalidateQueries({ queryKey: ['user_liked_question', questionId] });
     },

@@ -124,7 +124,7 @@ const getHotQuestions = unstable_cache(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('questions')
       .select(QUESTION_LIST_SELECT)
       .eq('status', 'published')
@@ -136,6 +136,9 @@ const getHotQuestions = unstable_cache(
       .order('id', { ascending: false })
       // The featured section renders 4 cards — fetching 20 wasted 16 rows.
       .range(0, 3);
+    // Throw so a transient DB error is NOT cached as an empty featured list
+    // for the revalidate window (the throw-on-error contract from PR #41).
+    if (error) throw error;
     return flattenCommentCount(data ?? []);
   },
   ['hot-questions'],
