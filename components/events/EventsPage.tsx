@@ -11,6 +11,7 @@
  */
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Calendar, ExternalLink, Clock } from 'lucide-react';
 import { useEvents } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
@@ -62,10 +63,32 @@ export default function EventsPage() {
           ))}
         </div>
       ) : !events || events.length === 0 ? (
-        <div className="border rounded-xl p-12 text-center bg-muted/30">
+        <div className="border rounded-xl p-12 text-center bg-muted/30 max-w-3xl mx-auto">
           <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-heading font-semibold text-lg mb-1">No upcoming events right now.</h3>
-          <p className="text-muted-foreground">Check back soon!</p>
+          <h2 className="font-heading font-semibold text-lg mb-3">No live events on the calendar right now</h2>
+          <div className="text-muted-foreground text-sm leading-relaxed space-y-3 text-left md:text-center">
+            <p>
+              Technomanagers events are free, practical sessions for product people: mock-interview
+              breakdowns, AI product deep dives, resume and portfolio teardowns, and live Q&amp;A with
+              PMs from top companies. New sessions are usually announced a few weeks ahead — this page
+              is where they appear first.
+            </p>
+            <p>
+              While you wait, recordings of past sessions are on our{' '}
+              <a href="https://www.youtube.com/@technomanagers" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-primary transition-colors underline">
+                YouTube channel
+              </a>
+              , you can practice with the{' '}
+              <Link href="/questions" className="text-secondary hover:text-primary transition-colors underline">
+                question bank
+              </Link>
+              , or book a 1:1 session on{' '}
+              <a href="https://topmate.io/technomanagers" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-primary transition-colors underline">
+                Topmate
+              </a>
+              .
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-5">

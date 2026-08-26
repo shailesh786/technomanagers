@@ -26,8 +26,9 @@ export const INSTRUCTOR_NAME = 'Shailesh Sharma';
 export const INSTRUCTOR_YOUTUBE_URL = 'https://www.youtube.com/@technomanagers';
 export const INSTRUCTOR_LINKEDIN_URL = 'https://www.linkedin.com/in/shailesh-sharma/';
 
-const PORTRAIT_URL =
+export const INSTRUCTOR_PORTRAIT_URL =
   'https://res.cloudinary.com/topmate/image/upload/v1778317151/WhatsApp_Image_2026-05-09_at_2.06.10_PM_ae5sht.jpg';
+const PORTRAIT_URL = INSTRUCTOR_PORTRAIT_URL;
 
 // Label → line. Labels share one column (min-width below) so the lines align.
 const PROOF: ReadonlyArray<readonly [string, string]> = [

@@ -32,6 +32,8 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { serializeJsonLd } from '@/lib/question-seo';
 import { resolveSiteUrl } from '@/lib/site-url';
+import { getHubTaxonomy } from '@/lib/hub-data';
+import type { NavHubs } from '@/components/layout/NavDropdown';
 import '@/app/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
@@ -147,7 +149,18 @@ const identityJsonLd = {
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Hub names for the Questions nav menu — served in every page's HTML so
+  // crawlers can reach the hub pages from anywhere. getHubTaxonomy is
+  // unstable_cache'd (tag 'questions') and throws on a DB error, which is
+  // correct here: fail the render loudly rather than ship a linkless nav.
+  const taxonomy = await getHubTaxonomy();
+  const navHubs: NavHubs = {
+    roles: taxonomy.role.map(({ name }) => name),
+    categories: taxonomy.category.slice(0, 12).map(({ name }) => name),
+    companies: taxonomy.company.slice(0, 8).map(({ name }) => name),
+  };
+
   return (
     <html
       lang="en"
@@ -170,7 +183,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <QuestionAccessProvider>
               <TooltipProvider>
-                <Navbar />
+                <Navbar hubs={navHubs} />
                 <main id="main" className="flex-1">{children}</main>
                 <FooterWrapper />
                 <Toaster />

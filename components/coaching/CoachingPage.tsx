@@ -12,6 +12,7 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCoaching } from '@/hooks/useCoaching';
 import CoachingCard from '@/components/coaching/CoachingCard';
@@ -25,9 +26,20 @@ export default function CoachingPage() {
 
   return (
     <div className="container py-8">
-      <div className="mb-8 space-y-2">
+      <div className="mb-8 space-y-3 max-w-3xl">
         <h1 className="font-heading font-extrabold text-3xl">1:1 Coaching</h1>
         <p className="text-muted-foreground">Get personalized guidance from experienced Product Managers.</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          These sessions are one-on-one, booked directly, and shaped around where you are: a mock
+          interview with detailed feedback before the real one, a resume review that gets you past
+          the screen, or ongoing mentorship as you grow into the role. Every coach is a working
+          product professional, so the advice reflects how hiring and building actually happen
+          today. If you're preparing for interviews, warm up with the free{' '}
+          <Link href="/questions" className="text-secondary hover:text-primary transition-colors underline">
+            question bank
+          </Link>{' '}
+          first, then book the session that fits.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-8">

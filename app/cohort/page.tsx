@@ -15,6 +15,12 @@
 import { unstable_cache } from 'next/cache';
 import type { Metadata } from 'next';
 import CohortPage from '@/components/cohort/CohortPage';
+import {
+  INSTRUCTOR_LINKEDIN_URL,
+  INSTRUCTOR_NAME,
+  INSTRUCTOR_PORTRAIT_URL,
+  INSTRUCTOR_YOUTUBE_URL,
+} from '@/components/cohort/InstructorCard';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
 import { TESTIMONIAL_COLUMNS } from '@/lib/cohort-testimonials';
 import type { CohortTestimonial } from '@/types';
@@ -88,6 +94,7 @@ function courseJsonLd(siteUrl: string) {
     description:
       'A 12-week mentor-led live cohort to become a job-ready AI Product Manager. Build RAG systems, AI agents, run evals, prep for interviews, and present on Demo Day.',
     url: `${siteUrl}/cohort`,
+    image: INSTRUCTOR_PORTRAIT_URL,
     provider: {
       '@type': 'Organization',
       name: 'Technomanagers',
@@ -111,7 +118,16 @@ function courseJsonLd(siteUrl: string) {
         repeatFrequency: 'Weekly',
         byDay: ['https://schema.org/Saturday', 'https://schema.org/Sunday'],
       },
+      instructor: {
+        '@type': 'Person',
+        name: INSTRUCTOR_NAME,
+        image: INSTRUCTOR_PORTRAIT_URL,
+        sameAs: [INSTRUCTOR_YOUTUBE_URL, INSTRUCTOR_LINKEDIN_URL],
+      },
     },
+    // No `offers`: pricing is deliberately not public (owner decision,
+    // Aug 26 2026) — structured data must not carry a price the page
+    // doesn't display. Add an Offer here if that ever changes.
   };
 }
 

@@ -7,10 +7,20 @@ import { hubHref } from '@/lib/hubs';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCourses } from '@/hooks/useCourses';
-import { useRoles } from '@/hooks/useRoles';
-import { useCategories } from '@/hooks/useCategories';
-import { usePopularCompanies } from '@/hooks/useCompanies';
 import type { Course } from '@/types';
+
+/**
+ * Hub names for the Questions menus, fetched server-side in app/layout.tsx
+ * (getHubTaxonomy) and passed down as props. The panels render in the server
+ * HTML (CSS-hidden until hover/tap) so every page carries crawlable hub
+ * links — previously the panels mounted only on open and their data hooks
+ * were gated on `enabled: open`, leaving ZERO hub links in any page's HTML.
+ */
+export interface NavHubs {
+  roles: string[];
+  categories: string[];
+  companies: string[];
+}
 
 function useHoverDropdown(delay = 100) {
   const [open, setOpen] = useState(false);
@@ -31,11 +41,8 @@ function useHoverDropdown(delay = 100) {
 }
 
 /* ========== QUESTIONS DROPDOWN ========== */
-export function QuestionsDropdown({ active }: { active: boolean }) {
+export function QuestionsDropdown({ active, hubs }: { active: boolean; hubs: NavHubs }) {
   const { open, setOpen, enter, leave } = useHoverDropdown();
-  const { data: roles = [] } = useRoles({ enabled: open });
-  const { data: categories = [] } = useCategories({ enabled: open });
-  const { data: popularCompanies = [] } = usePopularCompanies(8, open);
 
   return (
     <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
@@ -51,79 +58,82 @@ export function QuestionsDropdown({ active }: { active: boolean }) {
         <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
       </Link>
 
-      {open && (
-        <div
-          className="absolute left-0 top-full pt-2 z-50 animate-in fade-in-0 duration-150"
-          onMouseEnter={enter}
-          onMouseLeave={leave}
-        >
-          <div className="w-[600px] rounded-xl border bg-popover shadow-lg p-5 flex gap-8">
-            {/* Roles + Categories */}
-            <div className="flex-1 space-y-4">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Browse by Role</p>
+      {/* Rendered ALWAYS (CSS-hidden when closed) so the hub links are in the
+          server HTML of every page — do not switch back to `{open && …}`. */}
+      <div
+        className={cn(
+          'absolute left-0 top-full pt-2 z-50',
+          open ? 'animate-in fade-in-0 duration-150' : 'hidden',
+        )}
+        onMouseEnter={enter}
+        onMouseLeave={leave}
+      >
+        <div className="w-[600px] rounded-xl border bg-popover shadow-lg p-5 flex gap-8">
+          {/* Roles + Categories */}
+          <div className="flex-1 space-y-4">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Browse by Role</p>
+              <Link
+                href="/questions"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors hover:bg-accent/10"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+                All Roles
+              </Link>
+              {hubs.roles.map((name) => (
                 <Link
-                  href="/questions"
+                  key={name}
+                  href={hubHref('role', name)}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold transition-colors hover:bg-accent/10"
+                  className="block px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-accent/10"
                 >
-                  <ArrowRight className="h-3.5 w-3.5" />
-                  All Roles
+                  {name}
                 </Link>
-                {roles.map((r) => (
-                  <Link
-                    key={r.id}
-                    href={hubHref('role', r.name)}
-                    onClick={() => setOpen(false)}
-                    className="block px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-accent/10"
-                  >
-                    {r.name}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="border-t" />
-
-              <div className="space-y-1 max-h-64 overflow-y-auto">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Browse by Category</p>
-                {categories.length === 0 && (
-                  <p className="px-3 py-1.5 text-xs text-muted-foreground italic">No categories yet</p>
-                )}
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={hubHref('category', cat.name)}
-                    onClick={() => setOpen(false)}
-                    className="block px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-accent/10"
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
-              </div>
+              ))}
             </div>
 
-            {/* Companies */}
-            <div className="w-48 space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Popular Companies</p>
-              <div className="flex flex-wrap gap-2">
-                {popularCompanies.map((c) => (
-                  <Link
-                    key={c.company_name}
-                    href={hubHref('company', c.company_name)}
-                    onClick={() => setOpen(false)}
-                    className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                  >
-                    {c.company_name}
-                  </Link>
-                ))}
-                {popularCompanies.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">No companies yet</p>
-                )}
-              </div>
+            <div className="border-t" />
+
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Browse by Category</p>
+              {hubs.categories.length === 0 && (
+                <p className="px-3 py-1.5 text-xs text-muted-foreground italic">No categories yet</p>
+              )}
+              {hubs.categories.map((name) => (
+                <Link
+                  key={name}
+                  href={hubHref('category', name)}
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-1.5 rounded-md text-sm transition-colors hover:bg-accent/10"
+                >
+                  {name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Companies */}
+          <div className="w-48 space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Popular Companies</p>
+            <div className="flex flex-wrap gap-2">
+              {hubs.companies.map((name) => (
+                <Link
+                  key={name}
+                  href={hubHref('company', name)}
+                  onClick={() => setOpen(false)}
+                  className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                >
+                  {name}
+                </Link>
+              ))}
+              {hubs.companies.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No companies yet</p>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -211,10 +221,8 @@ export function CoursesDropdown({ active }: { active: boolean }) {
 }
 
 /* ========== MOBILE EXPANDABLE SECTIONS ========== */
-export function MobileQuestionsMenu({ onClose }: { onClose: () => void }) {
+export function MobileQuestionsMenu({ onClose, hubs }: { onClose: () => void; hubs: NavHubs }) {
   const [expanded, setExpanded] = useState(false);
-  const { data: categories = [] } = useCategories({ enabled: expanded });
-  const { data: popularCompanies = [] } = usePopularCompanies(8, expanded);
 
   return (
     <div>
@@ -230,33 +238,32 @@ export function MobileQuestionsMenu({ onClose }: { onClose: () => void }) {
           <ChevronDown className={cn('h-4 w-4 transition-transform', expanded && 'rotate-180')} />
         </button>
       </div>
-      {expanded && (
-        <div className="pl-6 space-y-1 pb-2">
-          {categories.map((cat) => (
+      {/* Rendered ALWAYS (CSS-hidden when collapsed) — see QuestionsDropdown. */}
+      <div className={cn('pl-6 space-y-1 pb-2', !expanded && 'hidden')}>
+        {hubs.categories.map((name) => (
+          <Link
+            key={name}
+            href={hubHref('category', name)}
+            onClick={onClose}
+            className="block px-3 py-1.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+          >
+            {name}
+          </Link>
+        ))}
+        <p className="px-3 pt-2 text-xs font-semibold text-muted-foreground">Companies</p>
+        <div className="flex flex-wrap gap-1.5 px-3">
+          {hubs.companies.map((name) => (
             <Link
-              key={cat.id}
-              href={hubHref('category', cat.name)}
+              key={name}
+              href={hubHref('company', name)}
               onClick={onClose}
-              className="block px-3 py-1.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="px-2.5 py-1 rounded-full text-xs bg-muted text-muted-foreground hover:bg-primary/10"
             >
-              {cat.name}
+              {name}
             </Link>
           ))}
-          <p className="px-3 pt-2 text-xs font-semibold text-muted-foreground">Companies</p>
-          <div className="flex flex-wrap gap-1.5 px-3">
-            {popularCompanies.map((c) => (
-              <Link
-                key={c.company_name}
-                href={hubHref('company', c.company_name)}
-                onClick={onClose}
-                className="px-2.5 py-1 rounded-full text-xs bg-muted text-muted-foreground hover:bg-primary/10"
-              >
-                {c.company_name}
-              </Link>
-            ))}
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

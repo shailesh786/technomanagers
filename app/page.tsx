@@ -33,6 +33,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import HeroPriorityBoard from '@/components/home/HeroPriorityBoard';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
+import { getHubTaxonomy } from '@/lib/hub-data';
+import { hubHref, type HubRef } from '@/lib/hubs';
 import { selectVisibleHeroItems } from '@/lib/hero';
 import type { HeroItem } from '@/types';
 
@@ -188,6 +190,21 @@ export default async function HomePage() {
   // to the visible/slotted filters already applied in the cached query.
   const heroItems = selectVisibleHeroItems(await getHeroItems());
 
+  // Hub links in the homepage HTML — the strongest page linking straight into
+  // the company/category landing pages (cached under the 'questions' tag).
+  const taxonomy = await getHubTaxonomy();
+  const browseCompanies = taxonomy.company.slice(0, 10);
+  const browseCategories = taxonomy.category.slice(0, 10);
+  const hubChip = (hub: HubRef) => (
+    <Link
+      key={hub.slug}
+      href={hubHref(hub.kind, hub.name)}
+      className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+    >
+      {hub.name} <span aria-hidden="true">({hub.count})</span>
+    </Link>
+  );
+
   return (
     <div>
       {/* Keyword page heading for search & screen readers. Lives here (not in
@@ -225,6 +242,25 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Browse hubs — crawlable links into the company/category landing pages */}
+      {(browseCompanies.length > 0 || browseCategories.length > 0) && (
+        <section aria-label="Browse questions by company and category" className="container pb-16 space-y-6">
+          <h2 className="font-heading font-bold text-2xl text-center">Browse Interview Questions</h2>
+          {browseCompanies.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-sm">By company</h3>
+              <div className="flex flex-wrap gap-2">{browseCompanies.map(hubChip)}</div>
+            </div>
+          )}
+          {browseCategories.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-heading font-bold text-sm">By category</h3>
+              <div className="flex flex-wrap gap-2">{browseCategories.map(hubChip)}</div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Coaching CTA */}
       <section className="bg-gradient-brand py-16">
