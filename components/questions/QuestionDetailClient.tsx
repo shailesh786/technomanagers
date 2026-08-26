@@ -35,7 +35,7 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
   const router = useRouter();
   const { data: question, isLoading } = useQuestion(id);
   const { user } = useAuth();
-  const { recordView, isExhausted, setGateOpen } = useQuestionAccess();
+  const { recordView, isExhausted, isViewed, setGateOpen } = useQuestionAccess();
   const { data: savedIds = [] } = useSavedQuestions(user?.id);
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
@@ -103,7 +103,9 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
   });
 
   const handleShowAnswer = () => {
-    if (!user && isExhausted) { setGateOpen(true); return; }
+    // An already-viewed question keeps its answer readable even after the
+    // free views run out — visitors get a true maxFreeViews answers.
+    if (!user && isExhausted && !isViewed(question.id)) { setGateOpen(true); return; }
     setShowAnswer(!showAnswer);
   };
 
@@ -206,7 +208,7 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
               className="w-full flex items-center justify-between p-4 text-left font-heading font-semibold"
             >
               <span className="flex items-center gap-2">
-                {!user && isExhausted && <Lock className="h-4 w-4 text-muted-foreground" />}
+                {!user && isExhausted && !isViewed(question.id) && <Lock className="h-4 w-4 text-muted-foreground" />}
                 {showAnswer ? 'Hide Answer' : 'Show Answer'}
               </span>
               {showAnswer ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

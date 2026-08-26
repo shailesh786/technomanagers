@@ -72,9 +72,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Threads ?next= through to the callback URL so users redirected to /auth
   // (e.g. from /profile) land back on their intended page after signing in.
+  // Without an explicit next, return to the CURRENT page — a reader signing
+  // in from the free-view gate lands back on the question they were reading.
+  // On /auth itself there is no page to return to, so fall back to /questions.
   const signInWithGoogle = useCallback(async () => {
     const searchParams = new URLSearchParams(window.location.search);
-    const next = searchParams.get('next') || '/questions';
+    const next =
+      searchParams.get('next') ||
+      (window.location.pathname !== '/auth'
+        ? window.location.pathname + window.location.search
+        : '/questions');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

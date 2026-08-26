@@ -5,7 +5,7 @@ import type { RelatedCluster } from '@/lib/related-questions';
 import type { Question } from '@/types';
 
 const { access, router, state, toast } = vi.hoisted(() => ({
-  access: { recordView: vi.fn(() => true), isExhausted: false, setGateOpen: vi.fn() },
+  access: { recordView: vi.fn(() => true), isExhausted: false, isViewed: vi.fn(() => false), setGateOpen: vi.fn() },
   router: { push: vi.fn(), replace: vi.fn() },
   state: { user: null as null | { id: string } },
   toast: { info: vi.fn(), success: vi.fn() },
@@ -113,6 +113,19 @@ describe('RelatedQuestions', () => {
     access.recordView.mockReturnValue(false);
     fireEvent.click(prev);
     expect(router.push).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves modified clicks to the browser so Cmd/Ctrl-click opens a new tab', () => {
+    render(<RelatedQuestions clusters={clusters} neighbours={neighbours} />);
+    const nav = screen.getByRole('navigation', { name: /previous and next question/i });
+    const next = within(nav).getByRole('link', { name: /next question/i });
+
+    fireEvent.click(next, { metaKey: true });
+    fireEvent.click(next, { ctrlKey: true });
+    fireEvent.click(next, { shiftKey: true });
+    fireEvent.click(next, { button: 1 });
+    expect(access.recordView).not.toHaveBeenCalled();
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it('renders only the side that exists and keeps the layout slot for the other', () => {

@@ -8,7 +8,7 @@ import type { Question } from '@/types';
 // vi.mock factories are hoisted above imports, so anything they close over
 // has to be created with vi.hoisted.
 const { access, state } = vi.hoisted(() => ({
-  access: { recordView: vi.fn(() => true), isExhausted: false, setGateOpen: vi.fn() },
+  access: { recordView: vi.fn(() => true), isExhausted: false, isViewed: vi.fn(() => false), setGateOpen: vi.fn() },
   state: { user: null as null | { id: string } },
 }));
 

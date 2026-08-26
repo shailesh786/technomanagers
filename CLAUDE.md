@@ -92,7 +92,7 @@ technomanagers/
 ├── supabase/
 │   └── migrations/                ← SQL migrations — NEVER modify existing files
 │
-├── middleware.ts                  ← Edge: refreshes Supabase auth cookie
+├── middleware.ts                  ← Edge: session guard on /profile, /admin, /auth, admin preview only
 ├── next.config.ts
 ├── tailwind.config.ts
 └── vitest.config.ts
@@ -121,7 +121,7 @@ technomanagers/
 - OAuth initiated via `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: '/auth/callback' } })`
 - `/auth/callback` Route Handler exchanges the PKCE code for a session and sets the cookie
 - Session stored in **cookies** (not `localStorage`) so RSC can read it
-- `middleware.ts` calls `supabase.auth.getSession()` on every request to keep the cookie fresh
+- `middleware.ts` validates the session (`getUser()`) ONLY on `/profile`, `/admin`, `/auth` and `/questions/[id]/preview` — public routes are cookieless server-side and the browser client auto-refreshes tokens, so they skip the Supabase round trip
 
 **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs** must include your production callback URL.
 
@@ -302,7 +302,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `lib/supabase/client.ts` | Browser Supabase singleton |
 | `lib/supabase/public.ts` | Cookieless anon client — use for all ISR/cached public reads |
 | `lib/supabase/middleware-client.ts` | Session-refresh client (middleware.ts only) |
-| `middleware.ts` | Edge: refreshes auth cookie on every request |
+| `middleware.ts` | Edge: session guard on `/profile`, `/admin`, `/auth`, admin preview only — public routes skip it |
 | `components/home/HeroPriorityBoard.tsx` | Homepage hero: static 3-card board (md+), manual scroll-snap slideshow below; renders nothing with 0 visible items |
 | `components/home/HeroCard.tsx` | Single hero card (white/navy surface, 16:9 image or gradient fallback); whole card is one link |
 | `components/admin/AdminHeroBoard.tsx` | Admin hero slots UI — 3 priority slots, visibility switches, editor with live preview, bench |

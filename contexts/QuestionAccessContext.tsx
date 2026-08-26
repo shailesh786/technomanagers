@@ -29,6 +29,13 @@ interface QuestionAccessContextType {
   maxFreeViews: number;
   /** Whether the user has exhausted free views (only relevant when not signed in) */
   isExhausted: boolean;
+  /**
+   * Whether this question is one of the free views already used this session.
+   * Lock checks must be `isExhausted && !isViewed(id)` — an already-viewed
+   * question keeps its answer readable, so visitors truly get MAX_FREE_VIEWS
+   * answers (the gate fires on the next distinct question).
+   */
+  isViewed: (questionId: string) => boolean;
 }
 
 const QuestionAccessContext = createContext<QuestionAccessContextType | null>(null);
@@ -58,6 +65,8 @@ export function QuestionAccessProvider({ children }: { children: ReactNode }) {
     [user, viewedIds],
   );
 
+  const isViewed = useCallback((questionId: string) => viewedIds.has(questionId), [viewedIds]);
+
   const value = useMemo(
     () => ({
       viewedCount,
@@ -67,8 +76,9 @@ export function QuestionAccessProvider({ children }: { children: ReactNode }) {
       setGateOpen,
       maxFreeViews: MAX_FREE_VIEWS,
       isExhausted,
+      isViewed,
     }),
-    [viewedCount, canView, recordView, gateOpen, setGateOpen, isExhausted],
+    [viewedCount, canView, recordView, gateOpen, setGateOpen, isExhausted, isViewed],
   );
 
   return (
