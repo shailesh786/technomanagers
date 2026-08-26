@@ -30,6 +30,8 @@ export default function Footer() {
               <Link href="/questions" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Questions</Link>
               <Link href="/courses" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Courses</Link>
               <Link href="/coaching" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Coaching</Link>
+              <Link href="/cohort" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Cohort</Link>
+              <Link href="/events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Events</Link>
             </div>
           </div>
           <div className="space-y-3">

@@ -17,12 +17,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { QuestionsDropdown, CoursesDropdown, MobileQuestionsMenu, MobileCoursesMenu } from '@/components/layout/NavDropdown';
+import { QuestionsDropdown, CoursesDropdown, MobileQuestionsMenu, MobileCoursesMenu, type NavHubs } from '@/components/layout/NavDropdown';
 import Image from 'next/image';
 
 const GOOGLE_ICON = 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg';
 
-export default function Navbar() {
+// `hubs` is fetched server-side in app/layout.tsx so the Questions menu's
+// hub links land in every page's server HTML.
+export default function Navbar({ hubs }: { hubs: NavHubs }) {
   const { user, profile, isAdmin, isLoading, signInWithGoogle, signOut } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -42,7 +44,7 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-1">
-          <QuestionsDropdown active={pathname === '/questions'} />
+          <QuestionsDropdown active={pathname === '/questions'} hubs={hubs} />
           <CoursesDropdown active={pathname === '/courses'} />
           <Link
             href="/coaching"
@@ -158,7 +160,7 @@ export default function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t bg-background p-4 space-y-2">
-          <MobileQuestionsMenu onClose={() => setMobileOpen(false)} />
+          <MobileQuestionsMenu onClose={() => setMobileOpen(false)} hubs={hubs} />
           <MobileCoursesMenu onClose={() => setMobileOpen(false)} />
           <Link
             href="/coaching"

@@ -11,6 +11,7 @@
  * - All logic, JSX, and visual design UNCHANGED.
  */
 
+import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCourses } from '@/hooks/useCourses';
 import CourseCard from '@/components/courses/CourseCard';
@@ -21,9 +22,23 @@ export default function CoursesPage() {
 
   return (
     <div className="container py-8">
-      <div className="mb-8 space-y-2">
+      <div className="mb-8 space-y-3 max-w-3xl">
         <h1 className="font-heading font-extrabold text-3xl">PM Courses</h1>
         <p className="text-muted-foreground">Level up your PM skills with structured courses.</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Every course here is self-paced and built from real product work — the frameworks, the
+          interview patterns, and the AI skills hiring managers actually test for. Start with the
+          course that matches your next milestone: breaking into product, preparing for interviews,
+          or becoming the AI-first PM on your team. Each one pairs well with the free{' '}
+          <Link href="/questions" className="text-secondary hover:text-primary transition-colors underline">
+            interview question bank
+          </Link>{' '}
+          for practice, and with the live{' '}
+          <Link href="/cohort" className="text-secondary hover:text-primary transition-colors underline">
+            AI Product Builder Cohort
+          </Link>{' '}
+          when you want mentorship and a working product to show for it.
+        </p>
       </div>
 
       {isLoading ? (

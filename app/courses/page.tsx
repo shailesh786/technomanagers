@@ -7,6 +7,10 @@ import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query
 import type { Metadata } from 'next';
 import CoursesPage from '@/components/courses/CoursesPage';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
+import { coursesJsonLd } from '@/lib/marketing-jsonld';
+import { serializeJsonLd } from '@/lib/question-seo';
+import { resolveSiteUrl } from '@/lib/site-url';
+import type { Course } from '@/types';
 
 // ISR: rebuild at most once every 5 minutes — avoids a fresh Supabase hit on every visit
 export const revalidate = 300;
@@ -29,23 +33,32 @@ export const metadata: Metadata = {
 export default async function Courses() {
   const queryClient = new QueryClient();
 
-  // Prefetch all active courses — matches useCourses() query key ['courses'].
+  // Fetch once, then both prefetch (key ['courses'] matches useCourses())
+  // and emit Course JSON-LD from the same rows.
+  const supabase = createSupabasePublicClient();
+  const { data } = await supabase
+    .from('courses')
+    .select('id, title, short_description, thumbnail_url, external_url, category, display_order, status')
+    .eq('status', 'active')
+    .order('display_order', { ascending: true });
+  const courses = (data ?? []) as Course[];
+
   await queryClient.prefetchQuery({
     queryKey: ['courses'],
-    queryFn: async () => {
-      const supabase = createSupabasePublicClient();
-      const { data } = await supabase
-        .from('courses')
-        .select('id, title, short_description, thumbnail_url, external_url, category, display_order, status')
-        .eq('status', 'active')
-        .order('display_order', { ascending: true });
-      return data ?? [];
-    },
+    queryFn: async () => courses,
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <CoursesPage />
-    </HydrationBoundary>
+    <>
+      {courses.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(coursesJsonLd(courses, resolveSiteUrl())) }}
+        />
+      )}
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <CoursesPage />
+      </HydrationBoundary>
+    </>
   );
 }
