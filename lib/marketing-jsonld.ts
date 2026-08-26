@@ -67,7 +67,9 @@ export function coursesJsonLd(courses: Course[], siteUrl: string) {
       '@type': 'Course',
       name: c.title,
       provider: org(siteUrl),
-      ...(c.short_description?.trim() ? { description: c.short_description } : {}),
+      // Google requires description on Course items — fall back to a factual
+      // template when a row has no short_description, so no item is invalid.
+      description: c.short_description?.trim() || `${c.title} — a self-paced product management course from Technomanagers.`,
       url: c.external_url,
     }));
   return itemList(siteUrl, '/courses', 'Technomanagers PM Courses', entries);

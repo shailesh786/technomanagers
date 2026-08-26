@@ -136,4 +136,24 @@ describe('useToggleLike — card toggle', () => {
     resolveRpc({ data: { liked: false }, error: null });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
+
+  it('reconciles the ids set and counters when the server disagrees with the flip', async () => {
+    const qc = makeClient();
+    // Empty set → optimistic flip will ADD q1 (liked=true). Server says liked=false
+    // (e.g. a double-fire the server processed as an un-like).
+    qc.setQueryData(['user_liked_question_ids', 'u1'], new Set<string>());
+    qc.setQueryData(['question', 'q1'], { id: 'q1', upvotes: 5 });
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    supabaseMock.rpc.mockResolvedValue({ data: { liked: false }, error: null });
+
+    const { result } = renderHook(() => useToggleLike(), { wrapper: withClient(qc) });
+    act(() => { result.current.mutate({ questionId: 'q1', userId: 'u1' }); });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Server truth (not liked) wins over the optimistic add.
+    expect(qc.getQueryData<Set<string>>(['user_liked_question_ids', 'u1'])?.has('q1')).toBe(false);
+    // And the counters it moved the wrong way get refetched.
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['questions'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['question', 'q1'] });
+  });
 });

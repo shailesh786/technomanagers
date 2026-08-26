@@ -114,6 +114,10 @@ export default function CommentItem({
       setReportReason('Spam');
       setReportDetails('');
       queryClient.invalidateQueries({ queryKey: ['comments'] });
+      // Replies render from ['comment_replies', questionId] (PR #43 batching) —
+      // without this a reported REPLY's is_flagged never refreshes, so the
+      // "Already reported" state and re-report guard don't update on it.
+      queryClient.invalidateQueries({ queryKey: ['comment_replies', questionId] });
       queryClient.invalidateQueries({ queryKey: ['flagged-count'] });
     } catch (e: any) {
       toast.error(e.message || 'Failed to report comment');

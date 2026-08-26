@@ -101,4 +101,12 @@ describe('coursesJsonLd', () => {
       description: 'Self-paced AI product management.',
     });
   });
+
+  it('falls back to a factual description when a course has none (Google requires it)', () => {
+    const out = coursesJsonLd([course({ short_description: null }), course({ id: 'c3', short_description: '   ' })], SITE);
+    for (const el of out.itemListElement) {
+      expect((el.item as { description: string }).description).toBeTruthy();
+      expect((el.item as { description: string }).description).toContain('The AI PM Course');
+    }
+  });
 });

@@ -135,7 +135,12 @@ export default function QuestionsClient() {
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
 
-  const handleLoadMore = () => setPageCount((n) => n + 1);
+  const handleLoadMore = () => {
+    // Retry the failed page in place instead of skipping past it to a new one.
+    const last = pages[pages.length - 1];
+    if (last.isError) { void last.refetch(); return; }
+    setPageCount((n) => n + 1);
+  };
 
   const handleUpvote = (id: string) => {
     if (!user) { toast.info('Sign in to upvote'); return; }
@@ -156,7 +161,11 @@ export default function QuestionsClient() {
   // matches and there is no hydration mismatch.
   const displayedQuestions = useMemo(() => pages.flatMap((p) => p.data ?? []), [pages]);
   const lastPage = pages[pages.length - 1];
-  const hasMore = (lastPage.data?.length ?? 0) === PAGE_SIZE;
+  // Keep the Load More control mounted while the newest page is still loading
+  // (so it can show a spinner instead of vanishing) or after it errored (so it
+  // stays clickable to retry). Only a settled, short final page ends the list.
+  const hasMore =
+    lastPage.isPending || lastPage.isError || (lastPage.data?.length ?? 0) === PAGE_SIZE;
 
   // ── Faceted filter options ────────────────────────────────────────────────
   // Each filter's available options reflect the questions that match the OTHER
@@ -300,7 +309,7 @@ export default function QuestionsClient() {
                 <div className="text-center pt-4">
                   <Button variant="outline" onClick={handleLoadMore} disabled={showLoadingMore} className="gap-2">
                     {showLoadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Load More
+                    {lastPage.isError ? 'Try again' : 'Load More'}
                   </Button>
                 </div>
               )}

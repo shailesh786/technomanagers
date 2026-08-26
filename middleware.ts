@@ -33,6 +33,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware-client';
+import { safeNextPath } from '@/lib/safe-redirect';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -77,10 +78,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // /auth — redirect away if already signed in, honouring a safe same-site
-  // ?next= (e.g. /auth?next=/profile) instead of discarding it.
+  // ?next= (e.g. /auth?next=/profile) instead of discarding it. safeNextPath
+  // rejects off-site targets including the `/<backslash>evil.com` escape that
+  // a naive `!startsWith('//')` check misses.
   if (pathname === '/auth' && user) {
-    const next = request.nextUrl.searchParams.get('next');
-    const dest = next && next.startsWith('/') && !next.startsWith('//') ? next : '/questions';
+    const dest = safeNextPath(request.nextUrl.searchParams.get('next'), request.url, '/questions');
     return NextResponse.redirect(new URL(dest, request.url));
   }
 
