@@ -4,13 +4,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useQueries } from '@tanstack/react-query';
 import { useLocationSearch } from '@/hooks/useLocationSearch';
 import { hubHref } from '@/lib/hubs';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuestions, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
+import { questionsQueryOptions, useSavedQuestions, useSaveQuestion, useUnsaveQuestion } from '@/hooks/useQuestions';
 import { useUserLikedQuestionIds, useToggleLike } from '@/hooks/useLikes';
 import { useRoles, useRoleQuestionCounts } from '@/hooks/useRoles';
 import { usePopularCompanies } from '@/hooks/useCompanies';
@@ -19,7 +20,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import QuestionCard from '@/components/questions/QuestionCard';
 import { RoleFilter, CompanyFilter, CategoryFilter, GeneralFilter, SortFilter } from '@/components/questions/QuestionFilters';
 import { toast } from 'sonner';
-import type { Question } from '@/types';
 
 const PAGE_SIZE = 20;
 
@@ -31,9 +31,10 @@ export default function QuestionsClient() {
   const searchParams = useLocationSearch();
   const router = useRouter();
 
-  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  // How many PAGE_SIZE pages are shown. Each page is its own live query in
+  // the useQueries() below — no local copy of the rows exists, so optimistic
+  // cache updates (upvote counters) reach every rendered card.
+  const [pageCount, setPageCount] = useState(1);
 
   // URL is the single source of truth for all filters
   const role = searchParams.get('role') || '';
@@ -90,15 +91,39 @@ export default function QuestionsClient() {
 
   const { user } = useAuth();
 
-  const { data: questions, isLoading } = useQuestions({
-    categories,
-    companies,
-    difficulties,
-    role: role || undefined,
-    search,
-    sort,
-    limit: PAGE_SIZE,
-    offset,
+  // Collapse back to page 1 the moment any filter changes — adjusted during
+  // render (the documented React pattern), BEFORE useQueries below mounts its
+  // observers, so a filter change never fires page-2+ requests for one render.
+  const filterKey = searchParams.toString();
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setPageCount(1);
+  }
+  const effectivePageCount = prevFilterKey === filterKey ? pageCount : 1;
+
+  // One live query per loaded page. Page 0 uses the EXACT key the server
+  // prefetches (app/questions/page.tsx), so hydration is preserved: a fresh
+  // load renders the 20 server-fetched cards with no refetch. Deliberately
+  // NOT useInfiniteQuery — that would change the load-bearing page-1 key
+  // shape shared with the homepage and the server prefetch.
+  const pages = useQueries({
+    queries: useMemo(
+      () =>
+        Array.from({ length: effectivePageCount }, (_, i) =>
+          questionsQueryOptions({
+            categories,
+            companies,
+            difficulties,
+            role: role || undefined,
+            search,
+            sort,
+            limit: PAGE_SIZE,
+            offset: i * PAGE_SIZE,
+          }),
+        ),
+      [effectivePageCount, categories, companies, difficulties, role, search, sort],
+    ),
   });
   const { data: savedIds = [] } = useSavedQuestions(user?.id);
   const { data: likedIds = new Set<string>() } = useUserLikedQuestionIds(user?.id);
@@ -110,48 +135,7 @@ export default function QuestionsClient() {
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
 
-  // Reset offset when filters change
-  const filterKey = searchParams.toString();
-  const prevFilterKey = useRef(filterKey);
-
-  useEffect(() => {
-    if (prevFilterKey.current !== filterKey) {
-      prevFilterKey.current = filterKey;
-      setOffset(0);
-      setAllQuestions([]);
-      setHasMore(true);
-    }
-  }, [filterKey]);
-
-  // Accumulate results across pagination pages.
-  //
-  // Guard logic:
-  //   offset === 0 → ALWAYS sync allQuestions with the latest cache data.
-  //     This handles filter resets, optimistic like/unlike updates, and
-  //     background refetches. Without this, the guard would block upvote
-  //     counter changes because the key (filterKey|offset) doesn't change
-  //     when only the upvote count changes.
-  //   offset >  0 → only APPEND once per page (guard prevents duplicates).
-  const lastAppliedKey = useRef('');
-  useEffect(() => {
-    if (!questions) return;
-    const currentKey = `${filterKey}|${offset}`;
-
-    if (offset === 0) {
-      setAllQuestions(questions);
-      setHasMore(questions.length === PAGE_SIZE);
-      lastAppliedKey.current = currentKey;
-      return;
-    }
-
-    // Paginated pages: only append once per page to prevent duplicate rows
-    if (lastAppliedKey.current === currentKey) return;
-    lastAppliedKey.current = currentKey;
-    setAllQuestions((prev) => [...prev, ...questions]);
-    setHasMore(questions.length === PAGE_SIZE);
-  }, [questions, offset, filterKey]);
-
-  const handleLoadMore = () => setOffset((prev) => prev + PAGE_SIZE);
+  const handleLoadMore = () => setPageCount((n) => n + 1);
 
   const handleUpvote = (id: string) => {
     if (!user) { toast.info('Sign in to upvote'); return; }
@@ -167,14 +151,12 @@ export default function QuestionsClient() {
     }
   };
 
-  // Use accumulated allQuestions for pagination; fall back to the raw `questions`
-  // data (available from server-prefetch on both SSR and first client render) so
-  // the initial HTML is identical on server and client — avoids a hydration mismatch
-  // caused by useEffect not running on the server while the query cache is populated.
-  const displayedQuestions = useMemo(() => {
-    if (offset > 0 || allQuestions.length > 0) return allQuestions;
-    return questions ?? [];
-  }, [offset, allQuestions, questions]);
+  // Rendered rows come straight from the live page queries — server render and
+  // first client render both read the hydrated page-0 cache, so the HTML
+  // matches and there is no hydration mismatch.
+  const displayedQuestions = useMemo(() => pages.flatMap((p) => p.data ?? []), [pages]);
+  const lastPage = pages[pages.length - 1];
+  const hasMore = (lastPage.data?.length ?? 0) === PAGE_SIZE;
 
   // ── Faceted filter options ────────────────────────────────────────────────
   // Each filter's available options reflect the questions that match the OTHER
@@ -225,18 +207,20 @@ export default function QuestionsClient() {
     return { role: role_, company, category, difficulty };
   }, [facetRows, role, companies, categories, difficulties, search]);
 
-  const categoryCounts = useMemo(() => {
+  // Sidebar "Top Categories": counted over the WHOLE corpus (facet rows), not
+  // the ≤20 loaded cards, and sorted by true count so "top" means top.
+  const topCategories = useMemo(() => {
     const counts: Record<string, number> = {};
-    displayedQuestions.forEach((q) => {
+    facetRows.forEach((q) => {
       q.category?.forEach((c) => {
         counts[c] = (counts[c] || 0) + 1;
       });
     });
-    return counts;
-  }, [displayedQuestions]);
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  }, [facetRows]);
 
-  const showInitialLoading = isLoading && displayedQuestions.length === 0;
-  const showLoadingMore = isLoading && offset > 0;
+  const showInitialLoading = pages[0].isPending && displayedQuestions.length === 0;
+  const showLoadingMore = effectivePageCount > 1 && lastPage.isPending;
 
   const clearAll = useCallback(() => {
     router.replace('/questions', { scroll: false });
@@ -343,8 +327,8 @@ export default function QuestionsClient() {
 
           {/* Top Categories */}
           <div className="rounded-xl border p-5 space-y-2.5">
-            <h3 className="font-heading font-bold text-sm">Top Categories</h3>
-            {Object.entries(categoryCounts).slice(0, 8).map(([cat, count]) => (
+            <h2 className="font-heading font-bold text-sm">Top Categories</h2>
+            {topCategories.map(([cat, count]) => (
               <Link
                 key={cat}
                 href={hubHref('category', cat)}
@@ -358,7 +342,7 @@ export default function QuestionsClient() {
 
           {/* Browse by Role */}
           <div className="rounded-xl border p-5 space-y-2.5">
-            <h3 className="font-heading font-bold text-sm">Browse by Role</h3>
+            <h2 className="font-heading font-bold text-sm">Browse by Role</h2>
             {rolesList.map((r) => (
               <Link
                 key={r.id}
@@ -375,7 +359,7 @@ export default function QuestionsClient() {
 
           {/* Trending Companies */}
           <div className="rounded-xl border p-5 space-y-3">
-            <h3 className="font-heading font-bold text-sm">Trending Companies</h3>
+            <h2 className="font-heading font-bold text-sm">Trending Companies</h2>
             <div className="flex flex-wrap gap-2">
               {trendingCompanies.map((c) => (
                 <Link
