@@ -30,6 +30,8 @@ import SignInGateModal from '@/components/questions/SignInGateModal';
 // views without useSearchParams (raw paths instead of route patterns).
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { serializeJsonLd } from '@/lib/question-seo';
+import { resolveSiteUrl } from '@/lib/site-url';
 import '@/app/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
@@ -110,6 +112,39 @@ export const metadata: Metadata = {
   },
 };
 
+// ─── Site identity (Organization + WebSite JSON-LD) ─────────────────────────
+// The entity graph Google reads to connect every page to the brand: name,
+// logo, official profiles (sameAs) and founder. Page-level JSON-LD (questions,
+// cohort, hubs) reference the same publisher by name; this is the one place
+// the entity itself is declared.
+
+const SITE_URL = resolveSiteUrl();
+const identityJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}#org`,
+      name: 'Technomanagers',
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo.webp`,
+      sameAs: ['https://www.youtube.com/@technomanagers', 'https://topmate.io/technomanagers'],
+      founder: {
+        '@type': 'Person',
+        name: 'Shailesh Sharma',
+        sameAs: ['https://www.linkedin.com/in/shailesh-sharma/'],
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}#website`,
+      url: SITE_URL,
+      name: 'Technomanagers',
+      publisher: { '@id': `${SITE_URL}#org` },
+    },
+  ],
+};
+
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -120,6 +155,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${plusJakartaSans.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex flex-col min-h-screen">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(identityJsonLd) }}
+        />
         <QueryProvider>
           <AuthProvider>
             <QuestionAccessProvider>

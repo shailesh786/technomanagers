@@ -93,7 +93,7 @@ export function createHubPage(kind: HubKind) {
       // enough questions to stand on its own; flips automatically as the
       // bank grows past the threshold.
       ...(isIndexable(hub) ? {} : { robots: { index: false, follow: true } }),
-      openGraph: { title: `${title} | Technomanagers`, description, type: 'website', url: path },
+      openGraph: { title, description, type: 'website', url: path },
     };
   }
 

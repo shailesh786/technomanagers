@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     'Join our upcoming webinars, workshops, and live sessions with industry PM experts.',
   alternates: { canonical: '/events' },
   openGraph: {
-    title: 'Upcoming Events | Technomanagers',
+    title: 'Upcoming Events',
     description:
       'Webinars, workshops, and live Q&A sessions with top Product Managers.',
     type: 'website',

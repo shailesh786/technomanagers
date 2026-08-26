@@ -87,7 +87,9 @@ function FeaturedQuestionsLoading() {
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Technomanagers — Crack Your PM Interview',
+  // `absolute` opts out of the layout's "%s | Technomanagers" template — the
+  // plain string was being templated into "…Technomanagers | Technomanagers".
+  title: { absolute: 'PM Interview Questions, Coaching & Courses | Technomanagers' },
   description:
     'Practice with real product management interview questions from top tech companies. Get coached by industry experts.',
   alternates: { canonical: '/' },

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     'Level up your product management skills with structured courses designed by industry experts.',
   alternates: { canonical: '/courses' },
   openGraph: {
-    title: 'PM Courses | Technomanagers',
+    title: 'PM Courses',
     description:
       'Structured PM courses to sharpen your product strategy, execution, and interview skills.',
     type: 'website',
