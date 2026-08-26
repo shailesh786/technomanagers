@@ -91,6 +91,17 @@ export default function QuestionsClient() {
 
   const { user } = useAuth();
 
+  // Collapse back to page 1 the moment any filter changes — adjusted during
+  // render (the documented React pattern), BEFORE useQueries below mounts its
+  // observers, so a filter change never fires page-2+ requests for one render.
+  const filterKey = searchParams.toString();
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setPageCount(1);
+  }
+  const effectivePageCount = prevFilterKey === filterKey ? pageCount : 1;
+
   // One live query per loaded page. Page 0 uses the EXACT key the server
   // prefetches (app/questions/page.tsx), so hydration is preserved: a fresh
   // load renders the 20 server-fetched cards with no refetch. Deliberately
@@ -99,7 +110,7 @@ export default function QuestionsClient() {
   const pages = useQueries({
     queries: useMemo(
       () =>
-        Array.from({ length: pageCount }, (_, i) =>
+        Array.from({ length: effectivePageCount }, (_, i) =>
           questionsQueryOptions({
             categories,
             companies,
@@ -111,7 +122,7 @@ export default function QuestionsClient() {
             offset: i * PAGE_SIZE,
           }),
         ),
-      [pageCount, categories, companies, difficulties, role, search, sort],
+      [effectivePageCount, categories, companies, difficulties, role, search, sort],
     ),
   });
   const { data: savedIds = [] } = useSavedQuestions(user?.id);
@@ -123,17 +134,6 @@ export default function QuestionsClient() {
   const toggleLike = useToggleLike();
   const save = useSaveQuestion();
   const unsave = useUnsaveQuestion();
-
-  // Collapse back to page 1 when any filter changes
-  const filterKey = searchParams.toString();
-  const prevFilterKey = useRef(filterKey);
-
-  useEffect(() => {
-    if (prevFilterKey.current !== filterKey) {
-      prevFilterKey.current = filterKey;
-      setPageCount(1);
-    }
-  }, [filterKey]);
 
   const handleLoadMore = () => setPageCount((n) => n + 1);
 
@@ -220,7 +220,7 @@ export default function QuestionsClient() {
   }, [facetRows]);
 
   const showInitialLoading = pages[0].isPending && displayedQuestions.length === 0;
-  const showLoadingMore = pageCount > 1 && lastPage.isPending;
+  const showLoadingMore = effectivePageCount > 1 && lastPage.isPending;
 
   const clearAll = useCallback(() => {
     router.replace('/questions', { scroll: false });
