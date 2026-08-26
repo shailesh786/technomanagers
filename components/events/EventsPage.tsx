@@ -49,7 +49,7 @@ export default function EventsPage() {
   return (
     <div className="container py-10 max-w-5xl">
       <header className="mb-10">
-        <h1 className="font-heading text-3xl md:text-4xl font-bold mb-3">Upcoming Events</h1>
+        <h1 className="font-heading text-3xl md:text-4xl font-bold mb-3">PM Events</h1>
         <p className="text-muted-foreground text-lg">
           Join our webinars, workshops, and live sessions with industry experts.
         </p>

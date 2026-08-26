@@ -230,7 +230,7 @@ export default function QuestionsClient() {
     <div className="container py-8">
       {/* Header */}
       <div className="mb-6 space-y-1">
-        <h1 className="font-heading font-extrabold text-3xl">Interview Questions</h1>
+        <h1 className="font-heading font-extrabold text-3xl">PM Interview Questions</h1>
         <p className="text-muted-foreground">Browse and practice real interview questions asked by top companies.</p>
       </div>
 

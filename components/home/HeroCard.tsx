@@ -61,7 +61,7 @@ export default function HeroCard({
         {item.image_url ? (
           <Image
             src={item.image_url}
-            alt=""
+            alt={item.title}
             fill
             priority={imagePriority}
             className="object-cover"
@@ -100,14 +100,14 @@ export default function HeroCard({
             {item.kind}
           </span>
         )}
-        <span
+        <h3
           className={cn(
             'font-heading text-[20px] font-bold leading-[1.2] tracking-[-0.016em] [text-wrap:pretty] md:text-[23px] md:tracking-[-0.018em]',
             navy ? 'text-primary-foreground' : 'text-foreground',
           )}
         >
           {item.title}
-        </span>
+        </h3>
         {item.subtitle && (
           <p
             className={cn(

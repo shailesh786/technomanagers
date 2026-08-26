@@ -18,52 +18,18 @@ export const revalidate = 3600;
 const _raw = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.technomanagers.in';
 const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes: MetadataRoute.Sitemap = [
-    {
-      url: BASE_URL,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1.0,
-    },
-    {
-      url: `${BASE_URL}/questions`,
-      lastModified: new Date(),
-      changeFrequency: 'hourly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/coaching`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/courses`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/cohort`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/events`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-  ];
+// Fixed lastmod per marketing route — bump when a page materially changes.
+// The previous `new Date()` told crawlers every page changed on every
+// regeneration, which teaches them to distrust our lastmod entirely.
+const ROUTE_LASTMOD = {
+  '/coaching': '2026-08-01T00:00:00+05:30',
+  '/courses': '2026-08-01T00:00:00+05:30',
+  '/cohort': '2026-08-26T00:00:00+05:30',
+  '/events': '2026-08-01T00:00:00+05:30',
+  '/privacy': '2026-07-01T00:00:00+05:30',
+} as const;
 
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createSupabasePublicClient();
   const { data: questions, error } = await supabase
     .from('questions')
@@ -74,6 +40,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // missing and caching that for an hour.
   if (error) throw error;
   const rows = questions ?? [];
+
+  // The honest lastmod for the pages that render question data: the latest
+  // content change across the bank.
+  const latest = rows.reduce<string | null>(
+    (acc, q) => (q.updated_at && (!acc || q.updated_at > acc) ? q.updated_at : acc),
+    null,
+  );
+  const contentLastMod = latest ? new Date(latest) : new Date(ROUTE_LASTMOD['/cohort']);
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: BASE_URL, lastModified: contentLastMod, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${BASE_URL}/questions`, lastModified: contentLastMod, changeFrequency: 'hourly', priority: 0.9 },
+    { url: `${BASE_URL}/coaching`, lastModified: new Date(ROUTE_LASTMOD['/coaching']), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE_URL}/courses`, lastModified: new Date(ROUTE_LASTMOD['/courses']), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE_URL}/cohort`, lastModified: new Date(ROUTE_LASTMOD['/cohort']), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE_URL}/events`, lastModified: new Date(ROUTE_LASTMOD['/events']), changeFrequency: 'weekly', priority: 0.5 },
+    { url: `${BASE_URL}/privacy`, lastModified: new Date(ROUTE_LASTMOD['/privacy']), changeFrequency: 'yearly', priority: 0.3 },
+  ];
 
   const questionRoutes: MetadataRoute.Sitemap = rows.map((q) => ({
     url: `${BASE_URL}/questions/${q.id}`,

@@ -510,10 +510,12 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.cyan2 }} />
               Applications Open · 12-Week Live Bootcamp
             </span>
+            {/* The {' '} before each <br/> keeps textContent readable —
+                without them crawlers see "Job ReadyAI First…" glued together. */}
             <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.05]" style={heading}>
-              Become a Job Ready
+              Become a Job Ready{' '}
               <br />
-              <span className="italic font-normal" style={{ ...body, color: C.cyan2 }}>AI First Product Manager</span>
+              <span className="italic font-normal" style={{ ...body, color: C.cyan2 }}>AI First Product Manager</span>{' '}
               <br />
               <span className="text-2xl md:text-4xl font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>in 12 Weeks</span>
             </h1>

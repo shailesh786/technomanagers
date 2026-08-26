@@ -22,7 +22,7 @@ export default function CoursesPage() {
   return (
     <div className="container py-8">
       <div className="mb-8 space-y-2">
-        <h1 className="font-heading font-extrabold text-3xl">Courses</h1>
+        <h1 className="font-heading font-extrabold text-3xl">PM Courses</h1>
         <p className="text-muted-foreground">Level up your PM skills with structured courses.</p>
       </div>
 
