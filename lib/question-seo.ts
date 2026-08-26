@@ -15,7 +15,14 @@ export const DESCRIPTION_MAX_LENGTH = 155;
 
 /** Truncate long question text gracefully for the <title> tag. */
 export function questionTitle(text: string, max: number = TITLE_MAX_LENGTH): string {
-  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+  // Word-boundary truncation — a mid-word chop ("How would you priorit…")
+  // reads broken in the SERP. Falls back to a hard cut if the only boundary
+  // is so early most of the budget would go unused.
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const boundary = cut.lastIndexOf(' ');
+  const kept = boundary > max * 0.6 ? cut.slice(0, boundary) : cut;
+  return `${kept.replace(/[\s,;:.\-–—]+$/, '')}…`;
 }
 
 /**
@@ -103,6 +110,7 @@ export function questionJsonLd({ question, comments, totalAnswerCount, siteUrl }
     '@id': url,
     url,
     name: question.question_text,
+    ...(question.updated_at ? { dateModified: question.updated_at } : {}),
     ...(sampleAnswer
       ? {
           isAccessibleForFree: false,

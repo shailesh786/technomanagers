@@ -155,6 +155,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${plusJakartaSans.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex flex-col min-h-screen">
+        {/* Keyboard/screen-reader users can jump past the navbar. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+        >
+          Skip to content
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(identityJsonLd) }}
@@ -164,7 +171,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <QuestionAccessProvider>
               <TooltipProvider>
                 <Navbar />
-                <main className="flex-1">{children}</main>
+                <main id="main" className="flex-1">{children}</main>
                 <FooterWrapper />
                 <Toaster />
                 <Sonner />

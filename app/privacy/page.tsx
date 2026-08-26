@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = 'June 3, 2026';
-const CONTACT_EMAIL = 'contact@technomanagers.com';
+const CONTACT_EMAIL = 's.shailesh1995@gmail.com';
 
 export default function PrivacyPolicy() {
   return (

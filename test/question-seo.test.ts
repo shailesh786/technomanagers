@@ -44,6 +44,13 @@ const graph = (q: Question, comments: Comment[] = [], totalAnswerCount?: number 
   questionJsonLd({ question: q, comments, totalAnswerCount, siteUrl: SITE })['@graph'];
 
 describe('questionTitle', () => {
+  it('truncates at a word boundary, dropping trailing punctuation', () => {
+    const text = 'How would you improve the onboarding funnel for a subscription product in a mature market today?';
+    const out = questionTitle(text);
+    expect(out.length).toBeLessThanOrEqual(71);
+    expect(out).toBe('How would you improve the onboarding funnel for a subscription…');
+  });
+
   it('leaves short text alone and truncates long text with an ellipsis', () => {
     expect(questionTitle('Short question?')).toBe('Short question?');
     const long = 'x'.repeat(80);
@@ -166,6 +173,13 @@ describe('questionJsonLd', () => {
     const [page] = graph(question, [], 0) as Record<string, unknown>[];
     expect(page['@type']).toBe('WebPage');
     expect(page).not.toHaveProperty('mainEntity');
+  });
+
+  it('carries dateModified from updated_at, omitted when absent', () => {
+    const [withDate] = graph({ ...question, updated_at: '2026-08-01T00:00:00+00:00' });
+    expect(withDate).toMatchObject({ dateModified: '2026-08-01T00:00:00+00:00' });
+    const [without] = graph(question);
+    expect(without).not.toHaveProperty('dateModified');
   });
 });
 

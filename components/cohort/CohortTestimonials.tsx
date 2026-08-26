@@ -155,9 +155,8 @@ function VideoCard({ item, onOpen }: { item: CohortTestimonial; onOpen: () => vo
       style={{ borderColor: 'hsl(var(--border))', background: 'hsl(var(--primary))' }}
       aria-label={`Play video testimonial${who ? ` from ${who}` : ''}`}
     >
-      {/* Decorative: the name and role are already text in this card, and the
-          link carries its own accessible label. */}
-      <VideoPoster source={source} override={item.image_url} alt="" />
+      {/* Named alt so the poster carries meaning in image search too. */}
+      <VideoPoster source={source} override={item.image_url} alt={who} />
 
       {/* Legibility scrim — dark at both ends, clear through the middle so the
           speaker's face stays visible. */}

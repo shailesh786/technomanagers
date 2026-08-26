@@ -35,14 +35,34 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware-client';
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Uppercase-UUID question links are the same page under a duplicate URL.
+  // Normalize to the canonical lowercase form here — a pure string check
+  // (page-level permanentRedirect gets ISR-cached as a 308 WITHOUT a
+  // Location header, which browsers cannot follow). These branches run
+  // before and without any Supabase call, so public question/hub pages
+  // still skip the auth round trip entirely; only the admin preview falls
+  // through to the session logic below.
+  const questionId = pathname.match(/^\/questions\/([^/]+)$/)?.[1];
+  if (questionId) {
+    if (questionId !== questionId.toLowerCase()) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/questions/${questionId.toLowerCase()}`;
+      return NextResponse.redirect(url, 308);
+    }
+    return NextResponse.next();
+  }
+  if (pathname === '/questions' || (pathname.startsWith('/questions/') && !pathname.endsWith('/preview'))) {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next({ request });
 
   const supabase = createSupabaseMiddlewareClient(request, response);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   // /profile — requires sign-in; preserve intended path for post-login redirect
   if (pathname.startsWith('/profile') && !user) {
@@ -68,5 +88,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/admin/:path*', '/auth', '/questions/:id/preview'],
+  // '/questions/:path*' is matched for the lowercase-URL normalization and
+  // the admin preview. A bare trailing-param matcher ('/questions/:id')
+  // compiles to a broken regex in Next 14 (the param collides with the
+  // internal .json data-route rewrite), so the whole subtree is matched and
+  // public paths exit in code BEFORE any Supabase call — P8's "no auth
+  // round trip on public pages" holds.
+  matcher: ['/profile/:path*', '/admin/:path*', '/auth', '/questions/:path*'],
 };
