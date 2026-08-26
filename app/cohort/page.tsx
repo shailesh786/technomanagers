@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     'A 12-week mentor-led live cohort to become a job-ready AI Product Manager. Build RAG systems, AI agents, run evals, prep for interviews, and present on Demo Day.',
   alternates: { canonical: '/cohort' },
   openGraph: {
-    title: 'AI Product Builder Cohort | Technomanagers',
+    title: 'AI Product Builder Cohort',
     description:
       '12-week live cohort: RAG prototypes, AI agents, evals, interview prep, and a live Demo Day. Become a job-ready AI PM.',
     type: 'website',

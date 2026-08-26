@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     'How Technomanagers collects, uses, and protects your personal information across our interview prep, coaching, courses, events, and cohort programmes.',
   alternates: { canonical: '/privacy' },
   openGraph: {
-    title: 'Privacy Policy | Technomanagers',
+    title: 'Privacy Policy',
     description:
       'How Technomanagers collects, uses, and protects your personal information.',
     type: 'website',
