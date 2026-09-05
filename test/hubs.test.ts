@@ -236,7 +236,7 @@ describe('copy', () => {
       { difficulties: [['Easy', 40], ['Hard', 60]], crossNames: [], dominantRole: null },
       100,
     );
-    expect(intro).toContain('— across the top 100: 40 easy, 60 hard.');
+    expect(intro).toContain('— across the latest 100: 40 easy, 60 hard.');
   });
 });
 
