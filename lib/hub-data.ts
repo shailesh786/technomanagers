@@ -27,7 +27,7 @@ export const getHubTaxonomy = unstable_cache(
   { revalidate: 300, tags: ['questions'] },
 );
 
-/** The hub's questions as list rows (same shape as the /questions cards), best first. */
+/** The hub's questions as list rows (same shape as the /questions cards), newest first. */
 export async function getHubQuestions(kind: HubKind, name: string): Promise<Question[]> {
   const supabase = createSupabasePublicClient();
   let query = supabase
@@ -37,8 +37,8 @@ export async function getHubQuestions(kind: HubKind, name: string): Promise<Ques
     // count only non-deleted comments — must match useQuestions()/useCommentCount()
     .is('question_comments.deleted_at', null);
   query = kind === 'role' ? query.eq('role', name) : query.contains(kind, pgArrayLiteral([name]));
+  // Same chain as the /questions 'Newest' sort in useQuestions() — keep in sync.
   const { data } = await query
-    .order('upvotes', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(HUB_LIST_CAP);

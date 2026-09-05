@@ -220,7 +220,7 @@ export function hubIntro(
   const mix = stats.difficulties.map(([label, n]) => `${n} ${label.toLowerCase()}`).join(', ');
   const mixClause = mix
     ? hub.count > sampledCount
-      ? ` — across the top ${sampledCount}: ${mix}`
+      ? ` — across the latest ${sampledCount}: ${mix}`
       : ` — ${mix}`
     : '';
   const what =
