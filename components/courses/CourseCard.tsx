@@ -28,10 +28,16 @@ export default function CourseCard({ course }: CourseCardProps) {
       rel="noopener noreferrer"
       className="group block rounded-xl border bg-background overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
     >
-      {/* Thumbnail/gradient */}
-      <div className="relative h-40 bg-gradient-brand flex items-center justify-center overflow-hidden">
+      {/* Thumbnail/gradient — 16:9 so standard-ratio uploads render uncropped */}
+      <div className="relative aspect-video bg-gradient-brand flex items-center justify-center overflow-hidden">
         {course.thumbnail_url ? (
-          <Image src={course.thumbnail_url} alt={course.title} fill className="object-cover" />
+          <Image
+            src={course.thumbnail_url}
+            alt={course.title}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            className="object-cover"
+          />
         ) : (
           <BookOpen className="h-12 w-12 text-primary-foreground/80" />
         )}
