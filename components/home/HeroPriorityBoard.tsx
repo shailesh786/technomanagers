@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // is unchanged, so the onScroll handler below needs no manual throttling.)
 import { cn } from '@/lib/utils';
 import HeroCard from '@/components/home/HeroCard';
+import StartHereHeading from '@/components/home/StartHereHeading';
 import type { HeroItem } from '@/types';
 
 /**
@@ -68,17 +69,16 @@ export default function HeroPriorityBoard({ items }: { items: HeroItem[] }) {
     <section aria-label="Start here" className="bg-muted">
       <div className="pb-[30px] pt-[26px] md:container md:pb-12 md:pt-8">
         {/* Header row */}
-        <div className="mb-4 flex items-baseline justify-between px-5 md:mb-7 md:px-0">
-          {/* h2, not h1 — the page's h1 is the rotating headline in HomeHero */}
-          <h2 className="font-heading text-[22px] font-bold tracking-[-0.02em] text-foreground md:text-[32px] md:tracking-[-0.022em]">
-            Start here.
-          </h2>
-          <span className="hidden font-body text-sm text-muted-foreground md:inline">
+        <div className="mb-4 flex items-baseline justify-between gap-4 px-5 md:mb-7 md:px-0">
+          {/* h2, not h1 — the page's h1 is the rotating headline in HomeHero.
+              Personalised ("<Name>, start here.") client-side when signed in. */}
+          <StartHereHeading />
+          <span className="hidden shrink-0 font-body text-sm text-muted-foreground md:inline">
             Three things worth your next hour
           </span>
           <span
             aria-hidden="true"
-            className="font-mono text-[10px] font-semibold tracking-[0.1em] text-muted-foreground/70 md:hidden"
+            className="shrink-0 font-mono text-[10px] font-semibold tracking-[0.1em] text-muted-foreground/70 md:hidden"
           >
             {clampedIndex + 1} / {items.length}
           </span>
