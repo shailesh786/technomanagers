@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+
+// Signed out — the heading's personalisation is covered in StartHereHeading.test.tsx.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: null, profile: null }) }));
+
 import HeroPriorityBoard from '@/components/home/HeroPriorityBoard';
 import type { HeroItem } from '@/types';
 
