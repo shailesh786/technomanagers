@@ -107,6 +107,11 @@
     background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
   }
 
+  /* Homepage hero wash — brand gradient at 5% */
+  .bg-gradient-hero-wash {
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--secondary) / 0.05), hsl(var(--accent) / 0.05));
+  }
+
   .bg-gradient-hero {
     background-image: linear-gradient(135deg, hsl(220 82% 23% / 0.03), hsl(213 81% 51% / 0.06), hsl(195 100% 50% / 0.03));
   }
@@ -119,4 +124,23 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;             /* Chrome, Safari, Opera */
   }
+}
+
+/* Rotating hero role marker (components/home/RotatingRoleHeadline.tsx).
+   clone draws the stroke across each line when the role wraps on mobile. */
+.tm-role-marker {
+  background-image: linear-gradient(hsl(var(--secondary) / 0.2), hsl(var(--secondary) / 0.2));
+  background-repeat: no-repeat;
+  background-position: 0 82%;
+  background-size: 0% 38%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size 700ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.tm-role-marker[data-active="true"] {
+  background-size: 100% 38%;
+  transition-delay: 300ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-role-marker { transition: none; }
 }
