@@ -66,10 +66,10 @@ export default function HeroPriorityBoard({ items }: { items: HeroItem[] }) {
 
   return (
     <section aria-label="Start here" className="bg-muted">
-      <div className="pb-[30px] pt-[26px] md:container md:pb-12 md:pt-[52px]">
+      <div className="pb-[30px] pt-[26px] md:container md:pb-12 md:pt-8">
         {/* Header row */}
         <div className="mb-4 flex items-baseline justify-between px-5 md:mb-7 md:px-0">
-          {/* h2, not h1 — the page's sr-only keyword h1 lives in app/page.tsx */}
+          {/* h2, not h1 — the page's h1 is the rotating headline in HomeHero */}
           <h2 className="font-heading text-[22px] font-bold tracking-[-0.02em] text-foreground md:text-[32px] md:tracking-[-0.022em]">
             Start here.
           </h2>
