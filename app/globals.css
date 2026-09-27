@@ -126,8 +126,36 @@
   }
 }
 
-/* Rotating hero role marker (components/home/RotatingRoleHeadline.tsx).
-   clone draws the stroke across each line when the role wraps on mobile. */
+/* Rotating hero role (components/home/RotatingRoleHeadline.tsx), one swap
+   every 2.2s, choreographed so the two lines never blur over each other:
+     0–180ms    old line fades and accelerates down and away (marker intact)
+     100–620ms  new line glides in from above, decelerating
+     380–860ms  marker sweeps left to right behind the settled role
+   Plain CSS, not Tailwind: tailwindcss-animate also defines duration-* and
+   ease-*, so arbitrary values like duration-[450ms] are ambiguous and
+   Tailwind silently emits nothing for them. The offsets, opacity and blur
+   per state are Tailwind classes on the element. */
+.tm-role-line {
+  will-change: transform, opacity, filter;
+}
+.tm-role-line[data-state="current"] {
+  transition:
+    transform 520ms cubic-bezier(0.33, 1, 0.68, 1) 100ms,
+    opacity 360ms cubic-bezier(0.33, 1, 0.68, 1) 100ms,
+    filter 420ms cubic-bezier(0.33, 1, 0.68, 1) 100ms;
+}
+.tm-role-line[data-state="previous"] {
+  transition:
+    transform 240ms cubic-bezier(0.4, 0, 1, 1),
+    opacity 180ms cubic-bezier(0.33, 1, 0.68, 1),
+    filter 200ms linear;
+}
+/* Queued roles reset above the line instantly — they're invisible. */
+.tm-role-line[data-state="next"] {
+  transition: none;
+}
+
+/* Marker. clone draws the stroke across each line when the role wraps. */
 .tm-role-marker {
   background-image: linear-gradient(hsl(var(--secondary) / 0.2), hsl(var(--secondary) / 0.2));
   background-repeat: no-repeat;
@@ -135,12 +163,16 @@
   background-size: 0% 38%;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  transition: background-size 700ms cubic-bezier(0.65, 0, 0.35, 1);
+  /* Outgoing: stays drawn while its line fades, resets once it's gone. */
+  transition: background-size 0s linear 260ms;
 }
 .tm-role-marker[data-active="true"] {
   background-size: 100% 38%;
-  transition-delay: 300ms;
+  transition: background-size 480ms cubic-bezier(0.65, 0, 0.35, 1) 380ms;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .tm-role-marker { transition: none; }
+  .tm-role-line[data-state],
+  .tm-role-marker,
+  .tm-role-marker[data-active="true"] { transition: none; }
 }

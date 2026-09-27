@@ -11,16 +11,18 @@ const ROLES = [
   { article: 'a', label: 'BizOps & Strategy Lead' },
 ] as const;
 
-const INTERVAL_MS = 3200;
+const INTERVAL_MS = 2200;
 
 /**
  * The homepage h1. "Land Your Dream Job as" with a role line underneath that
- * cycles every 3.2 s: the old role drifts down and blurs out, the new one drops
- * in from above, then the marker (.tm-role-marker in globals.css) draws behind
- * it. Every role sits in the same grid cell and stays laid out (the inactive
- * ones are just transparent), so the box is always as tall as the tallest role
- * at the current width — nothing below shifts as the roles change, even when
- * the longest role wraps on a small phone.
+ * cycles every 2.2 s: the old role fades and drifts down, the new one glides in
+ * from above, then the marker draws behind it. The choreography (who moves
+ * when) lives in globals.css, keyed off data-state / data-active.
+ *
+ * Every role sits in the same grid cell and stays laid out (the inactive ones
+ * are just transparent), so the box is always as tall as the tallest role at
+ * the current width — nothing below shifts as the roles change, even when the
+ * longest role wraps on a small phone.
  *
  * The h1's text is exactly one sentence (visible lead-in + sr-only roles), so
  * crawlers and screen readers get it once. The animated role box sits outside
@@ -90,10 +92,9 @@ export function RotatingRoleHeadline({ className }: { className?: string }) {
           return (
             <span
               key={role.label}
+              data-state={state}
               className={cn(
-                '[grid-area:1/1]',
-                'transition-[transform,opacity,filter] duration-[650ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
-                'motion-reduce:transition-none',
+                '[grid-area:1/1] tm-role-line',
                 state === 'current' && 'translate-y-0 opacity-100 blur-0',
                 state === 'previous' &&
                   'translate-y-[18px] opacity-0 blur-[6px] md:translate-y-[22px] md:blur-[8px]',
