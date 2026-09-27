@@ -34,7 +34,7 @@ describe('HomeHero', () => {
     expect(screen.getByRole('link', { name: /Explore Questions/ })).toHaveAttribute('href', '/questions');
   });
 
-  it('cycles the five roles every 3.2s with the matching article', () => {
+  it('cycles the five roles every 2.2s with the matching article', () => {
     vi.useFakeTimers();
     const { container } = render(<HomeHero />);
     const order = [
@@ -46,11 +46,18 @@ describe('HomeHero', () => {
       'AI Product Manager',
     ];
     order.forEach((role, i) => {
-      if (i > 0) act(() => void vi.advanceTimersByTime(3200));
+      if (i > 0) act(() => void vi.advanceTimersByTime(2200));
       expect(activeRole(container)).toBe(role);
     });
     const active = container.querySelector('.tm-role-marker[data-active="true"]')!;
     expect(active.previousElementSibling?.textContent).toBe('an');
+    // One incoming line, one outgoing line, the rest queued above.
+    const states = [...container.querySelectorAll('[data-state]')].map((el) =>
+      el.getAttribute('data-state'),
+    );
+    expect(states.filter((x) => x === 'current')).toHaveLength(1);
+    expect(states.filter((x) => x === 'previous')).toHaveLength(1);
+    expect(states.filter((x) => x === 'next')).toHaveLength(3);
   });
 
   it('holds the first role when reduced motion is on', () => {
