@@ -335,7 +335,7 @@ const FAQS: [string, string][] = [
   ['Do I need to be a developer or engineer to join?',
     'No. The cohort is designed for PMs, engineers, designers, and data scientists alike. All prototyping is done using no-code and AI tools (Claude, LangChain, no-code RAG builders). You need to be able to think through product decisions and use AI tools to build — not write production code.'],
   ['How much time per week do I need to commit?',
-    '8 hours per week for Weeks 1–10 (4 live sessions of 2 hrs each on Saturday + Sunday). 6 hours per week for Weeks 11–12 (Demo Prep and Demo Day). All sessions run on Saturday and Sunday mornings and afternoons IST — designed not to conflict with weekday work.'],
+    '8 hours per week for Weeks 1–10 (4 live sessions of 2 hrs each). 6 hours per week for Weeks 11–12 (Demo Prep and Demo Day). Weekend Cohort: Saturday and Sunday, 10:30 AM–12:30 PM and 2:30–4:30 PM IST. Weekday Cohort: Monday–Thursday, 9:30–11:30 PM IST, after work hours.'],
   ['What if I miss a session?',
     'All sessions are recorded and shared. Office Hours run throughout the cohort so you can catch up. We strongly recommend attending live — the real value is in Q&A, peer reviews of your capstone work, and real-time mentor feedback on your specific prototype.'],
   ['What does the capstone look like at the end?',
@@ -508,7 +508,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', ...heading }}
             >
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: C.cyan2 }} />
-              Applications Open · 12-Week Live Bootcamp
+              Applications Open for Cohort 3: Weekday Cohort
             </span>
             {/* The {' '} before each <br/> keeps textContent readable —
                 without them crawlers see "Job ReadyAI First…" glued together. */}
@@ -520,7 +520,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               <span className="text-2xl md:text-4xl font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>in 12 Weeks</span>
             </h1>
             <p className="text-lg max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Alumni now ship AI at Google, Microsoft and Oracle. Saturdays go deep on RAG, agents, evals, LLM systems and model tradeoffs. Sundays are interview prep and hands-on building.
+              Alumni now ship AI at Google, Microsoft and Oracle. Concept sessions go deep on RAG, agents, evals, LLM systems and model tradeoffs. Practice sessions are interview prep and hands-on building.
             </p>
             <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
               You don&apos;t finish with just a certificate. You leave with a working product, an eval framework, and the answers for the interview that follows.
@@ -564,7 +564,8 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
       <section style={{ background: C.light, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
         <div className={`${PAGE_WRAP} py-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm`} style={{ color: C.body }}>
           {[
-            [Calendar, <>Sat + Sun · 10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST</>],
+            [Calendar, <><b style={{ color: C.text }}>Weekend Cohort:</b> Sat + Sun · 10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST</>],
+            [Calendar, <><b style={{ color: C.text }}>Weekday Cohort:</b> Mon–Thu · 9:30–11:30 PM IST</>],
             [Video, <><b>45 live sessions</b></>],
             [Mic, <>Live <b>Demo Day</b> + certificate</>],
             [BookOpen, <><b>10 Interview Prep</b> + 10 Demo Sessions</>],
@@ -572,7 +573,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
             [Users, <>Alumni community + job board</>],
           ].map(([Icon, label]: any, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Icon className="w-4 h-4" style={{ color: C.cyan }} />
+              <Icon className="w-4 h-4 shrink-0" style={{ color: C.cyan }} />
               <span>{label}</span>
             </div>
           ))}
@@ -585,10 +586,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
           {/* CURRICULUM */}
           <section id="curriculum">
             <Eyebrow>— 12-WEEK CURRICULUM</Eyebrow>
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-3" style={heading}>Week-by-week breakdown</h2>
-            <p className="text-lg mb-10" style={{ color: C.body }}>
-              Saturdays + Sundays · 4 sessions/week (10:30 AM–12:30 PM &amp; 2:30–4:30 PM IST) · 8 hrs/week · Weeks 1–10
-            </p>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-8" style={heading}>Week-by-week breakdown</h2>
             <div className="space-y-10">
               {PHASES.map((p, i) => (
                 <div key={i} className="space-y-4">
@@ -808,7 +806,8 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
             <div className="rounded-2xl p-5 space-y-3 text-sm" style={{ background: '#fff', border: `1px solid ${C.border}` }}>
               {[
                 [Calendar, '12 weeks · Live cohort'],
-                [Clock, 'Sat + Sun · 10:30–12:30 & 2:30–4:30 PM IST'],
+                [Clock, <><b style={{ color: C.text }}>Weekend Cohort:</b> Sat + Sun · 10:30–12:30 &amp; 2:30–4:30 PM IST</>],
+                [Clock, <><b style={{ color: C.text }}>Weekday Cohort:</b> Mon–Thu · 9:30–11:30 PM IST</>],
                 [Video, '45 live sessions + recordings'],
                 [Monitor, '10 hands-on Demo sessions'],
                 [Mic, '2 mock interview rounds'],

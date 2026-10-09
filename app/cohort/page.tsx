@@ -108,15 +108,21 @@ function courseJsonLd(siteUrl: string) {
       'Model evaluation',
       'AI product go-to-market',
     ],
-    hasCourseInstance: {
+    // One instance per batch — the weekend and weekday cohorts differ only in
+    // their days, matching the schedule shown in the page's trust bar.
+    hasCourseInstance: [
+      { name: 'Weekend Cohort', days: ['Saturday', 'Sunday'] },
+      { name: 'Weekday Cohort', days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] },
+    ].map(({ name, days }) => ({
       '@type': 'CourseInstance',
+      name,
       courseMode: 'online',
       courseWorkload: 'PT8H',     // 8 hours per week — ISO 8601 time durations need the 'T'
       courseSchedule: {
         '@type': 'Schedule',
         duration: 'P12W',
         repeatFrequency: 'Weekly',
-        byDay: ['https://schema.org/Saturday', 'https://schema.org/Sunday'],
+        byDay: days.map((day) => `https://schema.org/${day}`),
       },
       instructor: {
         '@type': 'Person',
@@ -124,7 +130,7 @@ function courseJsonLd(siteUrl: string) {
         image: INSTRUCTOR_PORTRAIT_URL,
         sameAs: [INSTRUCTOR_YOUTUBE_URL, INSTRUCTOR_LINKEDIN_URL],
       },
-    },
+    })),
     // No `offers`: pricing is deliberately not public (owner decision,
     // Aug 26 2026) — structured data must not carry a price the page
     // doesn't display. Add an Offer here if that ever changes.
