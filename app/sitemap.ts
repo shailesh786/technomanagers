@@ -27,6 +27,7 @@ const ROUTE_LASTMOD = {
   '/cohort': '2026-08-26T00:00:00+05:30',
   '/events': '2026-08-01T00:00:00+05:30',
   '/privacy': '2026-07-01T00:00:00+05:30',
+  '/refund-policy': '2026-08-19T00:00:00+05:30',
 } as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -57,6 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/cohort`, lastModified: new Date(ROUTE_LASTMOD['/cohort']), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE_URL}/events`, lastModified: new Date(ROUTE_LASTMOD['/events']), changeFrequency: 'weekly', priority: 0.5 },
     { url: `${BASE_URL}/privacy`, lastModified: new Date(ROUTE_LASTMOD['/privacy']), changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${BASE_URL}/refund-policy`, lastModified: new Date(ROUTE_LASTMOD['/refund-policy']), changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   const questionRoutes: MetadataRoute.Sitemap = rows.map((q) => ({
