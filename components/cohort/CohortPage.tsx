@@ -342,8 +342,6 @@ const FAQS: [string, string][] = [
     'A complete portfolio-ready AI product: a written spec, working prototype (RAG or agent), eval framework with a golden test set and launch threshold, GTM one-pager, risk + metrics doc, a polished 10–12 slide deck, and a 3-min recorded demo video. You present it live on Demo Day in front of a panel.'],
   ['Is this heavy on theory or hands-on building?',
     'Heavily hands-on. Every concept week is paired with a Demo/Demo Hours session where you build something the same week. By the end you will have built a working RAG prototype, a working AI agent, run your own evals, and shipped a full spec-driven prototype — all before Demo Day.'],
-  ['How does the application process work?',
-    "Fill in the application form. The cohort is capped — applications are reviewed on a rolling basis. If you're a fit, you'll receive the payment link. Seats are allocated in order of approved application + payment."],
 ];
 
 const WHO = [
