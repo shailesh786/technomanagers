@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import CohortPage from '@/components/cohort/CohortPage';
 import type { CohortTestimonial } from '@/types';
 
@@ -59,5 +59,15 @@ describe('CohortPage hero', () => {
     expect(hero).toContainElement(card);
     expect(card).toContainElement(screen.getByRole('link', { name: /youtube/i }));
     expect(card).toContainElement(screen.getByRole('link', { name: /linkedin/i }));
+  });
+});
+
+describe('CohortPage FAQ', () => {
+  it('keeps every answer in the DOM while collapsed, so it ships in the static HTML', () => {
+    render(<CohortPage testimonials={[]} />);
+    const answer = screen.getByText(/fee for the current batch is shared/i);
+    expect(answer).not.toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /what is the fee/i }));
+    expect(answer).toBeVisible();
   });
 });

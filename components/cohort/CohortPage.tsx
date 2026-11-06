@@ -332,6 +332,10 @@ const OUTCOMES = [
 ];
 
 const FAQS: [string, string][] = [
+  ['Who is this AI product management cohort for?',
+    'Product managers moving into AI PM roles, mid-to-senior PMs (3–10 years) who want to lead AI initiatives, and engineers, data scientists and designers pivoting into AI product management. It also suits anyone preparing for AI PM interviews who wants a structured, mentor-led path instead of scattered tutorials.'],
+  ['Who teaches the cohort?',
+    'Shailesh Sharma, an IIT Kanpur and IIM Bangalore alumnus who has mentored 2,000+ PMs and builders over 4 years. He wrote a product management book that is on IIM elective reading lists, and his YouTube teaching on AI product work has 1M+ views.'],
   ['Do I need to be a developer or engineer to join?',
     'No. The cohort is designed for PMs, engineers, designers, and data scientists alike. All prototyping is done using no-code and AI tools (Claude, LangChain, no-code RAG builders). You need to be able to think through product decisions and use AI tools to build — not write production code.'],
   ['How much time per week do I need to commit?',
@@ -342,6 +346,8 @@ const FAQS: [string, string][] = [
     'A complete portfolio-ready AI product: a written spec, working prototype (RAG or agent), eval framework with a golden test set and launch threshold, GTM one-pager, risk + metrics doc, a polished 10–12 slide deck, and a 3-min recorded demo video. You present it live on Demo Day in front of a panel.'],
   ['Is this heavy on theory or hands-on building?',
     'Heavily hands-on. Every concept week is paired with a Demo/Demo Hours session where you build something the same week. By the end you will have built a working RAG prototype, a working AI agent, run your own evals, and shipped a full spec-driven prototype — all before Demo Day.'],
+  ['What is the fee for the cohort?',
+    'The fee for the current batch is shared when you get in touch. Apply through the form on this page or message us on WhatsApp, and we will send you the fee and the batch dates.'],
 ];
 
 const WHO = [
@@ -450,7 +456,9 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         <span className="flex-1 font-semibold text-base md:text-lg" style={{ ...heading, color: C.text }}>{q}</span>
         <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: C.body }} />
       </button>
-      {open && <div className="px-5 pb-5 text-base leading-relaxed" style={{ ...body, color: C.body }}>{a}</div>}
+      {/* Always in the DOM, hidden while collapsed, so the answers ship in the
+          static HTML for crawlers and AI answer engines. */}
+      <div hidden={!open} className="px-5 pb-5 text-base leading-relaxed" style={{ ...body, color: C.body }}>{a}</div>
     </div>
   );
 }

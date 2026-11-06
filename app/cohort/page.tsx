@@ -29,14 +29,17 @@ export const revalidate = 300;
 
 export const metadata: Metadata = {
   // No "| Technomanagers" suffix — the root layout's title.template appends it.
-  title: 'AI Product Builder Cohort',
+  // Leads with the phrases people search ("AI product management course",
+  // "cohort") rather than the programme's own name, which nobody searches
+  // before they know us; the name stays in the hero, OG image and JSON-LD.
+  title: 'AI Product Management Course & Live Cohort',
   description:
-    'A 12-week mentor-led live cohort to become a job-ready AI Product Manager. Build RAG systems, AI agents, run evals, prep for interviews, and present on Demo Day.',
+    'A 12-week, mentor-led AI product management course run as a live cohort from India. Build RAG and AI agent prototypes, run evals and prep for AI PM interviews.',
   alternates: { canonical: '/cohort' },
   openGraph: {
-    title: 'AI Product Builder Cohort',
+    title: 'AI Product Management Course: 12-Week Live Cohort',
     description:
-      '12-week live cohort: RAG prototypes, AI agents, evals, interview prep, and a live Demo Day. Become a job-ready AI PM.',
+      '12-week live AI product management cohort: RAG and agent prototypes, evals, AI PM interview prep and a live Demo Day.',
     type: 'website',
     url: '/cohort',
   },
@@ -91,6 +94,7 @@ function courseJsonLd(siteUrl: string) {
     '@context': 'https://schema.org',
     '@type': 'Course',
     name: 'AI Product Builder Cohort',
+    alternateName: 'AI Product Management Cohort',
     description:
       'A 12-week mentor-led live cohort to become a job-ready AI Product Manager. Build RAG systems, AI agents, run evals, prep for interviews, and present on Demo Day.',
     url: `${siteUrl}/cohort`,
