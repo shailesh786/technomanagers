@@ -146,6 +146,104 @@ export async function renderOgCard({ eyebrow, title, meta, coupon }: OgCardProps
   );
 }
 
+/**
+ * Share card for a course page, laid out for square crops: WhatsApp (and
+ * some LinkedIn placements) crop the 1200×630 image to a centred square, so
+ * the brand, the course name and the coupon all sit inside the middle
+ * ~600px column. Edges carry only background.
+ */
+export async function renderCourseOgCard({
+  eyebrow,
+  title,
+  coupon,
+}: {
+  eyebrow: string;
+  title: string;
+  coupon?: { headline: string; code: string; until: string };
+}): Promise<ImageResponse> {
+  const font = await loadHeadingFont();
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 26,
+          // 540px text column centred in the 630px square WhatsApp keeps.
+          padding: '40px 330px',
+          textAlign: 'center',
+          backgroundImage: 'linear-gradient(135deg, #0b2b6b 0%, #071c49 60%, #051433 100%)',
+          color: '#ffffff',
+          ...(font ? { fontFamily: '"Plus Jakarta Sans"' } : {}),
+        }}
+      >
+        <div style={{ display: 'flex', fontSize: 30, fontWeight: 800, letterSpacing: '0.02em' }}>
+          <span style={{ color: '#ffffff' }}>TECHNO</span>
+          <span style={{ color: '#7fb3ff' }}>MANAGERS</span>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 22,
+            fontWeight: 800,
+            color: '#7fb3ff',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+          }}
+        >
+          {eyebrow}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', fontSize: 52, fontWeight: 800, lineHeight: 1.1 }}>
+          {title}
+        </div>
+        {coupon ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 10,
+              padding: '18px 28px',
+              border: '3px dashed #7fb3ff',
+              borderRadius: 18,
+              background: 'rgba(29, 125, 232, 0.18)',
+            }}
+          >
+            <span style={{ fontSize: 26, fontWeight: 800 }}>{coupon.headline}</span>
+            <span
+              style={{
+                display: 'flex',
+                padding: '8px 22px',
+                borderRadius: 12,
+                background: '#ffffff',
+                color: '#0b2b6b',
+                fontSize: 40,
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+              }}
+            >
+              {coupon.code}
+            </span>
+            <span style={{ fontSize: 22, color: '#b9cdf3' }}>Use at checkout · till {coupon.until}</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', fontSize: 24, color: '#b9cdf3' }}>technomanagers.in</div>
+        )}
+      </div>
+    ),
+    {
+      ...OG_SIZE,
+      ...(font
+        ? { fonts: [{ name: 'Plus Jakarta Sans', data: font, weight: 800 as const, style: 'normal' as const }] }
+        : {}),
+    },
+  );
+}
+
 const HUB_EYEBROW: Record<HubKind, string> = {
   company: 'Company · Interview questions',
   category: 'Category · Interview questions',
