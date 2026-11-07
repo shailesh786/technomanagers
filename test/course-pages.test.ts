@@ -28,6 +28,14 @@ describe('course pages content', () => {
       expect(p.metaDescription.length).toBeLessThanOrEqual(160);
     }
   });
+
+  it('keeps live search titles short enough for Google to show whole, with no expiring offer in the snippet', () => {
+    for (const p of COURSE_PAGES) {
+      expect(p.seoTitle.length, p.slug).toBeLessThanOrEqual(65);
+      expect(p.metaDescription.length, p.slug).toBeLessThanOrEqual(155);
+      expect(p.metaDescription, p.slug).not.toMatch(/\b(off|coupon|code)\b/i);
+    }
+  });
 });
 
 describe('curriculum', () => {
