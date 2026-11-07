@@ -27,7 +27,7 @@ const ROUTE_LASTMOD = {
   '/courses': '2026-11-07T00:00:00+05:30',
   // One date for every /courses/[slug] page — bump when their copy changes.
   '/courses/[slug]': '2026-11-07T00:00:00+05:30',
-  '/cohort': '2026-08-26T00:00:00+05:30',
+  '/cohort': '2026-11-07T00:00:00+05:30',
   '/events': '2026-08-01T00:00:00+05:30',
   '/privacy': '2026-07-01T00:00:00+05:30',
   '/refund-policy': '2026-08-19T00:00:00+05:30',
