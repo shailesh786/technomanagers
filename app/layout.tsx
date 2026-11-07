@@ -33,6 +33,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { serializeJsonLd } from '@/lib/question-seo';
 import { resolveSiteUrl } from '@/lib/site-url';
 import { getHubTaxonomy } from '@/lib/hub-data';
+import { getActiveCourses } from '@/lib/course-data';
 import type { NavHubs } from '@/components/layout/NavDropdown';
 import '@/app/globals.css';
 
@@ -160,6 +161,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     categories: taxonomy.category.slice(0, 12).map(({ name }) => name),
     companies: taxonomy.company.slice(0, 8).map(({ name }) => name),
   };
+  // Courses for the Courses nav menu, likewise in every page's HTML so the
+  // on-site course pages are linked from everywhere. Unlike the hubs, a DB
+  // error here degrades to an empty menu rather than failing the page.
+  const navCourses = await getActiveCourses().catch(() => []);
 
   return (
     <html
@@ -183,7 +188,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             <QuestionAccessProvider>
               <TooltipProvider>
-                <Navbar hubs={navHubs} />
+                <Navbar hubs={navHubs} courses={navCourses} />
                 <main id="main" className="flex-1">{children}</main>
                 <FooterWrapper />
                 <Toaster />

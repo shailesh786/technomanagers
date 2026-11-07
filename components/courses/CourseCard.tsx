@@ -2,18 +2,23 @@
  * components/courses/CourseCard.tsx  —  Server Component ✅
  *
  * No 'use client' needed: pure display component. Receives a Course object
- * as a prop and renders static HTML. External <a> link, no state, no hooks.
+ * as a prop and renders static HTML. No state, no hooks.
  *
  * Changes from src/components/courses/CourseCard.tsx:
  * - Import path: `@/types` now resolves to root types/index.ts ✅
  * - <img> kept as-is (next/image migration deferred to Phase 5 SEO pass to
  *   avoid inadvertent visual changes from required width/height props)
  * - All content, logic, and visual design UNCHANGED.
+ *
+ * Courses with an on-site page (lib/course-links.ts) link to /courses/{slug}
+ * with "View Course"; every other course still opens Topmate in a new tab.
  */
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { courseHref } from '@/lib/course-links';
 import type { Course } from '@/types';
 
 interface CourseCardProps {
@@ -21,13 +26,10 @@ interface CourseCardProps {
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
-  return (
-    <a
-      href={course.external_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group block rounded-xl border bg-background overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
-    >
+  const { href, external } = courseHref(course);
+  const className = 'group block rounded-xl border bg-background overflow-hidden shadow-sm hover:shadow-md transition-all duration-200';
+  const body = (
+    <>
       {/* Thumbnail/gradient — 16:9 so standard-ratio uploads render uncropped */}
       <div className="relative aspect-video bg-gradient-brand flex items-center justify-center overflow-hidden">
         {course.thumbnail_url ? (
@@ -52,9 +54,15 @@ export default function CourseCard({ course }: CourseCardProps) {
         </h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{course.short_description}</p>
         <div className="flex items-center gap-2 text-sm font-medium text-secondary">
-          Start Course <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          {external ? 'Start Course' : 'View Course'} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
-    </a>
+    </>
+  );
+
+  return external ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{body}</a>
+  ) : (
+    <Link href={href} className={className}>{body}</Link>
   );
 }

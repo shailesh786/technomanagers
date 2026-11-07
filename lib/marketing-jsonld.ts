@@ -3,10 +3,13 @@
  * (/events, /coaching, /courses). Each returns an ItemList whose entries
  * point their organizer/provider at the site-wide Organization node
  * (`${siteUrl}#org`, declared in app/layout.tsx), so Google connects the
- * listings to the brand entity. Pure functions — unit-tested; the routes
- * serialize them with serializeJsonLd.
+ * listings to the brand entity. courseJsonLd covers a single
+ * /courses/[slug] page. Pure functions — unit-tested; the routes serialize
+ * them with serializeJsonLd.
  */
 
+import { courseHref } from '@/lib/course-links';
+import type { CoursePageContent } from '@/lib/course-pages';
 import type { CoachingService, Course, Event } from '@/types';
 
 const org = (siteUrl: string) => ({ '@id': `${siteUrl}#org` });
@@ -70,7 +73,67 @@ export function coursesJsonLd(courses: Course[], siteUrl: string) {
       // Google requires description on Course items — fall back to a factual
       // template when a row has no short_description, so no item is invalid.
       description: c.short_description?.trim() || `${c.title} — a self-paced product management course from Technomanagers.`,
-      url: c.external_url,
+      url: (() => {
+        const { href, external } = courseHref(c);
+        return external ? href : `${siteUrl}${href}`;
+      })(),
     }));
   return itemList(siteUrl, '/courses', 'Technomanagers PM Courses', entries);
+}
+
+/**
+ * Course + BreadcrumbList + FAQPage for one /courses/[slug] page, built from
+ * the same content the page renders so the markup never drifts from it.
+ * `checkoutUrl` is the Topmate product page — the offer carries no price
+ * because the site shows none. aggregateRating only with real numbers.
+ */
+export function courseJsonLd(page: CoursePageContent, checkoutUrl: string, siteUrl: string) {
+  const url = `${siteUrl}/courses/${page.slug}`;
+  const name = `${page.titleBefore}${page.titleLead}${page.titleRest}`;
+  const { rating, ratingCount } = page.proof;
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      '@id': url,
+      name,
+      description: page.metaDescription,
+      url,
+      provider: org(siteUrl),
+      inLanguage: 'en',
+      image: `${url}/opengraph-image`,
+      teaches: page.outcomes.map((o) => o.title),
+      offers: { '@type': 'Offer', category: 'Paid', url: checkoutUrl },
+      hasCourseInstance: {
+        '@type': 'CourseInstance',
+        courseMode: 'Online',
+        instructor: {
+          '@type': 'Person',
+          name: page.instructor.name,
+          ...(page.instructor.links.length ? { sameAs: page.instructor.links.map((l) => l.href) } : {}),
+        },
+      },
+      ...(rating && ratingCount
+        ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: rating, ratingCount } }
+        : {}),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+        { '@type': 'ListItem', position: 2, name: 'Courses', item: `${siteUrl}/courses` },
+        { '@type': 'ListItem', position: 3, name: page.breadcrumb, item: url },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: page.faqs.map(({ q, a }) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    },
+  ];
 }

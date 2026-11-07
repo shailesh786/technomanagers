@@ -19,12 +19,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { QuestionsDropdown, CoursesDropdown, MobileQuestionsMenu, MobileCoursesMenu, type NavHubs } from '@/components/layout/NavDropdown';
 import Image from 'next/image';
+import type { Course } from '@/types';
 
 const GOOGLE_ICON = 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg';
 
-// `hubs` is fetched server-side in app/layout.tsx so the Questions menu's
-// hub links land in every page's server HTML.
-export default function Navbar({ hubs }: { hubs: NavHubs }) {
+// `hubs` and `courses` are fetched server-side in app/layout.tsx so the
+// Questions and Courses menus' links land in every page's server HTML.
+export default function Navbar({ hubs, courses }: { hubs: NavHubs; courses: Course[] }) {
   const { user, profile, isAdmin, isLoading, signInWithGoogle, signOut } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function Navbar({ hubs }: { hubs: NavHubs }) {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-1">
           <QuestionsDropdown active={pathname === '/questions'} hubs={hubs} />
-          <CoursesDropdown active={pathname === '/courses'} />
+          <CoursesDropdown active={pathname === '/courses' || pathname.startsWith('/courses/')} courses={courses} />
           <Link
             href="/coaching"
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -161,7 +162,7 @@ export default function Navbar({ hubs }: { hubs: NavHubs }) {
       {mobileOpen && (
         <div className="md:hidden border-t bg-background p-4 space-y-2">
           <MobileQuestionsMenu onClose={() => setMobileOpen(false)} hubs={hubs} />
-          <MobileCoursesMenu onClose={() => setMobileOpen(false)} />
+          <MobileCoursesMenu onClose={() => setMobileOpen(false)} courses={courses} />
           <Link
             href="/coaching"
             onClick={() => setMobileOpen(false)}

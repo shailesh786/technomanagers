@@ -9,6 +9,7 @@
 import type { MetadataRoute } from 'next';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
 import { buildHubTaxonomy, hubHref, isIndexable } from '@/lib/hubs';
+import { COURSE_PAGES } from '@/lib/course-pages';
 
 // ISR: regenerate the sitemap at most once an hour. Without this the sitemap
 // is baked once at build time and goes stale — questions published after the
@@ -23,7 +24,9 @@ const BASE_URL = /^https?:\/\//i.test(_raw) ? _raw : `https://${_raw}`;
 // regeneration, which teaches them to distrust our lastmod entirely.
 const ROUTE_LASTMOD = {
   '/coaching': '2026-08-01T00:00:00+05:30',
-  '/courses': '2026-08-01T00:00:00+05:30',
+  '/courses': '2026-11-07T00:00:00+05:30',
+  // One date for every /courses/[slug] page — bump when their copy changes.
+  '/courses/[slug]': '2026-11-07T00:00:00+05:30',
   '/cohort': '2026-08-26T00:00:00+05:30',
   '/events': '2026-08-01T00:00:00+05:30',
   '/privacy': '2026-07-01T00:00:00+05:30',
@@ -61,6 +64,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/refund-policy`, lastModified: new Date(ROUTE_LASTMOD['/refund-policy']), changeFrequency: 'yearly', priority: 0.3 },
   ];
 
+  const courseRoutes: MetadataRoute.Sitemap = COURSE_PAGES.map(({ slug }) => ({
+    url: `${BASE_URL}/courses/${slug}`,
+    lastModified: new Date(ROUTE_LASTMOD['/courses/[slug]']),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+
   const questionRoutes: MetadataRoute.Sitemap = rows.map((q) => ({
     url: `${BASE_URL}/questions/${q.id}`,
     lastModified: new Date(q.updated_at ?? Date.now()),
@@ -81,5 +91,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   );
 
-  return [...staticRoutes, ...hubRoutes, ...questionRoutes];
+  return [...staticRoutes, ...courseRoutes, ...hubRoutes, ...questionRoutes];
 }
