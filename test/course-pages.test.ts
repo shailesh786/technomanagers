@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COURSE_PAGE_IDS, courseHref, coursePageSlug } from '@/lib/course-links';
-import { COURSE_PAGES, DEFAULT_OFFER_LABEL, courseOfferFromRow, getCoursePage, proofLine } from '@/lib/course-pages';
+import { COURSE_PAGES, DEFAULT_OFFER_LABEL, courseOfferFromRow, getCoursePage, offerEndDay, offerShareLine, proofLine } from '@/lib/course-pages';
 import { timeLeft } from '@/hooks/useCountdown';
 
 describe('course pages content', () => {
@@ -131,5 +131,13 @@ describe('proof pop-up', () => {
     expect(lines).toContain(page.proof.enrolled!);
     expect(lines).toContain(page.proof.rating!);
     expect(lines).not.toMatch(/today|in the last|bought/i);
+  });
+});
+
+describe('offer share text', () => {
+  it('names the code and the last day in IST', () => {
+    const offer = { label: '20% off for a limited time', code: 'AIPM20', endsAt: '2026-11-16T23:59:59+05:30' };
+    expect(offerEndDay(offer)).toBe('16 Nov');
+    expect(offerShareLine(offer)).toBe('20% off for a limited time with code AIPM20, till 16 Nov.');
   });
 });

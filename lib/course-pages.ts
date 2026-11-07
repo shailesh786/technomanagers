@@ -91,6 +91,18 @@ export interface CourseOffer {
 
 export const DEFAULT_OFFER_LABEL = 'Limited-time offer';
 
+/** "16 Nov" — the offer's last day in IST, for share previews. */
+export function offerEndDay(offer: CourseOffer): string {
+  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }).format(
+    new Date(offer.endsAt),
+  );
+}
+
+/** The share-preview sentence for a live offer: "20% off for a limited time with code AIPM20, till 16 Nov." */
+export function offerShareLine(offer: CourseOffer): string {
+  return `${offer.label} with code ${offer.code}, till ${offerEndDay(offer)}.`;
+}
+
 /** The course row's offer, or null when it has none or it has already ended. */
 export function courseOfferFromRow(
   row: Pick<Course, 'offer_label' | 'offer_code' | 'offer_ends_at'> | null | undefined,

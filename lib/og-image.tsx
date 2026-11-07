@@ -45,9 +45,11 @@ export interface OgCardProps {
   title: string;
   /** Bottom-left context line (e.g. "Medium · Sample answer inside"). */
   meta?: string;
+  /** A live discount, shown as a coupon strip under the title (course pages). */
+  coupon?: { headline: string; code: string; until: string };
 }
 
-export async function renderOgCard({ eyebrow, title, meta }: OgCardProps): Promise<ImageResponse> {
+export async function renderOgCard({ eyebrow, title, meta, coupon }: OgCardProps): Promise<ImageResponse> {
   const font = await loadHeadingFont();
   // Satori has no line-clamp — cap the text so long questions stay ≤3 lines.
   const clamped = title.length > 140 ? `${title.slice(0, 137).trimEnd()}…` : title;
@@ -87,6 +89,38 @@ export async function renderOgCard({ eyebrow, title, meta }: OgCardProps): Promi
             {eyebrow}
           </div>
           <div style={{ display: 'flex', fontSize: titleSize, fontWeight: 800, lineHeight: 1.15 }}>{clamped}</div>
+          {coupon && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+                marginTop: 8,
+                padding: '14px 22px',
+                border: '3px dashed #7fb3ff',
+                borderRadius: 16,
+                background: 'rgba(29, 125, 232, 0.18)',
+                fontSize: 28,
+                fontWeight: 800,
+                alignSelf: 'flex-start',
+              }}
+            >
+              <span>{coupon.headline}</span>
+              <span
+                style={{
+                  display: 'flex',
+                  padding: '6px 16px',
+                  borderRadius: 10,
+                  background: '#ffffff',
+                  color: '#0b2b6b',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {coupon.code}
+              </span>
+              <span style={{ color: '#b9cdf3', fontSize: 24 }}>till {coupon.until}</span>
+            </div>
+          )}
         </div>
 
         <div
