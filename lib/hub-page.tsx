@@ -18,6 +18,8 @@ import type { Metadata } from 'next';
 import { ChevronRight } from 'lucide-react';
 import HubQuestionList from '@/components/questions/HubQuestionList';
 import { getHubQuestions, getHubTaxonomy } from '@/lib/hub-data';
+import { coursePromoFor } from '@/lib/course-pages';
+import CoursePromoCard from '@/components/courses/CoursePromoCard';
 import {
   findHub,
   hubDescription,
@@ -106,6 +108,9 @@ export function createHubPage(kind: HubKind) {
     const { taxonomy, hub, questions } = data;
     const browse = pickBrowseHubs(taxonomy, hub);
     const stats = hubStats(hub, questions);
+    // Category hubs whose topic a course covers link to it (AI → AI PM course,
+    // Program Management → AI PgM course).
+    const coursePromo = kind === 'category' ? coursePromoFor([hub.name]) : null;
 
     return (
       <>
@@ -134,6 +139,12 @@ export function createHubPage(kind: HubKind) {
           <p className="text-muted-foreground leading-relaxed mb-8 max-w-2xl">
             {hubIntro(hub, stats, questions.length)}
           </p>
+
+          {coursePromo && (
+            <div className="mb-8">
+              <CoursePromoCard promo={coursePromo} eyebrow="Prepare with the course" />
+            </div>
+          )}
 
           <HubQuestionList questions={questions} />
 

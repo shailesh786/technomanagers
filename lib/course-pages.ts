@@ -70,6 +70,11 @@ export interface CoursePageContent {
   /** `role` is the reviewer's job or, failing that, the review date. */
   reviews: { quote: string; name: string; role: string }[];
   instructor: CourseInstructor;
+  /**
+   * The course's card on question pages and hubs (CoursePromoCard): shown on
+   * questions and category hubs tagged with any of `promoCategories`.
+   */
+  promo: { pitch: string; proof: string; promoCategories: string[] };
   /** Question-bank category the "Practice" cards and "View all" link come from. */
   questionCategory: string;
   faqs: { q: string; a: string }[];
@@ -267,6 +272,7 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
       { quote: 'Very structured content that has helped me crack my Product Management interview.', name: 'Shivansh Agarwal', role: 'Product Manager, Coinbase' },
     ],
     instructor: SHAILESH_SHARMA,
+    promo: { pitch: 'Build RAG apps, AI evals and agents, then crack AI PM interviews.', proof: 'Rated 4.9 · 1,120+ learners', promoCategories: ['Artificial Intelligence', 'AI PM Interview'] },
     questionCategory: 'Artificial Intelligence',
     faqs: [
       { q: 'What does an AI Product Manager do?', a: 'An AI Product Manager owns products where a model is a core component: what to build, how it should behave and when it is reliable enough to ship.' },
@@ -348,6 +354,7 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
     ],
     reviews: [],
     instructor: SHAILESH_SHARMA,
+    promo: { pitch: 'All 12 weeks of the live AI Product Builder Cohort, recorded.', proof: '53 learners enrolled', promoCategories: [] },
     questionCategory: 'Artificial Intelligence',
     faqs: [
       { q: 'What is the AI Product Builder Cohort?', a: 'A 12-week, mentor-led live cohort to become a job-ready AI Product Manager: RAG, AI agents, evals, interview prep and Demo Day.' },
@@ -427,6 +434,7 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
       { quote: 'Great content', name: 'Anonymous', role: 'Oct 2025' },
     ],
     instructor: PRIYANKA_DALMIA,
+    promo: { pitch: 'Lead AI programs with real technical depth, plus Meta and Google TPM interview guides.', proof: '32+ videos · lifetime access', promoCategories: ['Program Management'] },
     questionCategory: 'Program Management',
     faqs: [
       { q: 'What is AI Program Management?', a: 'Running programs that ship AI and ML products. AI is probabilistic, so planning, delivery and change management work differently from traditional software.' },
@@ -464,4 +472,33 @@ export function proofLine(proof: CoursePageContent['proof']): string {
       .filter(Boolean)
       .join(' · ') || 'Enroll on Topmate'
   );
+}
+
+/** A course card for question pages and hubs — plain data, safe to pass to client components. */
+export interface CoursePromo {
+  href: string;
+  title: string;
+  pitch: string;
+  proof: string;
+}
+
+// Most specific first: a question tagged both "Program Management" and
+// "Artificial Intelligence" is a program-management question.
+const PROMO_ORDER = ['ai-program-management-course', 'ai-product-management-course'];
+
+/** The published course to promote for a question's (or hub's) categories, or null. */
+export function coursePromoFor(categories: readonly string[] | null | undefined): CoursePromo | null {
+  if (!categories?.length) return null;
+  for (const slug of PROMO_ORDER) {
+    const page = getCoursePage(slug);
+    if (page && page.promo.promoCategories.some((c) => categories.includes(c))) {
+      return {
+        href: `/courses/${page.slug}`,
+        title: `${page.titleBefore}${page.titleLead}${page.titleRest}`,
+        pitch: page.promo.pitch,
+        proof: page.promo.proof,
+      };
+    }
+  }
+  return null;
 }
