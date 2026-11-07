@@ -27,6 +27,7 @@ import { notFound } from 'next/navigation';
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import QuestionDetailClient from '@/components/questions/QuestionDetailClient';
+import { coursePromoFor } from '@/lib/course-pages';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
 import { pgArrayLiteral } from '@/lib/postgrest';
 import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
@@ -283,7 +284,12 @@ export default async function QuestionDetailPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <QuestionDetailClient id={params.id} clusters={clusters} neighbours={neighbours} />
+        <QuestionDetailClient
+          id={params.id}
+          clusters={clusters}
+          neighbours={neighbours}
+          coursePromo={coursePromoFor(question.category)}
+        />
       </HydrationBoundary>
     </>
   );

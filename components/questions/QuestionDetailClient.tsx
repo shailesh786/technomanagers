@@ -16,6 +16,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuestionAccess } from '@/contexts/QuestionAccessContext';
 import CommentsSection from '@/components/questions/CommentsSection';
 import RelatedQuestions from '@/components/questions/RelatedQuestions';
+import CoursePromoCard from '@/components/courses/CoursePromoCard';
+import type { CoursePromo } from '@/lib/course-pages';
 import { categoryHref, companyHref, type QuestionNeighbours, type RelatedCluster } from '@/lib/related-questions';
 
 const difficultyColors: Record<string, string> = {
@@ -29,9 +31,11 @@ interface Props {
   /** Server-chosen related clusters and previous/next pair (lib/related-questions.ts). */
   clusters: RelatedCluster[];
   neighbours: QuestionNeighbours;
+  /** Course covering this question's topic, chosen server-side (lib/course-pages.ts), or null. */
+  coursePromo?: CoursePromo | null;
 }
 
-export default function QuestionDetailClient({ id, clusters, neighbours }: Props) {
+export default function QuestionDetailClient({ id, clusters, neighbours, coursePromo }: Props) {
   const router = useRouter();
   const { data: question, isLoading } = useQuestion(id);
   const { user } = useAuth();
@@ -225,6 +229,8 @@ export default function QuestionDetailClient({ id, clusters, neighbours }: Props
             </div>
           </div>
         )}
+
+        {coursePromo && <CoursePromoCard promo={coursePromo} eyebrow="Go deeper with the course" />}
 
         {/* Comments */}
         <CommentsSection questionId={question.id} />

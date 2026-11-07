@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COURSE_PAGE_IDS, courseHref, coursePageSlug } from '@/lib/course-links';
-import { COURSE_PAGES, DEFAULT_OFFER_LABEL, courseOfferFromRow, getCoursePage, offerEndDay, offerShareLine, proofLine } from '@/lib/course-pages';
+import { COURSE_PAGES, DEFAULT_OFFER_LABEL, courseOfferFromRow, coursePromoFor, getCoursePage, offerEndDay, offerShareLine, proofLine } from '@/lib/course-pages';
 import { timeLeft } from '@/hooks/useCountdown';
 
 describe('course pages content', () => {
@@ -147,5 +147,26 @@ describe('offer share text', () => {
     const offer = { label: '20% off for a limited time', code: 'AIPM20', endsAt: '2026-11-16T23:59:59+05:30' };
     expect(offerEndDay(offer)).toBe('16 Nov');
     expect(offerShareLine(offer)).toBe('20% off for a limited time with code AIPM20, till 16 Nov.');
+  });
+});
+
+describe('coursePromoFor', () => {
+  it('sends AI questions to the AI Product Management course', () => {
+    expect(coursePromoFor(['Artificial Intelligence', 'Metrics'])).toMatchObject({
+      href: '/courses/ai-product-management-course',
+      title: 'AI Product Management Course',
+    });
+    expect(coursePromoFor(['AI PM Interview'])?.href).toBe('/courses/ai-product-management-course');
+  });
+
+  it('sends Program Management questions to the AI Program Management course, even when also tagged AI', () => {
+    expect(coursePromoFor(['Program Management'])?.href).toBe('/courses/ai-program-management-course');
+    expect(coursePromoFor(['Artificial Intelligence', 'Program Management'])?.href).toBe('/courses/ai-program-management-course');
+  });
+
+  it('shows no course for unrelated or untagged questions', () => {
+    expect(coursePromoFor(['Guesstimates'])).toBeNull();
+    expect(coursePromoFor(null)).toBeNull();
+    expect(coursePromoFor([])).toBeNull();
   });
 });
