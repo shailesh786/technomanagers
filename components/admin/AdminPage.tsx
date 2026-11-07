@@ -1307,7 +1307,12 @@ function AdminCourses() {
       const { error } = await supabase.from('courses').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-courses'] }); queryClient.invalidateQueries({ queryKey: ['courses'] }); toast.success('Course deleted'); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      fetch('/api/revalidate/courses', { method: 'POST' }).catch(() => {});
+      toast.success('Course deleted');
+    },
   });
 
   const [editCourse, setEditCourse] = useState<Course | null>(null);
@@ -1346,7 +1351,19 @@ function AdminCourses() {
             <tbody>
               {courses?.map((c) => (
                 <tr key={c.id} className="border-t">
-                  <td className="p-3">{c.title}</td>
+                  <td className="p-3">
+                    {c.title}
+                    {c.offer_code && c.offer_ends_at && (
+                      <span
+                        className={`ml-2 rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                          Date.parse(c.offer_ends_at) > Date.now() ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground line-through'
+                        }`}
+                        title={Date.parse(c.offer_ends_at) > Date.now() ? 'Offer live' : 'Offer ended'}
+                      >
+                        {c.offer_code}
+                      </span>
+                    )}
+                  </td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">{c.category}</td>
                   <td className="p-3 hidden md:table-cell"><a href={c.external_url} target="_blank" rel="noopener noreferrer" className="text-secondary text-xs hover:underline truncate max-w-[120px] block">Link ↗</a></td>
                   <td className="p-3 hidden md:table-cell"><Badge variant={c.status === 'active' ? 'default' : 'outline'}>{c.status}</Badge></td>
@@ -1368,6 +1385,15 @@ function AdminCourses() {
   );
 }
 
+/** ISO instant → "YYYY-MM-DDTHH:mm" in the admin's local time, for a datetime-local input. */
+function toLocalInputValue(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function CourseForm({ course, onClose }: { course: Course | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
@@ -1379,7 +1405,13 @@ function CourseForm({ course, onClose }: { course: Course | null; onClose: () =>
     category: course?.category || '',
     display_order: course?.display_order || 0,
     status: course?.status || 'active',
+    offer_label: course?.offer_label || '',
+    offer_code: course?.offer_code || '',
+    offer_ends_at: toLocalInputValue(course?.offer_ends_at),
   });
+  const offerCode = form.offer_code.trim();
+  // Both or neither — the DB enforces it too (courses_offer_complete).
+  const offerIncomplete = Boolean(offerCode) !== Boolean(form.offer_ends_at);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -1402,6 +1434,10 @@ function CourseForm({ course, onClose }: { course: Course | null; onClose: () =>
         category: form.category || null,
         display_order: form.display_order,
         status: form.status,
+        offer_label: offerCode ? form.offer_label.trim() || null : null,
+        offer_code: offerCode ? offerCode.toUpperCase() : null,
+        // datetime-local is the admin's local time; store it as an instant.
+        offer_ends_at: offerCode && form.offer_ends_at ? new Date(form.offer_ends_at).toISOString() : null,
       };
 
       if (course) {
@@ -1416,6 +1452,8 @@ function CourseForm({ course, onClose }: { course: Course | null; onClose: () =>
       setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
+      // Rebuild the course pages and nav menu now, not after the ISR window.
+      fetch('/api/revalidate/courses', { method: 'POST' }).catch(() => {});
       toast.success(course ? 'Course updated' : 'Course added');
       onClose();
     },
@@ -1452,8 +1490,54 @@ function CourseForm({ course, onClose }: { course: Course | null; onClose: () =>
           <span className="text-sm">{form.status === 'active' ? 'Active' : 'Inactive'}</span>
         </div>
       </div>
+      <div className="space-y-3 rounded-lg border p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Limited-time offer</p>
+            <p className="text-xs text-muted-foreground">
+              Coupon and countdown on the course&apos;s own page. It disappears by itself after the end time. Leave the code empty for no offer.
+            </p>
+          </div>
+          {(form.offer_code || form.offer_ends_at) && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setForm({ ...form, offer_label: '', offer_code: '', offer_ends_at: '' })}
+            >
+              Clear offer
+            </Button>
+          )}
+        </div>
+        <div>
+          <label className="text-sm font-medium block mb-1">Headline</label>
+          <Input value={form.offer_label} onChange={(e) => setForm({ ...form, offer_label: e.target.value })} placeholder="20% off for a limited time" />
+        </div>
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="text-sm font-medium block mb-1">Coupon code</label>
+            <Input
+              value={form.offer_code}
+              onChange={(e) => setForm({ ...form, offer_code: e.target.value.toUpperCase().replace(/\s/g, '') })}
+              placeholder="AIPM20"
+              className="font-mono"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-sm font-medium block mb-1">Ends at</label>
+            <Input type="datetime-local" value={form.offer_ends_at} onChange={(e) => setForm({ ...form, offer_ends_at: e.target.value })} />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          End time is in your timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone}). The code must also exist on Topmate.
+        </p>
+        {offerIncomplete && <p className="text-xs text-destructive">Add both a coupon code and an end time, or clear the offer.</p>}
+        {offerCode && form.offer_ends_at && new Date(form.offer_ends_at).getTime() <= Date.now() && (
+          <p className="text-xs text-warning">This offer has ended and is no longer shown on the site. Set a new end time or clear it.</p>
+        )}
+      </div>
       <div className="flex gap-2">
-        <Button onClick={() => mutation.mutate()} disabled={isSaving || !form.title || !form.external_url} className="flex-1 gap-2">
+        <Button onClick={() => mutation.mutate()} disabled={isSaving || !form.title || !form.external_url || offerIncomplete} className="flex-1 gap-2">
           {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
           {isSaving ? 'Saving...' : (course ? 'Update' : 'Add') + ' Course'}
         </Button>

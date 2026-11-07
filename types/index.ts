@@ -38,6 +38,10 @@ export interface Course {
   status: string | null;
   created_at: string | null;
   updated_at: string | null;
+  /** Limited-time offer for the course page — see 20261107120000_course_offers.sql. */
+  offer_label?: string | null;
+  offer_code?: string | null;
+  offer_ends_at?: string | null;
 }
 
 export interface CoachingService {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { coachingJsonLd, coursesJsonLd, eventsJsonLd } from '@/lib/marketing-jsonld';
+import { coachingJsonLd, courseJsonLd, coursesJsonLd, eventsJsonLd } from '@/lib/marketing-jsonld';
+import { COURSE_PAGES, getCoursePage } from '@/lib/course-pages';
 import type { CoachingService, Course, Event } from '@/types';
 
 const SITE = 'https://www.technomanagers.in';
@@ -108,5 +109,49 @@ describe('coursesJsonLd', () => {
       expect((el.item as { description: string }).description).toBeTruthy();
       expect((el.item as { description: string }).description).toContain('The AI PM Course');
     }
+  });
+
+  it('points courses with an on-site page at that page, others at Topmate', () => {
+    const pgm = COURSE_PAGES.find((p) => p.slug === 'ai-program-management-course')!;
+    const out = coursesJsonLd([course({ id: pgm.courseId }), course({ id: 'c9' })], SITE);
+    expect((out.itemListElement[0].item as { url: string }).url).toBe(`${SITE}/courses/ai-program-management-course`);
+    expect((out.itemListElement[1].item as { url: string }).url).toBe('https://example.com/course');
+  });
+});
+
+describe('courseJsonLd', () => {
+  const checkout = 'https://topmate.io/technomanagers/2033621';
+
+  it('emits Course, BreadcrumbList and FAQPage from the page content', () => {
+    const page = getCoursePage('ai-program-management-course')!;
+    const [courseNode, crumbs, faq] = courseJsonLd(page, checkout, SITE);
+    expect(courseNode).toMatchObject({
+      '@type': 'Course',
+      name: 'AI Program Management Course',
+      url: `${SITE}/courses/ai-program-management-course`,
+      provider: { '@id': `${SITE}#org` },
+      offers: { '@type': 'Offer', category: 'Paid', url: checkout },
+    });
+    expect(courseNode).toMatchObject({
+      inLanguage: 'en',
+      image: `${SITE}/courses/ai-program-management-course/opengraph-image`,
+      hasCourseInstance: { courseMode: 'Online', instructor: { '@type': 'Person', name: 'Priyanka Dalmia' } },
+    });
+    expect((courseNode as { teaches: string[] }).teaches).toContain('Crack AI Program Manager Interviews');
+    // No price on-site, so none in the markup either.
+    expect(JSON.stringify(courseNode)).not.toContain('price');
+    expect(crumbs.itemListElement.map((i: { name: string }) => i.name)).toEqual(['Home', 'Courses', 'AI Program Management']);
+    expect(faq.mainEntity).toHaveLength(page.faqs.length);
+    expect(faq.mainEntity[0]).toMatchObject({ '@type': 'Question', name: page.faqs[0].q, acceptedAnswer: { text: page.faqs[0].a } });
+  });
+
+  it('adds aggregateRating only when both the rating and its count are known', () => {
+    const page = getCoursePage('ai-product-management-course')!;
+    const counted = { ...page, proof: { ...page.proof, rating: '4.8', ratingCount: 12 } };
+    expect(courseJsonLd(counted, checkout, SITE)[0]).toMatchObject({ aggregateRating: { ratingValue: '4.8', ratingCount: 12 } });
+    // The AI PM course shows its rating without a count, so no rating markup.
+    expect(courseJsonLd(page, checkout, SITE)[0]).not.toHaveProperty('aggregateRating');
+    const unrated = courseJsonLd(getCoursePage('ai-program-management-course')!, checkout, SITE)[0];
+    expect(unrated).not.toHaveProperty('aggregateRating');
   });
 });

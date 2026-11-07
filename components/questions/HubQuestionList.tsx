@@ -4,17 +4,19 @@
  * components/questions/HubQuestionList.tsx — the question cards on a hub
  * page. Rows arrive as props from the server route, so every card is in the
  * initial HTML; the cards are the same QuestionCard as everywhere else.
+ * Also used for the "Practice" cards on the course pages (with a grid
+ * className instead of the default vertical stack).
  */
 
 import QuestionCard from '@/components/questions/QuestionCard';
 import { useQuestionCardActions } from '@/hooks/useQuestionCardActions';
 import type { Question } from '@/types';
 
-export default function HubQuestionList({ questions }: { questions: Question[] }) {
+export default function HubQuestionList({ questions, className = 'space-y-3' }: { questions: Question[]; className?: string }) {
   const { isAuthenticated, savedIds, likedIds, handleUpvote, handleToggleSave } = useQuestionCardActions();
 
   return (
-    <div className="space-y-3">
+    <div className={className}>
       {questions.map((q) => (
         <QuestionCard
           key={q.id}

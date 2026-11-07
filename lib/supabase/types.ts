@@ -166,6 +166,9 @@ export type Database = {
           external_url: string
           id: string
           long_description: string | null
+          offer_code: string | null
+          offer_ends_at: string | null
+          offer_label: string | null
           short_description: string | null
           status: string | null
           thumbnail_url: string | null
@@ -179,6 +182,9 @@ export type Database = {
           external_url: string
           id?: string
           long_description?: string | null
+          offer_code?: string | null
+          offer_ends_at?: string | null
+          offer_label?: string | null
           short_description?: string | null
           status?: string | null
           thumbnail_url?: string | null
@@ -192,6 +198,9 @@ export type Database = {
           external_url?: string
           id?: string
           long_description?: string | null
+          offer_code?: string | null
+          offer_ends_at?: string | null
+          offer_label?: string | null
           short_description?: string | null
           status?: string | null
           thumbnail_url?: string | null

@@ -4,9 +4,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { hubHref } from '@/lib/hubs';
-import { ChevronDown, ArrowRight } from 'lucide-react';
+import { ChevronDown, ArrowRight, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCourses } from '@/hooks/useCourses';
+import { courseHref } from '@/lib/course-links';
 import type { Course } from '@/types';
 
 /**
@@ -138,12 +138,33 @@ export function QuestionsDropdown({ active, hubs }: { active: boolean; hubs: Nav
   );
 }
 
-/* ========== COURSES DROPDOWN ========== */
-export function CoursesDropdown({ active }: { active: boolean }) {
-  const { open, setOpen, enter, leave } = useHoverDropdown();
-  const { data: courses } = useCourses({ enabled: open });
+/**
+ * One course row in the Courses menus: courses with an on-site page link to
+ * /courses/{slug} (trailing arrow); the rest open Topmate in a new tab
+ * (trailing external-link icon).
+ */
+function CourseMenuLink({ course, onClick, className, children }: {
+  course: Course;
+  onClick: () => void;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const { href, external } = courseHref(course);
+  return external ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className}>{children}</a>
+  ) : (
+    <Link href={href} onClick={onClick} className={className}>{children}</Link>
+  );
+}
 
-  const grouped = (courses || []).reduce<Record<string, Course[]>>((acc, c) => {
+/* ========== COURSES DROPDOWN ========== */
+// `courses` is fetched server-side in app/layout.tsx (getActiveCourses), so —
+// like the Questions menu — the panel renders in every page's HTML and the
+// on-site course pages are linked from everywhere.
+export function CoursesDropdown({ active, courses }: { active: boolean; courses: Course[] }) {
+  const { open, setOpen, enter, leave } = useHoverDropdown();
+
+  const grouped = courses.reduce<Record<string, Course[]>>((acc, c) => {
     const cat = c.category || 'Other';
     (acc[cat] = acc[cat] || []).push(c);
     return acc;
@@ -167,34 +188,37 @@ export function CoursesDropdown({ active }: { active: boolean }) {
         <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
       </Link>
 
-      {open && (
-        <div
-          className="absolute left-0 top-full pt-2 z-50 animate-in fade-in-0 duration-150"
-          onMouseEnter={enter}
-          onMouseLeave={leave}
-        >
-          <div className="w-[480px] rounded-xl border bg-popover shadow-lg p-5 space-y-4">
-            <div>
-              <Link
-                href="/courses"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-bold hover:bg-accent/10 transition-colors"
-              >
-                All Courses <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="border-t" />
-            {orderedCategories.map((cat) => (
-              <div key={cat}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat}</p>
-                {grouped[cat]?.length ? (
-                  <div className="space-y-1">
-                    {grouped[cat].map((course) => (
-                      <a
+      {/* Rendered ALWAYS (CSS-hidden when closed) — see QuestionsDropdown. */}
+      <div
+        className={cn(
+          'absolute left-0 top-full pt-2 z-50',
+          open ? 'animate-in fade-in-0 duration-150' : 'hidden',
+        )}
+        onMouseEnter={enter}
+        onMouseLeave={leave}
+      >
+        <div className="w-[480px] rounded-xl border bg-popover shadow-lg p-5 space-y-4">
+          <div>
+            <Link
+              href="/courses"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-bold hover:bg-accent/10 transition-colors"
+            >
+              All Courses <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="border-t" />
+          {orderedCategories.map((cat) => (
+            <div key={cat}>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat}</p>
+              {grouped[cat]?.length ? (
+                <div className="space-y-1">
+                  {grouped[cat].map((course) => {
+                    const Icon = courseHref(course).external ? ExternalLink : ArrowRight;
+                    return (
+                      <CourseMenuLink
                         key={course.id}
-                        href={course.external_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        course={course}
                         onClick={() => setOpen(false)}
                         className="flex items-center justify-between gap-3 px-3 py-2 rounded-md hover:bg-accent/10 transition-colors group"
                       >
@@ -204,18 +228,18 @@ export function CoursesDropdown({ active }: { active: boolean }) {
                             <p className="text-xs text-muted-foreground truncate">{course.short_description}</p>
                           )}
                         </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 group-hover:text-foreground transition-colors" />
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="px-3 text-xs text-muted-foreground italic">No courses yet</p>
-                )}
-              </div>
-            ))}
-          </div>
+                        <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0 group-hover:text-foreground transition-colors" />
+                      </CourseMenuLink>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="px-3 text-xs text-muted-foreground italic">No courses yet</p>
+              )}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -268,11 +292,10 @@ export function MobileQuestionsMenu({ onClose, hubs }: { onClose: () => void; hu
   );
 }
 
-export function MobileCoursesMenu({ onClose }: { onClose: () => void }) {
+export function MobileCoursesMenu({ onClose, courses }: { onClose: () => void; courses: Course[] }) {
   const [expanded, setExpanded] = useState(false);
-  const { data: courses } = useCourses({ enabled: expanded });
 
-  const grouped = (courses || []).reduce<Record<string, Course[]>>((acc, c) => {
+  const grouped = courses.reduce<Record<string, Course[]>>((acc, c) => {
     const cat = c.category || 'Other';
     (acc[cat] = acc[cat] || []).push(c);
     return acc;
@@ -292,27 +315,24 @@ export function MobileCoursesMenu({ onClose }: { onClose: () => void }) {
           <ChevronDown className={cn('h-4 w-4 transition-transform', expanded && 'rotate-180')} />
         </button>
       </div>
-      {expanded && (
-        <div className="pl-6 space-y-2 pb-2">
-          {Object.entries(grouped).map(([cat, items]) => (
-            <div key={cat}>
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase">{cat}</p>
-              {items.map((course) => (
-                <a
-                  key={course.id}
-                  href={course.external_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={onClose}
-                  className="block px-3 py-1.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
-                >
-                  {course.title}
-                </a>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Rendered ALWAYS (CSS-hidden when collapsed) — see QuestionsDropdown. */}
+      <div className={cn('pl-6 space-y-2 pb-2', !expanded && 'hidden')}>
+        {Object.entries(grouped).map(([cat, items]) => (
+          <div key={cat}>
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase">{cat}</p>
+            {items.map((course) => (
+              <CourseMenuLink
+                key={course.id}
+                course={course}
+                onClick={onClose}
+                className="block px-3 py-1.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                {course.title}
+              </CourseMenuLink>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
