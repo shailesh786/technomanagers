@@ -12,7 +12,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import CourseDetail from '@/components/courses/CourseDetail';
 import { getActiveCourses, getCourseOffer } from '@/lib/course-data';
-import { COURSE_PAGES, getCoursePage } from '@/lib/course-pages';
+import { COURSE_PAGES, getCoursePage, offerShareLine } from '@/lib/course-pages';
 import { getHubQuestions } from '@/lib/hub-data';
 import { courseJsonLd } from '@/lib/marketing-jsonld';
 import { serializeJsonLd } from '@/lib/question-seo';
@@ -25,9 +25,13 @@ export function generateStaticParams() {
   return COURSE_PAGES.map(({ slug }) => ({ slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const page = getCoursePage(params.slug);
   if (!page) return {};
+  // A live coupon goes into the share text (WhatsApp, LinkedIn), not the
+  // search snippet — the meta description stays offer-free.
+  const offer = await getCourseOffer(page.courseId);
+  const shareDescription = offer ? `${offerShareLine(offer)} ${page.metaDescription}` : page.metaDescription;
   return {
     // seoTitle already ends in the brand, so skip the layout's title template.
     title: { absolute: page.seoTitle },
@@ -35,10 +39,14 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     alternates: { canonical: `/courses/${page.slug}` },
     openGraph: {
       title: page.seoTitle,
-      description: page.metaDescription,
+      description: shareDescription,
       type: 'website',
       url: `/courses/${page.slug}`,
+      // Page-level openGraph/twitter replace the layout's, so repeat its shared fields.
+      siteName: 'Technomanagers',
+      locale: 'en_US',
     },
+    twitter: { card: 'summary_large_image', site: '@technomanagers', title: page.seoTitle, description: shareDescription },
   };
 }
 

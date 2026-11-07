@@ -35,8 +35,14 @@ export interface CoursePageContent {
    * true and checkable (enrolments, rating, where learners work).
    */
   proofPoints?: CourseProofPoint[];
-  /** Full <title>, used as an absolute title (no layout suffix). */
+  /**
+   * Full <title>, used as an absolute title (no layout suffix). Kept under
+   * ~60 characters so Google shows it whole; Google already prints the site
+   * name above the link, so no brand suffix. Titles carry the year — update
+   * it each January.
+   */
   seoTitle: string;
+  /** Search snippet: lead with proof, ≤155 characters, no expiring offers. */
   metaDescription: string;
   breadcrumb: string;
   category: string;
@@ -90,6 +96,18 @@ export interface CourseOffer {
 }
 
 export const DEFAULT_OFFER_LABEL = 'Limited-time offer';
+
+/** "16 Nov" — the offer's last day in IST, for share previews. */
+export function offerEndDay(offer: CourseOffer): string {
+  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }).format(
+    new Date(offer.endsAt),
+  );
+}
+
+/** The share-preview sentence for a live offer: "20% off for a limited time with code AIPM20, till 16 Nov." */
+export function offerShareLine(offer: CourseOffer): string {
+  return `${offer.label} with code ${offer.code}, till ${offerEndDay(offer)}.`;
+}
 
 /** The course row's offer, or null when it has none or it has already ended. */
 export function courseOfferFromRow(
@@ -174,9 +192,9 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
       { strong: 'Rated 4.9', rest: 'by learners who took the course.' },
       { strong: 'Learners now work at', rest: 'Google, Microsoft, Uber and Coinbase.' },
     ],
-    seoTitle: 'AI Product Management Course & Interview Prep | Technomanagers',
+    seoTitle: 'AI Product Management Course 2026: RAG, Evals & Interview Prep',
     metaDescription:
-      'AI product management course: ML, GenAI, RAG, AI evals, agents and vibe coding, plus 20+ AI PM interview questions. Rated 4.9 · 1,120+ learners.',
+      'Rated 4.9 by 1,120+ learners now at Google, Microsoft and Uber. Build RAG apps, AI evals and agents, then crack AI PM interviews. Lifetime access.',
     breadcrumb: 'AI Product Management',
     category: 'AI Product Management',
     badge: 'Interview Prep',
@@ -345,9 +363,9 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
     slug: 'ai-program-management-course',
     courseId: COURSE_PAGE_IDS['ai-program-management-course'],
     checkoutUrl: 'https://topmate.io/technomanagers/2033621/pay',
-    seoTitle: 'AI Program Management Course & Interview Prep | Technomanagers',
+    seoTitle: 'AI Program Management Course 2026: TPM & AI PgM Interview Prep',
     metaDescription:
-      'AI program management course: ML, GenAI, RAG, vibe coding, AI change management and all 5 AI PgM interview rounds. 32+ videos and a certificate.',
+      'Lead AI programs with real technical depth: ML, GenAI, RAG and AI change management, plus Meta and Google TPM interview guides. Lifetime access.',
     breadcrumb: 'AI Program Management',
     category: 'Program Management',
     badge: 'AI Edition',

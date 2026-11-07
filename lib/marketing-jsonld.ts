@@ -97,7 +97,8 @@ export function courseJsonLd(page: CoursePageContent, checkoutUrl: string, siteU
       '@type': 'Course',
       '@id': url,
       name,
-      description: page.metaDescription,
+      // The headline describes the course; the meta description is written to win clicks.
+      description: page.headline,
       url,
       provider: org(siteUrl),
       inLanguage: 'en',
