@@ -128,7 +128,7 @@ export function courseOfferFromRow(
 }
 
 export interface CourseProofPoint {
-  /** The highlighted lead-in, e.g. "1,120+ learners". */
+  /** The highlighted lead-in, e.g. "Rated 4.9". */
   strong: string;
   rest: string;
 }
@@ -193,13 +193,12 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
     courseId: COURSE_PAGE_IDS['ai-product-management-course'],
     checkoutUrl: 'https://topmate.io/technomanagers/1861184/pay',
     proofPoints: [
-      { strong: '1,120+ learners', rest: 'have enrolled in the AI Product Management Course.' },
       { strong: 'Rated 4.9', rest: 'by learners who took the course.' },
       { strong: 'Learners now work at', rest: 'Google, Microsoft, Uber and Coinbase.' },
     ],
     seoTitle: 'AI Product Management Course 2026: RAG, Evals & Interview Prep',
     metaDescription:
-      'Rated 4.9 by 1,120+ learners now at Google, Microsoft and Uber. Build RAG apps, AI evals and agents, then crack AI PM interviews. Lifetime access.',
+      'Rated 4.9 by learners now at Google, Microsoft and Uber. Build RAG apps, AI evals and agents, then crack AI PM interviews. Lifetime access.',
     breadcrumb: 'AI Product Management',
     category: 'AI Product Management',
     badge: 'Interview Prep',
@@ -208,7 +207,7 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
     titleRest: ' Course',
     headline:
       'Learn machine learning, GenAI, RAG, AI evals, agents and vibe coding as a product manager, then crack AI PM interviews. Our learners now work at Google, Microsoft, Uber and Coinbase.',
-    proof: { rating: '4.9', ratingCount: null, ratingLabel: 'average rating', enrolled: '1,120+', enrolledLabel: 'learners enrolled' },
+    proof: { rating: '4.9', ratingCount: null, ratingLabel: 'average rating', enrolled: null, enrolledLabel: 'learners enrolled' },
     facts: [
       { label: 'Videos', value: '48+ lectures' },
       { label: 'Case studies', value: '25+' },
@@ -272,7 +271,7 @@ const ALL_COURSE_PAGES: readonly CoursePageContent[] = [
       { quote: 'Very structured content that has helped me crack my Product Management interview.', name: 'Shivansh Agarwal', role: 'Product Manager, Coinbase' },
     ],
     instructor: SHAILESH_SHARMA,
-    promo: { pitch: 'Build RAG apps, AI evals and agents, then crack AI PM interviews.', proof: 'Rated 4.9 · 1,120+ learners', promoCategories: ['Artificial Intelligence', 'AI PM Interview'] },
+    promo: { pitch: 'Build RAG apps, AI evals and agents, then crack AI PM interviews.', proof: 'Rated 4.9', promoCategories: ['Artificial Intelligence', 'AI PM Interview'] },
     questionCategory: 'Artificial Intelligence',
     faqs: [
       { q: 'What does an AI Product Manager do?', a: 'An AI Product Manager owns products where a model is a core component: what to build, how it should behave and when it is reliable enough to ship.' },
@@ -462,7 +461,7 @@ export function getCoursePage(slug: string): CoursePageContent | undefined {
   return COURSE_PAGES.find((p) => p.slug === slug);
 }
 
-/** "Rated 4.9 · 1,120+ learners enrolled" — the enroll card / sticky bar line. */
+/** "Rated 4.9 · 53 learners enrolled" — the enroll card / sticky bar line. */
 export function proofLine(proof: CoursePageContent['proof']): string {
   return (
     [

@@ -88,8 +88,8 @@ describe('proofLine', () => {
   const base = { rating: null, ratingCount: null, ratingLabel: 'ratings', enrolled: null, enrolledLabel: 'learners enrolled' };
 
   it('joins the rating and enrolment when present', () => {
-    expect(proofLine({ ...base, rating: '4.9', ratingLabel: 'average rating', enrolled: '1,120+' })).toBe(
-      'Rated 4.9 · 1,120+ learners enrolled',
+    expect(proofLine({ ...base, rating: '4.9', ratingLabel: 'average rating', enrolled: '53' })).toBe(
+      'Rated 4.9 · 53 learners enrolled',
     );
   });
 
@@ -136,8 +136,8 @@ describe('proof pop-up', () => {
     const page = getCoursePage('ai-product-management-course')!;
     const lines = page.proofPoints!.map((p) => `${p.strong} ${p.rest}`).join(' ');
     // Numbers in the pop-up must match the hero proof strip — no invented counters.
-    expect(lines).toContain(page.proof.enrolled!);
     expect(lines).toContain(page.proof.rating!);
+    if (page.proof.enrolled) expect(lines).toContain(page.proof.enrolled);
     expect(lines).not.toMatch(/today|in the last|bought/i);
   });
 });
