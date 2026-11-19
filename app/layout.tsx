@@ -3,7 +3,7 @@
  *
  * Wraps every page with:
  *   QueryProvider → AuthProvider → QuestionAccessProvider → TooltipProvider
- *   Navbar · <main> · FooterWrapper (hidden on /admin)
+ *   CohortAnnouncementBar · Navbar · <main> · FooterWrapper (hidden on /admin)
  *   Toaster (shadcn) · Sonner · SignInGateModal
  *
  * Fonts are loaded via next/font/google — zero layout-shift, self-hosted
@@ -17,6 +17,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { QuestionAccessProvider } from '@/contexts/QuestionAccessContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Navbar from '@/components/layout/Navbar';
+import CohortAnnouncementBar, { COHORT_BAR_DISMISSED_SCRIPT } from '@/components/layout/CohortAnnouncementBar';
 import FooterWrapper from '@/components/layout/FooterWrapper';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
@@ -180,6 +181,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Skip to content
         </a>
+        {/* Runs before first paint: hides the announcement bar for visitors
+            who dismissed it, so it never flashes in (see the component). */}
+        <script dangerouslySetInnerHTML={{ __html: COHORT_BAR_DISMISSED_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(identityJsonLd) }}
@@ -188,6 +192,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             <QuestionAccessProvider>
               <TooltipProvider>
+                <CohortAnnouncementBar />
                 <Navbar hubs={navHubs} courses={navCourses} />
                 <main id="main" className="flex-1">{children}</main>
                 <FooterWrapper />

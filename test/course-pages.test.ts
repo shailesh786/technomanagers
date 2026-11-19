@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COURSE_PAGE_IDS, courseHref, coursePageSlug } from '@/lib/course-links';
-import { COURSE_PAGES, DEFAULT_OFFER_LABEL, courseOfferFromRow, coursePromoFor, getCoursePage, offerEndDay, offerShareLine, proofLine } from '@/lib/course-pages';
+import { COURSE_PAGES, DEFAULT_OFFER_LABEL, courseOfferFromRow, coursePromoFor, getCoursePage, questionCoursePromo, offerEndDay, offerShareLine, proofLine } from '@/lib/course-pages';
 import { timeLeft } from '@/hooks/useCountdown';
 
 describe('course pages content', () => {
@@ -168,5 +168,54 @@ describe('coursePromoFor', () => {
     expect(coursePromoFor(['Guesstimates'])).toBeNull();
     expect(coursePromoFor(null)).toBeNull();
     expect(coursePromoFor([])).toBeNull();
+  });
+});
+
+describe('questionCoursePromo', () => {
+  const row = (id: string, title: string) => ({
+    id,
+    title,
+    short_description: `${title} pitch`,
+    external_url: `https://topmate.io/technomanagers/${title.length}`,
+  });
+  const MASTERY = row('0332d1ac-4dea-4e8d-950b-a2938f443882', 'PM Interview Mastery Course');
+  const GOOGLE = row('68048f71-4b37-4ad1-8655-ed3729b738bf', 'Google PM Interview Prep');
+  const CASES = row('f407883a-2867-4ccb-82ea-8c9de800fc67', 'Business Case Interviews (AI Edition)');
+  const ACTIVE = [MASTERY, GOOGLE, CASES];
+  const q = (over: Partial<{ category: string[] | null; company: string[] | null; role: string | null }> = {}) => ({
+    category: null,
+    company: null,
+    role: 'Product Management',
+    ...over,
+  });
+
+  it('keeps the on-site course for AI and Program Management questions', () => {
+    expect(questionCoursePromo(q({ category: ['Artificial Intelligence'], company: ['Google'] }), ACTIVE)).toMatchObject({
+      href: '/courses/ai-product-management-course',
+    });
+    expect(questionCoursePromo(q({ category: ['Program Management'] }), ACTIVE)?.external).toBeFalsy();
+  });
+
+  it('sends consulting questions to the business case course', () => {
+    expect(questionCoursePromo(q({ role: 'Management Consulting', category: ['Profitability'] }), ACTIVE)).toEqual({
+      href: CASES.external_url,
+      title: CASES.title,
+      pitch: CASES.short_description,
+      external: true,
+    });
+  });
+
+  it('sends Google questions to Google PM Interview Prep', () => {
+    expect(questionCoursePromo(q({ company: ['Google', 'Meta'], category: ['Product Sense'] }), ACTIVE)?.title).toBe(GOOGLE.title);
+  });
+
+  it('gives every other question the PM Interview Mastery Course', () => {
+    expect(questionCoursePromo(q({ category: ['Guesstimates'] }), ACTIVE)?.title).toBe(MASTERY.title);
+    expect(questionCoursePromo(q({ role: null }), ACTIVE)?.title).toBe(MASTERY.title);
+  });
+
+  it('skips courses that are not active', () => {
+    expect(questionCoursePromo(q({ company: ['Google'] }), [MASTERY])?.title).toBe(MASTERY.title);
+    expect(questionCoursePromo(q({ category: ['Guesstimates'] }), [])).toBeNull();
   });
 });
