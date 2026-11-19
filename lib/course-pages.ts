@@ -19,7 +19,7 @@ import type { LucideIcon } from 'lucide-react';
 import { BookOpen, Calendar, Clock, MessageCircle, Shield, Users, Video } from 'lucide-react';
 import { COURSE_PAGE_IDS } from '@/lib/course-links';
 import { INSTRUCTOR_NAME, INSTRUCTOR_PORTRAIT_URL, INSTRUCTOR_YOUTUBE_URL } from '@/components/cohort/InstructorCard';
-import type { Course } from '@/types';
+import type { Course, Question } from '@/types';
 
 export interface CoursePageContent {
   slug: string;
@@ -478,7 +478,10 @@ export interface CoursePromo {
   href: string;
   title: string;
   pitch: string;
-  proof: string;
+  /** Short proof line after the pitch; omitted when there is no checkable fact to show. */
+  proof?: string;
+  /** True when href leaves the site (a Topmate product page). */
+  external?: boolean;
 }
 
 // Most specific first: a question tagged both "Program Management" and
@@ -498,6 +501,45 @@ export function coursePromoFor(categories: readonly string[] | null | undefined)
         proof: page.promo.proof,
       };
     }
+  }
+  return null;
+}
+
+/**
+ * Interview-prep courses that have no on-site page (they sell on Topmate),
+ * used on question pages the on-site courses don't cover — so every question
+ * points at a course. First match wins; the last entry catches everything.
+ * Title, pitch (short_description) and link come from the `courses` row, so
+ * the admin's copy and active/inactive switch apply here too.
+ */
+const INTERVIEW_PREP_PROMOS: readonly {
+  courseId: string;
+  matches: (q: Pick<Question, 'company' | 'role'>) => boolean;
+}[] = [
+  // Business Case Interviews (AI Edition)
+  { courseId: 'f407883a-2867-4ccb-82ea-8c9de800fc67', matches: (q) => q.role === 'Management Consulting' },
+  // Google PM Interview Prep
+  { courseId: '68048f71-4b37-4ad1-8655-ed3729b738bf', matches: (q) => !!q.company?.includes('Google') },
+  // PM Interview Mastery Course
+  { courseId: '0332d1ac-4dea-4e8d-950b-a2938f443882', matches: () => true },
+];
+
+/**
+ * The course card for a question page: the on-site course for its categories
+ * (coursePromoFor) when there is one, else the best-matching active
+ * interview-prep course from `activeCourses`. Null only when none is active.
+ */
+export function questionCoursePromo(
+  question: Pick<Question, 'category' | 'company' | 'role'>,
+  activeCourses: readonly Pick<Course, 'id' | 'title' | 'short_description' | 'external_url'>[],
+): CoursePromo | null {
+  const onSite = coursePromoFor(question.category);
+  if (onSite) return onSite;
+  for (const promo of INTERVIEW_PREP_PROMOS) {
+    if (!promo.matches(question)) continue;
+    const row = activeCourses.find((c) => c.id === promo.courseId);
+    if (!row?.external_url) continue;
+    return { href: row.external_url, title: row.title, pitch: row.short_description ?? '', external: true };
   }
   return null;
 }

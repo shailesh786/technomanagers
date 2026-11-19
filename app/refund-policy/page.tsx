@@ -93,7 +93,7 @@ export default function RefundPolicy() {
           <ul className="list-disc pl-6 space-y-2">
             <li>Your full name</li>
             <li>The email address you used to enrol</li>
-            <li>Your cohort (for example, Cohort 3 &ndash; Weekday)</li>
+            <li>The cohort and batch you enrolled in</li>
           </ul>
           <p>That is all we need. You do not have to tell us why you are cancelling.</p>
         </section>

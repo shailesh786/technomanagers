@@ -112,11 +112,10 @@ function courseJsonLd(siteUrl: string) {
       'Model evaluation',
       'AI product go-to-market',
     ],
-    // One instance per batch — the weekend and weekday cohorts differ only in
-    // their days, matching the schedule shown in the page's trust bar.
+    // One instance per batch — only the weekend cohort runs, matching the
+    // schedule shown in the page's trust bar.
     hasCourseInstance: [
       { name: 'Weekend Cohort', days: ['Saturday', 'Sunday'] },
-      { name: 'Weekday Cohort', days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] },
     ].map(({ name, days }) => ({
       '@type': 'CourseInstance',
       name,

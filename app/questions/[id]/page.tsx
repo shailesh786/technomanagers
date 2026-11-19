@@ -27,7 +27,8 @@ import { notFound } from 'next/navigation';
 import { QueryClient, HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import QuestionDetailClient from '@/components/questions/QuestionDetailClient';
-import { coursePromoFor } from '@/lib/course-pages';
+import { questionCoursePromo } from '@/lib/course-pages';
+import { getActiveCourses } from '@/lib/course-data';
 import { createSupabasePublicClient } from '@/lib/supabase/public';
 import { pgArrayLiteral } from '@/lib/postgrest';
 import { QUESTION_LIST_SELECT, flattenCommentCount } from '@/lib/question-list-select';
@@ -244,7 +245,12 @@ export default async function QuestionDetailPage({ params }: Props) {
   const question = await getPublishedQuestion(params.id);
   if (!question) notFound();
 
-  const { clusters, neighbours, comments, commentCount } = await getQuestionPageData(question);
+  const [{ clusters, neighbours, comments, commentCount }, activeCourses] = await Promise.all([
+    getQuestionPageData(question),
+    // Shared with the navbar's Courses menu (cached, tag 'courses'). A DB blip
+    // only drops the course card — never fails the question page.
+    getActiveCourses().catch(() => []),
+  ]);
 
   const queryClient = new QueryClient();
   // Prefetch keys must match the client hooks exactly: ['question', id],
@@ -288,7 +294,7 @@ export default async function QuestionDetailPage({ params }: Props) {
           id={params.id}
           clusters={clusters}
           neighbours={neighbours}
-          coursePromo={coursePromoFor(question.category)}
+          coursePromo={questionCoursePromo(question, activeCourses)}
         />
       </HydrationBoundary>
     </>

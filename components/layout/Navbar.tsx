@@ -77,7 +77,7 @@ export default function Navbar({ hubs, courses }: { hubs: NavHubs; courses: Cour
           >
             Cohort
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] animate-pulse leading-none">
-              NEW
+              OPEN
             </span>
           </Link>
           <a
@@ -184,7 +184,7 @@ export default function Navbar({ hubs, courses }: { hubs: NavHubs; courses: Cour
           >
             Cohort
             <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#1A7AE8] to-[#00C2FF] animate-pulse leading-none">
-              NEW
+              OPEN
             </span>
           </Link>
           <a
