@@ -522,7 +522,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               <span className="text-2xl md:text-4xl font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>in 12 Weeks</span>
             </h1>
             <p className="text-lg max-w-2xl" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Alumni now ship AI at Google, Microsoft and Oracle. Concept sessions go deep on RAG, agents, evals, LLM systems and model tradeoffs. Practice sessions are interview prep and hands-on building.
+              Past cohorts have included PMs from Google, Microsoft and Oracle. Concept sessions go deep on RAG, agents, evals, LLM systems and model tradeoffs. Practice sessions are interview prep and hands-on building.
             </p>
             <p className="text-base max-w-2xl" style={{ color: 'rgba(255,255,255,0.5)' }}>
               You don&apos;t finish with just a certificate. You leave with a working product, an eval framework, and the answers for the interview that follows.
@@ -635,7 +635,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
               The cohort <span className="italic font-normal" style={{ ...body, color: C.cyan }}>makes</span> you one.
             </h2>
             <p className="text-lg mb-8" style={{ color: C.body }}>
-              The self-paced course gives you knowledge. The cohort gives you more knowledge, proof of work, interview readiness, and mentor access — the things that actually get you hired.
+              The self-paced course gives you knowledge. The cohort gives you more knowledge, proof of work, interview readiness, and mentor access.
             </p>
             <div className="rounded-2xl overflow-hidden overflow-x-auto" style={{ border: `1px solid ${C.border}` }}>
               <table className="w-full text-sm min-w-[700px]">
