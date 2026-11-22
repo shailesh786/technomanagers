@@ -10,6 +10,7 @@ import {
 import { deliverApplication } from '@/lib/cohort-application-delivery';
 import { createSupabaseServiceClient } from '@/lib/supabase/service';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { runAfterResponse } from '@/lib/background';
 
 /**
  * POST /api/cohort-applications — the cohort application ("lead") form.
@@ -17,9 +18,11 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * 1. Validates the body with the shared zod schema (same rules as the form).
  * 2. Saves the application, with the exact consent wording and version, via
  *    the service-role client (the table has no public INSERT policy).
- * 3. Sends the applicant's copy, the team copy and the Google Sheet row in
- *    parallel, and records which of them worked. A failed email or Sheet
- *    write never loses the application — the admin view shows the error.
+ * 3. Replies straight away, then sends the applicant's copy, the team copy
+ *    and the Google Sheet row in the background (Vercel waitUntil) and records
+ *    which of them worked. The Sheet's Apps Script alone can take seconds, so
+ *    the applicant never waits on it. A failed email or Sheet write never
+ *    loses the application — Admin → Leads shows the error.
  */
 export const dynamic = 'force-dynamic';
 export const maxDuration = 20;
@@ -83,6 +86,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Applications are temporarily unavailable. Please try again later.' }, { status: 503 });
   }
 
+  // Look up the signed-in user (if any) while the duplicate check runs.
+  const userIdPromise = signedInUserId();
+
   // A double-click or a refresh-and-resubmit should not create two leads.
   const since = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString();
   const { data: recent } = await supabase
@@ -113,7 +119,7 @@ export async function POST(req: Request) {
     utm: cleanUtm(body.utm),
     ip_address: clientIp(req),
     user_agent: req.headers.get('user-agent')?.slice(0, 500) ?? null,
-    user_id: await signedInUserId(),
+    user_id: await userIdPromise,
   };
 
   const { data, error } = await supabase.from('cohort_applications').insert(insert).select('*').single();
@@ -124,10 +130,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 
-  const delivery = await deliverApplication(row);
-  const { error: updErr } = await supabase.from('cohort_applications').update(delivery).eq('id', row.id);
-  if (updErr) console.error('[cohort-applications] delivery status update failed:', updErr);
-  if (delivery.sync_errors) console.warn('[cohort-applications] delivery issues:', row.id, delivery.sync_errors);
+  const deliver = (async () => {
+    const delivery = await deliverApplication(row);
+    const { error: updErr } = await supabase.from('cohort_applications').update(delivery).eq('id', row.id);
+    if (updErr) console.error('[cohort-applications] delivery status update failed:', updErr);
+    if (delivery.sync_errors) console.warn('[cohort-applications] delivery issues:', row.id, delivery.sync_errors);
+  })().catch((e) => console.error('[cohort-applications] delivery crashed:', row.id, e));
 
-  return NextResponse.json({ ok: true, id: row.id, emailSent: Boolean(delivery.applicant_email_sent_at) });
+  // Outside Vercel (local dev) there is no waitUntil, so finish the work first.
+  if (!runAfterResponse(deliver)) await deliver;
+
+  // The copy is sent in the background; tell the form whether one is set up.
+  const emailConfigured = Boolean(process.env.RESEND_API_KEY && process.env.LEADS_FROM_EMAIL);
+  return NextResponse.json({ ok: true, id: row.id, emailSent: emailConfigured });
 }
