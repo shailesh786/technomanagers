@@ -256,6 +256,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server and Client Components.
 
+Server-only (Vercel → Environment Variables) for the cohort application form — see `docs/integrations/cohort-applications-setup.md`:
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=      # used ONLY by app/api/cohort-applications (lib/supabase/service.ts); never NEXT_PUBLIC_
+RESEND_API_KEY=                 # emails from hello@technomanagers.in
+LEADS_FROM_EMAIL="TechnoManagers <hello@technomanagers.in>"
+LEADS_REPLY_TO=                 # applicant replies land here
+LEADS_NOTIFY_EMAIL=             # team copy, comma-separated
+LEADS_SHEET_WEBHOOK_URL=        # Google Apps Script /exec URL
+LEADS_SHEET_WEBHOOK_SECRET=
+NEXT_PUBLIC_LEADS_SHEET_URL=    # "Google Sheet" button in Admin → Leads
+```
+
 ---
 
 ## What NOT to Do
@@ -294,6 +307,13 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `hooks/useQuestionCardActions.ts` | Like/save wiring for QuestionCard, shared by the listing, related clusters and hub pages |
 | `lib/question-seo.ts` | Question `<title>`, meta description (sample-answer excerpt or template) and JSON-LD graph (QAPage/WebPage with paywall markup + BreadcrumbList) |
 | `lib/comments-query.ts` | Shared comments query shape (select, filters, order, page size, keys) used by `hooks/useComments.ts` and the question route's prefetch — keep both on it |
+| `app/cohort/apply/page.tsx` + `components/cohort/CohortApplyForm.tsx` | Cohort application (lead) form — replaces the HubSpot and Topmate lead forms (same fields and single consent as Topmate); consent starts unticked |
+| `lib/cohort-application.ts` | Form schema, options and consent wording (Topmate wording) + `CONSENT_VERSION` (bump it when wording changes; each row stores the exact text it was submitted with) |
+| `app/api/cohort-applications/route.ts` | Validates, saves via the service-role client, then emails applicant + team (Resend) and appends to the Google Sheet (Apps Script); delivery failures are recorded, never lose the lead |
+| `lib/countries.ts` | Country names + calling codes for the phone field |
+| `lib/cohort-application-delivery.ts` | Email/Sheet rendering and sending; each channel optional via env vars |
+| `components/admin/AdminCohortApplications.tsx` | Admin → Leads: list, consents, delivery status, status + notes, CSV export |
+| `docs/integrations/cohort-applications-setup.md` | One-time setup: migration, Resend + GoDaddy DNS, Apps Script, Vercel env vars |
 | `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |
 | `app/api/revalidate/hero/route.ts` | Admin-gated POST → `revalidateTag('hero')` |
 | `app/api/revalidate/questions/route.ts` | Admin-gated POST → `revalidateTag('questions')` |
@@ -343,6 +363,7 @@ Both variables are prefixed `NEXT_PUBLIC_` so they are available in both Server 
 | `hero_items` | Hero Priority Board items — priority 1..3 = slotted, NULL = bench; visible flag, IST schedule window, 16:9 image, surface |
 | `cohort_settings` | Single-row config for cohort page CTA links (apply_url, whatsapp_url) |
 | `cohort_testimonials` | Cohort review wall — kind: text / video (YouTube) / image; visible flag, display_order |
+| `cohort_applications` | Cohort application leads + consent snapshot; written only by the API route (service role), admin read/update via RLS |
 
 ### Key RPCs
 

@@ -28,7 +28,14 @@ import {
   MessageCircle, Users, BookOpen, Award,
 } from 'lucide-react';
 
-const APPLY_URL = 'https://share-na2.hsforms.com/1vL9J0C6rR9yhuOz54UhLog41clik';
+// Our own application form (consents + email copies + admin view). The admin
+// "Apply link" setting in cohort_settings still overrides this.
+const APPLY_URL = '/cohort/apply';
+
+/** Internal links (our own pages) open in the same tab; external ones in a new tab. */
+function linkTarget(href: string) {
+  return href.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' };
+}
 const WA_URL = 'https://api.whatsapp.com/send/?phone=918017145177&text=Hi+Anand%2C+I%27m+interested+in+the+AI+Product+Builder+Cohort&type=phone_number&app_absent=0';
 
 // Page palette, mapped onto the site-wide design tokens in app/globals.css.
@@ -76,8 +83,7 @@ function CTAPrimary({ children, href, light = false }: { children: React.ReactNo
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...linkTarget(href)}
       className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold transition hover:scale-[1.02] hover:shadow-lg"
       style={{
         ...heading,
@@ -762,7 +768,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
                 12-Week Live Bootcamp · Including Interview Prep · with Shailesh Sharma
               </div>
               <div className="mt-5 space-y-3">
-                <a href={applyUrl} target="_blank" rel="noopener noreferrer"
+                <a href={applyUrl} {...linkTarget(applyUrl)}
                   className="flex items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-sm transition hover:opacity-90"
                   style={{ ...heading, background: `linear-gradient(135deg, ${C.navy}, ${C.cyan})`, color: '#fff' }}>
                   <ArrowRight className="w-4 h-4" /> Apply Now
@@ -828,7 +834,7 @@ export default function CohortPage({ testimonials }: { testimonials: CohortTesti
       {/* MOBILE FIXED BOTTOM CTA */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 p-3 flex gap-2"
         style={{ background: '#fff', borderTop: `1px solid ${C.border}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
-        <a href={applyUrl} target="_blank" rel="noopener noreferrer"
+        <a href={applyUrl} {...linkTarget(applyUrl)}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full font-bold text-sm"
           style={{ ...heading, background: C.navy, color: '#fff' }}>
           <ArrowRight className="w-4 h-4" /> Apply Now
