@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { csContains, pgArrayLiteral, pgQuote } from '@/lib/postgrest';
@@ -14,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Eye, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket, MessageSquareQuote } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, LayoutDashboard, BookOpen, Users, HelpCircle, GraduationCap, ArrowLeft, Mail, Download, Search, ChevronLeft, ChevronRight, Loader2, CloudUpload, X, ShieldAlert, Tags, Calendar, Building2, GalleryHorizontalEnd, Rocket, MessageSquareQuote, Inbox } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminModeration from '@/components/admin/AdminModeration';
 import { useFlaggedCount } from '@/hooks/useModeration';
@@ -23,6 +24,7 @@ import { useAllCategories, useCreateCategory, useUpdateCategory, useDeleteCatego
 import { useCompaniesWithCounts, useAllCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany } from '@/hooks/useCompanies';
 import AdminHeroBoard from '@/components/admin/AdminHeroBoard';
 import AdminCohortTestimonials from '@/components/admin/AdminCohortTestimonials';
+import AdminCohortApplications from '@/components/admin/AdminCohortApplications';
 import { useCohortSettings, useUpdateCohortSettings } from '@/hooks/useCohortSettings';
 import CompanyMultiSelect from '@/components/admin/CompanyMultiSelect';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -32,14 +34,17 @@ import type { Question, Course, CoachingService, Profile, Event } from '@/types'
 
 const supabase = createSupabaseBrowserClient();
 
-type AdminTab = 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage' | 'cohort' | 'testimonials';
+type AdminTab = 'leads' | 'questions' | 'courses' | 'coaching' | 'events' | 'moderation' | 'users' | 'waitlist' | 'roles' | 'categories' | 'companies' | 'homepage' | 'cohort' | 'testimonials';
 
 export default function Admin() {
-  const [tab, setTab] = useState<AdminTab>('questions');
+  // /admin/leads opens straight on the Leads tab (linked from the new-lead email).
+  const pathname = usePathname();
+  const [tab, setTab] = useState<AdminTab>(() => (pathname?.startsWith('/admin/leads') ? 'leads' : 'questions'));
   const { data: flaggedCount = 0 } = useFlaggedCount();
 
   const tabs = [
     { id: 'homepage' as const,   label: 'Homepage Hero', shortLabel: 'Hero',  icon: GalleryHorizontalEnd },
+    { id: 'leads' as const,      label: 'Leads',                               icon: Inbox },
     { id: 'cohort' as const,     label: 'Cohort',                              icon: Rocket },
     { id: 'testimonials' as const, label: 'Testimonials', shortLabel: 'Revws', icon: MessageSquareQuote },
     { id: 'questions' as const,  label: 'Questions',                           icon: HelpCircle },
@@ -119,6 +124,7 @@ export default function Admin() {
       {/* Content */}
       <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto">
         {tab === 'homepage' && <AdminHeroBoard />}
+        {tab === 'leads' && <AdminCohortApplications />}
         {tab === 'cohort' && <AdminCohortSettings />}
         {tab === 'testimonials' && <AdminCohortTestimonials />}
         {tab === 'questions' && <AdminQuestions />}
