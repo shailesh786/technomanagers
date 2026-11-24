@@ -18,8 +18,8 @@ import { runAfterResponse } from '@/lib/background';
  * 1. Validates the body with the shared zod schema (same rules as the form).
  * 2. Saves the application, with the exact consent wording and version, via
  *    the service-role client (the table has no public INSERT policy).
- * 3. Replies straight away, then sends the applicant's copy, the team copy
- *    and the Google Sheet row in the background (Vercel waitUntil) and records
+ * 3. Replies straight away, then sends one email (to the applicant, team on
+ *    BCC) and the Google Sheet row in the background (Vercel waitUntil) and records
  *    which of them worked. The Sheet's Apps Script alone can take seconds, so
  *    the applicant never waits on it. A failed email or Sheet write never
  *    loses the application — Admin → Leads shows the error.

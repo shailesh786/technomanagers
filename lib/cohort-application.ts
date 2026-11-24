@@ -123,7 +123,10 @@ export interface CohortApplicationRow {
   status: ApplicationStatus;
   admin_notes: string | null;
   applicant_email_sent_at: string | null;
+  /** Set when the team was BCC'd on the applicant's email. */
   team_email_sent_at: string | null;
+  /** Resend's id for the applicant email; look it up at resend.com/emails/<id>. */
+  resend_email_id: string | null;
   sheet_synced_at: string | null;
   sync_errors: string | null;
 }

@@ -4,11 +4,10 @@ The form lives at **technomanagers.in/cohort/apply**. Every submission:
 
 1. is saved in Supabase (`cohort_applications`), with the exact consent wording the applicant ticked, the consent version, time, IP and browser;
 2. appears in **Admin → Leads** (status, notes, CSV export, link to the Sheet);
-3. emails the applicant a copy of their answers and the consent they ticked, from `hello@technomanagers.in`;
-4. emails the team a copy (Reply goes to the applicant);
-5. adds a row to the Google Sheet.
+3. emails the applicant a copy of their answers and the consent they ticked, from `hello@technomanagers.in`, with the team on **BCC**, so the team's copy is the very same email (the applicant can't see the BCC addresses). Resend's email id is saved on the lead as proof of sending;
+4. adds a row to the Google Sheet.
 
-Steps 3–5 are optional and independent. If one isn't set up or fails, the application is still saved and Admin → Leads shows what didn't go out.
+Steps 3 and 4 are optional and independent. If one isn't set up or fails, the application is still saved and Admin → Leads shows what didn't go out.
 
 Do the steps below once, in this order.
 
@@ -50,7 +49,7 @@ There is no mailbox at technomanagers.in. Resend only *sends* as that address, a
 | `RESEND_API_KEY` | the API key |
 | `LEADS_FROM_EMAIL` | `TechnoManagers <hello@technomanagers.in>` |
 | `LEADS_REPLY_TO` | your Gmail address (where applicants' replies should land) |
-| `LEADS_NOTIFY_EMAIL` | who gets the team copy, comma-separated |
+| `LEADS_NOTIFY_EMAIL` | team addresses BCC'd on every applicant email, comma-separated (malformed ones are skipped) |
 
 ## 4. Google Sheet
 
@@ -78,7 +77,7 @@ If you edit the script later, use Deploy → **Manage deployments** → edit →
 ## 6. Test
 
 Submit the form once with your own email. Check that:
-- the row is in Admin → Leads, and "Copies" says **All sent**;
+- the row is in Admin → Leads, and "Copies" says **All sent** (the lead also shows the Resend email id);
 - both emails arrived (check Spam the first time);
 - the row is in the Sheet.
 

@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   cohortApplicationSchema,
   consentSnapshot,
   CONSENTS,
   type CohortApplicationRow,
 } from '@/lib/cohort-application';
-import { applicantEmail, escapeHtml, sheetRow, teamEmail } from '@/lib/cohort-application-delivery';
+import { applicantEmail, deliverApplication, escapeHtml, sheetRow, teamBccList } from '@/lib/cohort-application-delivery';
 import { COUNTRIES, countryByIso } from '@/lib/countries';
 
 const valid = {
@@ -60,9 +60,8 @@ describe('consentSnapshot', () => {
   });
 });
 
-describe('emails and sheet row', () => {
-  const app = cohortApplicationSchema.parse({ ...valid, fullName: 'Asha <script>alert(1)</script>' });
-  const row: CohortApplicationRow = {
+const app = cohortApplicationSchema.parse({ ...valid, fullName: 'Asha <script>alert(1)</script>' });
+const row: CohortApplicationRow = {
     id: '11111111-2222-3333-4444-555555555555',
     created_at: '2026-11-22T10:35:00.000Z',
     full_name: app.fullName,
@@ -85,13 +84,16 @@ describe('emails and sheet row', () => {
     admin_notes: null,
     applicant_email_sent_at: null,
     team_email_sent_at: null,
+    resend_email_id: null,
     sheet_synced_at: null,
     sync_errors: null,
-  };
+};
+
+describe('emails and sheet row', () => {
 
   it('escapes applicant-supplied text in the HTML', () => {
     expect(escapeHtml('<b>"x"</b>')).toBe('&lt;b&gt;&quot;x&quot;&lt;/b&gt;');
-    const { html } = teamEmail(row);
+    const { html } = applicantEmail(row);
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
   });
@@ -113,5 +115,65 @@ describe('emails and sheet row', () => {
     ]);
     expect(s.phone).toBe('+91 9876543210');
     expect(s.utm).toBe('utm_source=linkedin');
+  });
+});
+
+describe('delivery: one email, team on BCC', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  function stubEnv(notify: string) {
+    vi.stubEnv('RESEND_API_KEY', 're_test');
+    vi.stubEnv('LEADS_FROM_EMAIL', 'TechnoManagers <hello@technomanagers.in>');
+    vi.stubEnv('LEADS_REPLY_TO', 'owner@example.com');
+    vi.stubEnv('LEADS_NOTIFY_EMAIL', notify);
+    vi.stubEnv('LEADS_SHEET_WEBHOOK_URL', 'https://sheet.example/exec');
+    vi.stubEnv('LEADS_SHEET_WEBHOOK_SECRET', 's');
+  }
+
+  function mockFetch() {
+    return vi.spyOn(global, 'fetch').mockImplementation(async (url) =>
+      String(url).includes('resend.com')
+        ? new Response(JSON.stringify({ id: 'email_123' }), { status: 200 })
+        : new Response('{"ok":true}', { status: 200 }),
+    );
+  }
+
+  it('sends a single email to the applicant with the team on BCC and keeps its id', async () => {
+    stubEnv('a@example.com, b@example.com');
+    const fetchSpy = mockFetch();
+    const result = await deliverApplication(row);
+
+    const resendCalls = fetchSpy.mock.calls.filter(([u]) => String(u).includes('resend.com'));
+    expect(resendCalls).toHaveLength(1);
+    const body = JSON.parse((resendCalls[0][1] as RequestInit).body as string);
+    expect(body.to).toEqual([row.email]);
+    expect(body.bcc).toEqual(['a@example.com', 'b@example.com']);
+    expect(body.reply_to).toBe('owner@example.com');
+    expect(body.subject).toBe(applicantEmail(row).subject);
+
+    expect(result.resend_email_id).toBe('email_123');
+    expect(result.applicant_email_sent_at).toBeTruthy();
+    expect(result.team_email_sent_at).toBe(result.applicant_email_sent_at);
+    expect(result.sheet_synced_at).toBeTruthy();
+    expect(result.sync_errors).toBeNull();
+  });
+
+  it('drops a malformed BCC address instead of failing the whole email', () => {
+    stubEnv('a@example.com, not-an-email ,');
+    expect(teamBccList()).toEqual(['a@example.com']);
+  });
+
+  it('still emails the applicant when no team BCC is set, and flags it', async () => {
+    stubEnv('');
+    const fetchSpy = mockFetch();
+    const result = await deliverApplication(row);
+    const body = JSON.parse((fetchSpy.mock.calls.find(([u]) => String(u).includes('resend.com'))![1] as RequestInit).body as string);
+    expect(body.bcc).toBeUndefined();
+    expect(result.applicant_email_sent_at).toBeTruthy();
+    expect(result.team_email_sent_at).toBeNull();
+    expect(result.sync_errors).toContain('team BCC');
   });
 });

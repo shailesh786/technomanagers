@@ -3,7 +3,8 @@
 /**
  * Admin → Leads. Every cohort application from /cohort/apply, with the
  * exact consent wording each applicant ticked, when, and from where; whether
- * their email copy, the team copy and the Google Sheet row went out; and a
+ * their email (with the team on BCC) and the Google Sheet row went out, with
+ * Resend's email id as proof of sending; and a
  * status + notes field for follow-up. Reads and updates go through RLS
  * (admins only); rows are only ever created by /api/cohort-applications.
  */
@@ -286,10 +287,24 @@ export default function AdminCohortApplications() {
               <section className="space-y-1.5">
                 <h3 className="font-medium text-sm">Copies</h3>
                 <div className="flex flex-wrap gap-4">
-                  <DeliveryBadge ok={Boolean(open.applicant_email_sent_at)} label={`Applicant email ${open.applicant_email_sent_at ? fmt(open.applicant_email_sent_at) : 'not sent'}`} />
-                  <DeliveryBadge ok={Boolean(open.team_email_sent_at)} label={`Team email ${open.team_email_sent_at ? fmt(open.team_email_sent_at) : 'not sent'}`} />
+                  <DeliveryBadge ok={Boolean(open.applicant_email_sent_at)} label={`Email to applicant ${open.applicant_email_sent_at ? fmt(open.applicant_email_sent_at) : 'not sent'}`} />
+                  <DeliveryBadge ok={Boolean(open.team_email_sent_at)} label={open.team_email_sent_at ? 'Team on BCC' : 'Team not BCC\'d'} />
                   <DeliveryBadge ok={Boolean(open.sheet_synced_at)} label={`Sheet ${open.sheet_synced_at ? fmt(open.sheet_synced_at) : 'not added'}`} />
                 </div>
+                {open.resend_email_id && (
+                  <p className="text-xs text-muted-foreground break-words">
+                    Resend email id:{' '}
+                    <a
+                      href={`https://resend.com/emails/${encodeURIComponent(open.resend_email_id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {open.resend_email_id}
+                    </a>{' '}
+                    (open in Resend to see delivery status)
+                  </p>
+                )}
                 {open.sync_errors && <p className="text-xs text-amber-700 break-words">{open.sync_errors}</p>}
               </section>
 

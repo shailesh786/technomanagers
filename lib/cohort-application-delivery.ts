@@ -1,6 +1,7 @@
 /**
  * lib/cohort-application-delivery.ts — everything that happens to a cohort
- * application after it is saved: the applicant's copy, the team's copy and
+ * application after it is saved: one email to the applicant with the team on
+ * BCC (so the team's copy is identical to what the applicant received), and
  * the Google Sheet row. Server-only (reads secret env vars).
  *
  * Each channel is optional and independent. If its env vars are missing or
@@ -11,7 +12,7 @@
  *   RESEND_API_KEY              Resend API key (emails are skipped without it)
  *   LEADS_FROM_EMAIL            e.g. "TechnoManagers <hello@technomanagers.in>"
  *   LEADS_REPLY_TO              where applicant replies go, e.g. your Gmail
- *   LEADS_NOTIFY_EMAIL          who gets the team copy (comma-separated)
+ *   LEADS_NOTIFY_EMAIL          team addresses BCC'd on every applicant email (comma-separated)
  *   LEADS_SHEET_WEBHOOK_URL     Google Apps Script web-app URL
  *   LEADS_SHEET_WEBHOOK_SECRET  shared secret the script checks
  */
@@ -118,39 +119,6 @@ export function applicantEmail(row: CohortApplicationRow) {
   return { subject, html, text };
 }
 
-export function teamEmail(row: CohortApplicationRow) {
-  const subject = `New cohort application: ${row.full_name} (${row.job_role}, ${row.experience})`;
-  const meta: [string, string][] = [
-    ['Submitted', formatIst(row.created_at)],
-    ['Consent version', row.consent_version],
-    ['Source page', row.source_url || '—'],
-    ['UTM', row.utm ? Object.entries(row.utm).map(([k, v]) => `${k}=${v}`).join(', ') : '—'],
-    ['IP', row.ip_address || '—'],
-    ['Reference', row.id],
-  ];
-  const wa = `https://wa.me/${(row.country_code + row.phone).replace(/\D/g, '')}`;
-  const html = wrap(`
-    <p><b>${escapeHtml(row.full_name)}</b> applied for the cohort.</p>
-    <p><a href="${wa}">WhatsApp them</a> · <a href="mailto:${escapeHtml(row.email)}">Email them</a> · <a href="${SITE_URL}/admin/leads">Open in Admin → Leads</a></p>
-    ${tableHtml(answerRows(row))}
-    <h3 style="font-size:15px;margin:20px 0 4px">Consents</h3>
-    ${consentsHtml(row.consents)}
-    ${tableHtml(meta)}
-  `);
-  const text = [
-    `${row.full_name} applied for the cohort.`,
-    `WhatsApp: ${wa}`,
-    '',
-    ...answerRows(row).map(([k, v]) => `${k}: ${v}`),
-    '',
-    'Consents:',
-    consentsText(row.consents),
-    '',
-    ...meta.map(([k, v]) => `${k}: ${v}`),
-  ].join('\n');
-  return { subject, html, text };
-}
-
 /** One flat row for the Google Sheet, in column order (see docs/integrations). */
 export function sheetRow(row: CohortApplicationRow): Record<string, string> {
   return {
@@ -182,27 +150,57 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
   }
 }
 
-async function sendViaResend(to: string[], mail: { subject: string; html: string; text: string }, replyTo?: string) {
+const EMAIL_RE = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/;
+
+/**
+ * Team addresses BCC'd on every applicant email, from LEADS_NOTIFY_EMAIL.
+ * Malformed entries are dropped: one bad address would make Resend reject the
+ * whole email, and the applicant would get nothing.
+ */
+export function teamBccList(): string[] {
+  return (process.env.LEADS_NOTIFY_EMAIL || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => EMAIL_RE.test(s));
+}
+
+/** Sends one email through Resend and returns its id (to look it up in Resend later). */
+async function sendViaResend(
+  to: string[],
+  mail: { subject: string; html: string; text: string },
+  opts: { replyTo?: string; bcc?: string[] } = {},
+): Promise<string | null> {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.LEADS_FROM_EMAIL;
   if (!key || !from) throw new Error('email not configured (RESEND_API_KEY / LEADS_FROM_EMAIL)');
   const res = await fetchWithTimeout('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to, subject: mail.subject, html: mail.html, text: mail.text, ...(replyTo ? { reply_to: replyTo } : {}) }),
+    body: JSON.stringify({
+      from,
+      to,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+      ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
+      ...(opts.bcc?.length ? { bcc: opts.bcc } : {}),
+    }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const json = (await res.json().catch(() => ({}))) as { id?: unknown };
+  return typeof json.id === 'string' ? json.id : null;
 }
 
-export async function sendApplicantCopy(row: CohortApplicationRow) {
-  await sendViaResend([row.email], applicantEmail(row), process.env.LEADS_REPLY_TO || undefined);
-}
-
-export async function sendTeamCopy(row: CohortApplicationRow) {
-  const to = (process.env.LEADS_NOTIFY_EMAIL || '').split(',').map((s) => s.trim()).filter(Boolean);
-  if (!to.length) throw new Error('team email not configured (LEADS_NOTIFY_EMAIL)');
-  // Reply-To the applicant, so "Reply" in the team copy writes to them.
-  await sendViaResend(to, teamEmail(row), row.email);
+/**
+ * The one email per application: To the applicant, BCC the team. The applicant
+ * cannot see the BCC addresses; the team's copy is the very same email.
+ * Replies go to LEADS_REPLY_TO.
+ */
+export async function sendApplicantCopy(row: CohortApplicationRow, bcc: string[] = teamBccList()) {
+  return sendViaResend([row.email], applicantEmail(row), {
+    replyTo: process.env.LEADS_REPLY_TO || undefined,
+    bcc,
+  });
 }
 
 export async function appendToSheet(row: CohortApplicationRow) {
@@ -220,24 +218,24 @@ export async function appendToSheet(row: CohortApplicationRow) {
 }
 
 /**
- * Runs all three channels in parallel and reports which succeeded.
- * Never throws — a delivery failure must not lose the application.
+ * Sends the email (applicant + team BCC) and the Sheet row in parallel and
+ * reports what succeeded. Never throws — a delivery failure must not lose the
+ * application. team_email_sent_at means "the team was BCC'd on that email".
  */
 export async function deliverApplication(row: CohortApplicationRow) {
-  const [applicant, team, sheet] = await Promise.allSettled([
-    sendApplicantCopy(row),
-    sendTeamCopy(row),
-    appendToSheet(row),
-  ]);
+  const bcc = teamBccList();
+  const [email, sheet] = await Promise.allSettled([sendApplicantCopy(row, bcc), appendToSheet(row)]);
   const now = new Date().toISOString();
+  const sent = email.status === 'fulfilled';
   const errors = [
-    applicant.status === 'rejected' ? `applicant email: ${String(applicant.reason?.message ?? applicant.reason)}` : null,
-    team.status === 'rejected' ? `team email: ${String(team.reason?.message ?? team.reason)}` : null,
+    email.status === 'rejected' ? `email: ${String(email.reason?.message ?? email.reason)}` : null,
+    sent && !bcc.length ? 'team BCC: no valid address in LEADS_NOTIFY_EMAIL' : null,
     sheet.status === 'rejected' ? `sheet: ${String(sheet.reason?.message ?? sheet.reason)}` : null,
   ].filter(Boolean) as string[];
   return {
-    applicant_email_sent_at: applicant.status === 'fulfilled' ? now : null,
-    team_email_sent_at: team.status === 'fulfilled' ? now : null,
+    applicant_email_sent_at: sent ? now : null,
+    team_email_sent_at: sent && bcc.length ? now : null,
+    resend_email_id: sent ? email.value : null,
     sheet_synced_at: sheet.status === 'fulfilled' ? now : null,
     sync_errors: errors.length ? errors.join(' | ') : null,
   };
