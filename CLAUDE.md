@@ -263,7 +263,7 @@ SUPABASE_SERVICE_ROLE_KEY=      # used ONLY by app/api/cohort-applications (lib/
 RESEND_API_KEY=                 # emails from hello@technomanagers.in
 LEADS_FROM_EMAIL="TechnoManagers <hello@technomanagers.in>"
 LEADS_REPLY_TO=                 # applicant replies land here
-LEADS_NOTIFY_EMAIL=             # team copy, comma-separated
+LEADS_NOTIFY_EMAIL=             # team BCC'd on every applicant email, comma-separated
 LEADS_SHEET_WEBHOOK_URL=        # Google Apps Script /exec URL
 LEADS_SHEET_WEBHOOK_SECRET=
 NEXT_PUBLIC_LEADS_SHEET_URL=    # "Google Sheet" button in Admin → Leads
@@ -311,7 +311,7 @@ NEXT_PUBLIC_LEADS_SHEET_URL=    # "Google Sheet" button in Admin → Leads
 | `lib/cohort-application.ts` | Form schema, options and consent wording (Topmate wording) + `CONSENT_VERSION` (bump it when wording changes; each row stores the exact text it was submitted with) |
 | `app/api/cohort-applications/route.ts` | Validates, saves via the service-role client, then emails applicant + team (Resend) and appends to the Google Sheet (Apps Script); delivery failures are recorded, never lose the lead |
 | `lib/countries.ts` | Country names + calling codes for the phone field |
-| `lib/cohort-application-delivery.ts` | Email/Sheet rendering and sending; each channel optional via env vars |
+| `lib/cohort-application-delivery.ts` | One email per lead (to the applicant, team on BCC; Resend id stored as `resend_email_id`) + Sheet row; each channel optional via env vars |
 | `components/admin/AdminCohortApplications.tsx` | Admin → Leads: list, consents, delivery status, status + notes, CSV export |
 | `docs/integrations/cohort-applications-setup.md` | One-time setup: migration, Resend + GoDaddy DNS, Apps Script, Vercel env vars |
 | `app/auth/callback/route.ts` | OAuth PKCE exchange — sets session cookie |
